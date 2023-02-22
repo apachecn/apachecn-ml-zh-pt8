@@ -1,0 +1,1352 @@
+<html><head/><body>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Deploying, Managing, and Monitoring Database Solutions containing R Code</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3UQQQ0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">部署、管理和监控包含R代码的数据库解决方案</h1>
+                
+            
+            
+                
+<p class="calibre2">在SQL Server数据库中运行R代码意味着数据科学家/数据库开发人员也可以将生产数据科学解决方案作为<strong class="calibre1">数据库生命周期管理</strong> ( <strong class="calibre1"> DLM </strong>)的一部分。这包括以下内容:</p>
+<ul class="calibre7">
+<li class="calibre8">将R代码作为SQL Server数据库项目的一部分签入版本控制</li>
+<li class="calibre8">将数据科学解决方案的存储过程添加为SQL Server单元测试的一部分</li>
+<li class="calibre8">将数据科学解决方案集成到<strong class="calibre1">持续集成/持续交付</strong> ( <strong class="calibre1"> CI/CD </strong>)流程中</li>
+<li class="calibre8">定期监控数据科学解决方案在生产中的性能</li>
+</ul>
+<p class="calibre2">在本章中，我们将使用Visual Studio 2017和Visual Studio Team Services中的<strong class="calibre1"> SQL Server数据工具</strong> ( <strong class="calibre1"> SSDT </strong>)来执行这个DLM工作流。然而，底层概念可以应用于您或您的团队可能已经在使用的任何其他CI/CD平台。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating R into the SQL Server Database lifecycle workflow</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3VPBC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将R集成到SQL Server数据库生命周期工作流中</h1>
+                
+            
+            
+                
+<p class="calibre2">在前面的<a target="_blank" href="part0102.html#318PC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第7章</a>、<em class="calibre12">操作化R预测模型</em>中，我们讨论了如何在Visual Studio 2017中创建R项目。我们还谈到了在SQL Server中集成R代码作为<kbd class="calibre11">sp_execute_external_script</kbd>的一部分。在这里，我们将重温Visual Studio 2017，特别是在作为SQL Server数据库项目的一部分将R代码集成到<kbd class="calibre11">sp_execute_external_script</kbd>中的背景下，并且整体上作为数据库生命周期工作流的一部分。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Preparing your environment for the database lifecycle workflow</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="40NRU0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">为数据库生命周期工作流准备您的环境</h1>
+                
+            
+            
+                
+<p class="calibre2">在本节中，我们将讨论数据库生命周期工作流的各个阶段以及我们将使用的工具。对于工作流程中的每个阶段，还会有一些建议的备选方案供您探索。</p>
+<ol class="calibre14">
+<li value="1" class="calibre8"><strong class="calibre1">编码和管理SQL Server数据库项目/解决方案</strong>:有几种不同的方法来管理构成SQL Server数据库项目的SQL Server DML/DDL脚本。Visual Studio 2017 (VS2017)中的SQL SSDT是一个成熟的产品，它形式化了数据库模式和对象的创建和修改。在本节中，我们将在VS2017中使用SSDT。</li>
+</ol>
+<p class="calibre34">您可以使用VS2017社区版、专业版或企业版。请查看<a xmlns:epub="http://www.idpf.org/2007/ops" href="https://www.visualstudio.com/vs/compare/" target="_blank" class="calibre10">https://www.visualstudio.com/vs/compare/</a>了解更多关于这些版本比较的最新信息。在本节的演练和示例中，我们将使用Visual Studio企业版，但是您可以使用任何版本。你可以从https://www.visualstudio.com/vs/的<a xmlns:epub="http://www.idpf.org/2007/ops" href="https://www.visualstudio.com/vs/" class="calibre10">下载这些。</a></p>
+<p class="calibre34">以下其他值得尝试的方法有:</p>
+<ul class="calibre7">
+<li class="front-matter">
+ 
+</li>
+</ul>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">单元测试:就像应用程序开发一样，数据库开发将受益于单元测试框架，尤其是如果它可以自动化的话。有两个众所周知的单元测试框架可用于SQL Server数据库，tSQLt和集成在Visual Studio中的SQL Server单元测试。以下是链接:</li>
+</ol>
+<ul class="calibre7">
+<li class="front-matter">
+ 
+</li>
+</ul>
+<p class="calibre34">在本节中，我们将使用VS2017中的SQL Server单元测试。</p>
+<p class="calibre34">另一个值得尝试的工具是:</p>
+<ul class="calibre7">
+<li class="front-matter">
+ 
+</li>
+</ul>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8"><strong class="calibre1">版本控制</strong>:版本控制系统有很多流行的选择，例如Git和<strong class="calibre1"> Team Foundation版本控制</strong> ( <strong class="calibre1"> TFVC </strong>)。在本节中，我们将使用TFVC主持的<strong class="calibre1"> Visual Studio团队服务</strong> ( <strong class="calibre1"> VSTS </strong>)。VS2017可以连接到VSTS存储库。你可以通过<a href="https://www.visualstudio.com/team-services/" target="_blank" class="calibre10">https://www.visualstudio.com/team-services/</a>在线注册一个VSTS账户。</li>
+</ol>
+<p class="calibre34">其他值得尝试的方法有:</p>
+<p class="calibre34">使用Visual Studio，您可以连接到在线版本控制主机，如GitHub和VSTS，以及私有的本地版本控制服务器，如<strong class="calibre1">Team Foundation Server</strong>(<strong class="calibre1">TFS</strong>):</p>
+<ul class="calibre7">
+<li class="front-matter">
+ 
+</li>
+</ul>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8"><strong class="calibre1"> CI/CD </strong> : VSTS支持托管代理和私有代理。托管代理是基于云的代理，执行持续集成和持续交付。私有代理是基于内部部署的代理版本，在Visual Studio 2017中可用。将CI放在适当的位置意味着当脚本被签入时，代理将自动构建并选择性地执行许多测试。有了CD，我们就可以只根据基线来测试代码发布和/或模式变更。在本章中，我们将使用带有私有代理的VSTS来部署本地SQL Server数据库。</li>
+</ol>
+<p class="calibre34">其他值得尝试的方法有:</p>
+<ul class="calibre7">
+<li class="front-matter">
+ 
+</li>
+</ul>
+<p class="calibre34"><em class="calibre12">图8.1 </em>显示了使用VSTS的CI/CD工作流，我们将在本章的示例SQL Server R Services解决方案中使用该工作流:</p>
+<div><img class="aligncenter65" src="img/00124.jpeg"/></div>
+<p>图8.1使用VSTS的CI/CD流程</p>
+<p class="calibre2">来源:<a href="https://docs.microsoft.com/en-us/vsts/build-release/actions/ci-cd-part-1" target="_blank" class="calibre10">https://docs . Microsoft . com/en-us/vsts/build-release/actions/ci-CD-part-1</a></p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Prerequisites for this chapter</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="41MCG0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">本章的先决条件</h1>
+                
+            
+            
+                
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">工具</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">网址</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">注释</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1"> Visual Studio 2017 </strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">下载:<a href="https://www.visualstudio.com/downloads/" target="_blank" class="calibre10">https://www.visualstudio.com/downloads/</a></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">社区版是免费的。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1"> VSTS </strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">报名/签到:<a href="https://www.visualstudio.com/team-services/" target="_blank" class="calibre10">https://www.visualstudio.com/team-services/</a></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">免费注册个人帐户。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">动力壳v2.0以上</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">下载PowerShell:<a href="https://www.microsoft.com/en-us/download/details.aspx?id=42554" target="_blank" class="calibre10">https://www.microsoft.com/en-us/download/details.aspx?id=42554 </a></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">您将需要在本地设置私有代理。</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Creating the SQL Server database project</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="42KT20-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">创建SQL Server数据库项目</h1>
+                
+            
+            
+                
+<p class="calibre2">在本节中，我们将带您了解如何在VS2017中创建数据库项目。</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在VS2017中，单击文件|新建项目。</li>
+<li value="2" class="calibre8">从左侧窗格的“已安装”中选择SQL Server，然后单击SQL Server数据库项目模板。</li>
+<li value="3" class="calibre8">在Name:字段中键入<kbd class="calibre11">Ch08</kbd>,在Solution name: file中键入<kbd class="calibre11">SQL Server R Services Book</kbd>,如下图所示:</li>
+</ol>
+<div><img class="aligncenter66" src="img/00125.jpeg"/></div>
+<p>图8.2 Visual Studio中的新项目</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">选择保存解决方案的位置。</li>
+</ol>
+<p>如果您已经有了版本控制的本地文件夹，您可以在此指定路径。</p>
+<p class="calibre34">在这个例子中，我的VSTS项目被命名为SQL Server R Services Book，它与我的本地文件夹<kbd class="calibre11">C:\VSTS\SQL Server R Services Book</kbd>相关联。</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">确保“为解决方案创建目录”和“添加到源代码管理”都已选中。</li>
+<li value="6" class="calibre8">在新建项目对话框中单击确定。解决方案资源管理器窗口应该显示类似于以下屏幕截图的内容:</li>
+</ol>
+<div><img class="aligncenter67" src="img/00126.jpeg"/></div>
+<p>图8.3解决方案资源管理器中的数据库项目</p>
+<p class="calibre34">从这里，您可以添加新的对象，如表、存储过程和许多其他对象。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Importing an existing database into the project</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="43JDK0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将现有数据库导入到项目中</h1>
+                
+            
+            
+                
+<p class="calibre2">现在我们有了一个空白数据库，我们可以导入您在第7章<em class="calibre12">运行R预测模型</em>中创建的现有数据库:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在Ch08上，右键单击并选择导入|数据库:</li>
+</ol>
+<div><img class="aligncenter68" src="img/00127.jpeg"/></div>
+<p>图8.4将数据库导入数据库项目</p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">在导入数据库对话框中，单击选择连接。然后，指定您先前在第7章、<em xmlns:epub="http://www.idpf.org/2007/ops" class="calibre12">操作R预测模型</em>中创建的数据库的数据库连接。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">“导入数据库”对话框应如下所示。点击开始:</li>
+</ol>
+<div><img class="aligncenter69" src="img/00128.jpeg"/></div>
+<p>图8.5导入数据库对话框</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">“导入数据库”对话框将显示导入进度摘要:</li>
+</ol>
+<div><img class="aligncenter70" src="img/00129.jpeg"/></div>
+<p>图8.6数据库项目导入摘要</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">解决方案应该如下所示:</li>
+</ol>
+<div><img class="aligncenter71" src="img/00130.jpeg"/></div>
+<p>图8.7导入数据库后显示数据库项目的解决方案资源管理器</p>
+<ol start="6" class="calibre14">
+<li value="6" class="calibre8">在我们进行更多的更改之前，让我们通过右键单击根解决方案节点并选择Build Solution来构建解决方案，或者您也可以单击<em class="calibre12">Ctrl</em>+<em class="calibre12">Shift</em>+<em class="calibre12">B</em>。</li>
+</ol>
+<p class="calibre34">请注意，输出应该包含每个引用<kbd class="calibre11">sp_execute_external</kbd>脚本的存储过程的警告，如下所示:</p>
+<pre class="calibre33"><strong class="calibre1">C:\VSTS\SQL Server R Services Book\SQL Server R Services Book\Ch08\dbo\Stored Procedures\uspTrainTipPredictionModelWithRealTimeScoring.sql(27,8): Warning:  SQL71502: Procedure: [dbo].[uspTrainTipPredictionModelWithRealTimeScoring] has an unresolved reference to object [dbo].[sp_execute_external_script].</strong></pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Adding a new stored procedure object</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="44HU60-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">添加新的存储过程对象</h1>
+                
+            
+            
+                
+<p class="calibre2">以下是如何向现有数据库项目添加新对象的示例:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">要创建一个新的过程，您可以右键单击<kbd class="calibre11">Stored Procedures</kbd>文件夹，然后单击Add | Stored Procedure...</li>
+<li value="2" class="calibre8">在名称字段中键入<kbd class="calibre11">uspTrainTipPredictionModelWithRealTimeScoringDTree</kbd>作为新的存储过程:</li>
+</ol>
+<div><img class="aligncenter72" src="img/00131.jpeg"/></div>
+<p>图8.8向数据库项目添加新项</p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">将以下脚本添加到存储过程中:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">CREATE PROCEDURE [dbo].[uspTrainTipPredictionModelWithRealTimeScoringDTree] 
+AS 
+BEGIN 
+   DECLARE @auc FLOAT; 
+   DECLARE @model VARBINARY(MAX); 
+ 
+   -- The data to be used for training 
+   DECLARE @inquery NVARCHAR(MAX)= N' 
+         SELECT  
+               tipped,  
+               fare_amount,  
+               passenger_count, 
+               trip_time_in_secs, 
+               trip_distance, 
+               pickup_datetime,  
+               dropoff_datetime, 
+               dbo.fnCalculateDistance(pickup_latitude,  
+                     pickup_longitude,   
+                     dropoff_latitude,  
+                     dropoff_longitude) as direct_distance 
+         FROM dbo.nyctaxi_sample 
+         TABLESAMPLE (10 PERCENT) REPEATABLE (98052)' 
+ 
+-- Calculate the model based on the trained data and the AUC. 
+EXEC sys.sp_execute_external_script @language = N'R', 
+                                  @script = N' 
+         ## Create model 
+         dTreeObj&lt;- rxDTree(tipped ~ passenger_count + 
+trip_distance + 
+trip_time_in_secs + 
+direct_distance, 
+                    data = InputDataSet); 
+ 
+treeCp &lt;- rxDTreeBestCp(dTreeObj); 
+         dTreeObjChosen&lt;- prune.rxDTree(dTreeObj, cp = treeCp); 
+ 
+         ## Serialize model             
+         model &lt;- serialize(dTreeObjChosen, NULL); 
+ 
+         predictTree &lt;- rxPredict(dTreeObjChosen, data = InputDataSet, overwrite = TRUE)               
+          
+        library('ROCR'); 
+predOutput &lt;- cbind(InputDataSet, predictTree); 
+ 
+auc &lt;- rxAuc(rxRoc("tipped", "tipped_Pred", predOutput)); 
+print(paste0("AUC of Classification Model:", auc)); 
+         ', 
+     @input_data_1 = @inquery,    
+     @output_data_1_name = N'trained_model', 
+     @params= N'@auc FLOAT OUTPUT, @model VARBINARY(MAX) OUTPUT', 
+     @auc= @auc OUTPUT, 
+     @model = @model OUTPUT; 
+    
+-- Store the train model output and its AUC  
+INSERT INTO [dbo].[NYCTaxiModel] (Model, AUC,IsRealTimeScoring) 
+SELECT @model, @auc, 1; 
+ 
+END</strong> </pre>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">按下<em class="calibre12"> Ctrl </em> + <em class="calibre12"> S </em>保存文件。</li>
+<li value="5" class="calibre8">您现在可以使用<em class="calibre12">Ctrl</em>+<em class="calibre12">Shift</em>+<em class="calibre12">B</em>重新构建解决方案。</li>
+</ol>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Publishing schema changes</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="45GEO0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">发布架构更改</h1>
+                
+            
+            
+                
+<p class="calibre2">发布对环境的更改有两种选择:</p>
+<ul class="calibre7">
+<li class="calibre8">现有数据库</li>
+<li class="calibre8">新数据库</li>
+</ul>
+<p class="calibre2">在本例中，数据库中已经存在NYCTaxi。您可以识别模式更改并创建更新脚本:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">右键单击Ch08并选择模式比较。</li>
+<li value="2" class="calibre8">确保左侧的源代码指向数据库项目路径。</li>
+<li value="3" class="calibre8">在选择目标下拉列表中，单击它以设置目标数据库。</li>
+<li value="4" class="calibre8">选择数据库并点击选择连接。在这里，您可以提供到现有的<kbd class="calibre11">NYCTaxi</kbd>数据库的连接。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">单击比较，它应该只显示一个文件:</li>
+</ol>
+<div><img class="aligncenter73" src="img/00132.jpeg"/></div>
+<p>图8.9 Visual Studio中的架构比较</p>
+<ol start="6" class="calibre14">
+<li value="6" class="calibre8">在这里，您可以单击Update直接对数据库进行更改，或者单击Generate Script图标为更改生成脚本。</li>
+</ol>
+<p>作为一种最佳实践，特别是如果您有一个正式的生产变更管理流程，您应该选择生成脚本并将其包含在变更管理请求中。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Adding a unit test against a stored procedure</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="46EVA0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">针对存储过程添加单元测试</h1>
+                
+            
+            
+                
+<p class="calibre2">针对可编程性对象(如存储过程或函数)添加单元测试是良好编程实践的一部分:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">通过右键单击其中一个存储过程或函数来创建一个单元测试套件，比如<kbd class="calibre11">Ch08 </kbd> | <kbd class="calibre11">dbo</kbd> | <kbd class="calibre11">Stored Procedures</kbd> | <kbd class="calibre11">uspTrainTipPredictionModel</kbd>。然后，选择创建单元测试...：</li>
+</ol>
+<div><img class="aligncenter74" src="img/00133.jpeg"/></div>
+<p>图8.10在Visual Studio中创建单元测试</p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">选择连接:</li>
+</ol>
+<div><img class="aligncenter75" src="img/00134.gif"/></div>
+<p>图8.11 SQL Server测试配置</p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">一旦您点击OK，您将会看到一个新的单元测试项目被创建，并且一个单元测试模板的例子被创建:</li>
+</ol>
+<div><img class="aligncenter76" src="img/00135.jpeg"/></div>
+<p>图8.12 SQL Server单元测试模板</p>
+<p class="calibre34">在右上方的窗格中，您可以管理您的单元测试用例。随着<kbd class="calibre11">dbo.uspTrianTipPredictionModel</kbd>训练样本数据并将模型和AUC存储到<kbd class="calibre11">dbo.NYCTaxiModel</kbd>，我们将创建一个单元测试来确保:</p>
+<ul class="calibre7">
+<li class="front-matter">
+ 
+</li>
+</ul>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">复制以下代码:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">-- database unit test for dbo.uspTrainTipPredictionModel</strong><br class="title-page-name"/><strong class="calibre1">DECLARE @RC AS INT;</strong><br class="title-page-name"/><strong class="calibre1">DECLARE @RowCountBefore AS INT;</strong><br class="title-page-name"/><strong class="calibre1">DECLARE @RowCountAfter AS INT;</strong><br class="title-page-name"/><strong class="calibre1">DECLARE @AUC FLOAT;</strong><br class="title-page-name"/><strong class="calibre1">SELECT @RC = 0;</strong></pre>
+<pre class="calibre33"><strong class="calibre1">SELECT @RowCountBefore = IS NULL((SELECT COUNT(1) ROWCOUNT</strong><br class="title-page-name"/><strong class="calibre1">FROM [dbo].[NYCTaxiModel]</strong><br class="title-page-name"/><strong class="calibre1">WHERE [AUC] ISNOTNULL), 0);</strong><br class="title-page-name"/><strong class="calibre1">EXECUTE @RC = [dbo].[uspTrainTipPredictionModel];</strong><br class="title-page-name"/><strong class="calibre1">-- Expected value: there should be a new record added to NYCTaxiModel</strong><br class="title-page-name"/><strong class="calibre1">-- where AUC is known.</strong><br class="title-page-name"/><strong class="calibre1">SELECT @RowCountAfter = ISNULL((SELECTCOUNT(1)ROWCOUNT</strong><br class="title-page-name"/><strong class="calibre1">FROM [dbo].[NYCTaxiModel]</strong><br class="title-page-name"/><strong class="calibre1">WHERE [AUC] ISNOTNULL), 0);</strong><br class="title-page-name"/><strong class="calibre1">SELECT @AUC = (SELECTTOP 1 [AUC]</strong><br class="title-page-name"/><strong class="calibre1">FROM [dbo].[NYCTaxiModel]</strong><br class="title-page-name"/><strong class="calibre1">ORDER BY [CreatedOn] DESC);</strong><br class="title-page-name"/><strong class="calibre1">SELECT</strong><br class="title-page-name"/><strong class="calibre1">@RowCountAfter - @RowCountBeforeRowCountAdded,</strong><br class="title-page-name"/><strong class="calibre1">IIF(@AUC &gt; 0.5, 1, 0) AUCOfModel;</strong></pre>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">在Test Conditions窗格中，单击inconclusiveCondition1，然后单击红叉将其删除。</li>
+<li value="6" class="calibre8">现在，从测试条件中选择标量值，并单击加号按钮。</li>
+<li value="7" class="calibre8">然后，右键单击scalarValueCondition1并单击Properties。</li>
+<li value="8" class="calibre8">在“属性”窗口中更新以下值:<ol class="calibre15">
+<li value="1" class="calibre8"><strong class="calibre1">名称</strong> : <kbd class="calibre11">TestNYCTaxiModelAdded</kbd></li>
+<li value="2" class="calibre8"><strong class="calibre1">期望值</strong> : <kbd class="calibre11">1</kbd></li>
+<li value="3" class="calibre8"><strong class="calibre1">空预期</strong> : <kbd class="calibre11">False</kbd></li>
+</ol>
+</li>
+<li value="9" class="calibre8">重复步骤6至8，并在“属性”窗口中更改以下值:<ol class="calibre15">
+<li value="1" class="calibre8"><strong class="calibre1">姓名</strong> : <kbd class="calibre11">TestNYCTaxiModelAdded</kbd></li>
+<li value="2" class="calibre8"><strong class="calibre1">期望值</strong> : <kbd class="calibre11">1</kbd></li>
+<li value="3" class="calibre8"><strong class="calibre1">空预期</strong> : <kbd class="calibre11">False</kbd></li>
+</ol>
+</li>
+</ol>
+<p class="calibre34">完成设置后，您的Visual Studio现在应该是这样的:</p>
+<div><img src="img/00136.jpeg" class="calibre27"/></div>
+<p>图8.13 dbo . usptrintippredictionmodel的SQL Server单元测试</p>
+<ol start="10" class="calibre14">
+<li value="10" class="calibre8">拆下<kbd class="calibre11">UnitTest.cs</kbd>。</li>
+<li value="11" class="calibre8">然后，右键单击Ch08_Test项目，并单击Build。</li>
+<li value="12" class="calibre8">导航到测试资源管理器并单击Run All。</li>
+<li value="13" class="calibre8">几秒钟后，<kbd class="calibre11">dbo_uspTrainTipPredictionModelTest</kbd>出现在通过测试下。单击它可以查看执行摘要。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="14" class="calibre14">
+<li value="14" class="calibre8">单击输出查看更多详细信息，例如:</li>
+</ol>
+<div><img src="img/00137.jpeg" class="calibre80"/></div>
+<p>图8.14测试执行结果</p>
+<p class="calibre2">现在，您已经学习了如何创建一个针对存储过程的单元测试，该单元测试是针对现有NYC Taxi模型上的现有存储过程执行的。理想情况下，单元测试是针对最近发布的SQL Server运行的。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using version control</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="47DFS0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用版本控制</h1>
+                
+            
+            
+                
+<p class="calibre2">从Visual Studio中，我们可以签入解决方案并管理版本控制中的更改。在这个具体的例子中，我们使用VSTS进行登记。假设您已经在VSTS创建了一个项目。</p>
+<p class="calibre2">以下是本节其余部分的先决条件:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8"><strong class="calibre1">一个VSTS项目</strong>:要建立一个新的VSTS项目，只需转到:<a href="https://www.visualstudio.com/team-services/" target="_blank" class="calibre10">https://www.visualstudio.com/team-services/</a>。</li>
+</ol>
+<p class="calibre34">VSTS项目的URL应该遵循以下格式:<br class="title-page-name"/> <kbd class="calibre11">https://&lt;your account&gt;.visualstudio.com/&lt;VSTS Project&gt;</kbd></p>
+<p class="calibre34">本章所指的VSTS项目名为<kbd class="calibre11">SQL Server R Services Book</kbd>。所以，在我的例子中，URL是<kbd class="calibre11">https://mssqlgirl.visualstudio.com/SQL%20Server%20R%20Services%20Book</kbd></p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">VSTS项目被映射到本地文件夹。</li>
+</ol>
+<p class="calibre34">这里映射到项目的本地文件夹是<kbd class="calibre11">C:\VSTS\SQL Server R Services Book</kbd>。在本章的前面，我们在这个路径中创建了SQL Server数据库解决方案。</p>
+<p class="calibre2"> </p>
+<p class="calibre2">按照下列步骤从Visual Studio签入您的解决方案:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在解决方案根节点上，右键单击并选择“签入”。</li>
+<li value="2" class="calibre8">在团队资源管理器窗口中，在挂起的更改下，在注释文本框中键入<kbd class="calibre11">Initial check-in</kbd>。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">在单击“签入”之前，查看相关的工作项、包括的更改和排除的更改:</li>
+</ol>
+<div><img class="aligncenter77" src="img/00138.jpeg"/></div>
+<p>图8.15签入挂起的更改</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">在检入确认对话框中，单击是。</li>
+</ol>
+<p class="calibre2">所有文件成功签入后，您还可以在VSTS网站上查看它们。举个例子:</p>
+<p class="calibre2"><kbd class="calibre11">https://mssqlgirl.visualstudio.com/SQL%20Server%20R%20Services%20Book/_versionControl</kbd></p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Setting up continuous integration</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="48C0E0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">设置持续集成</h1>
+                
+            
+            
+                
+<p class="calibre2"><strong class="calibre1">持续集成</strong> ( <strong class="calibre1"> CI </strong>)的主要思想是执行基于一个或多个触发器的自动化构建。执行构建的触发器之一是签入事件。另一个可能是定期构建。选择哪个触发器合适取决于各种因素，例如项目的复杂性和团队的文化。在这一部分中，由于项目很小，我们将自动执行由签入触发的构建。我们还将添加测试作为构建的一部分。</p>
+<p class="calibre2">VSTS是一个自动化构建、测试部署和监控的良好平台。在这个部分中，我们将在VSTS配置一个构建定义并安排一个持续集成。</p>
+<p>确保成功生成Visual Studio解决方案，包括SQL Server数据库项目和SQL Server单元测试项目。</p>
+<p class="calibre2"><em class="calibre12">图8.16 </em>显示了VSTS在线的SQL Server R Services Book团队。在接下来的几节中，我们将在您的浏览器上使用VSTS来配置CI:</p>
+<div><img src="img/00139.jpeg" class="calibre81"/></div>
+<p>图8.16签入挂起的更改</p>
+<p class="calibre2">这是本节其余部分的先决条件:</p>
+<ul class="calibre7">
+<li class="calibre8">为了能够将SQL Server数据库项目部署到本地SQL Server实例，您需要创建一个在VSTS注册的本地托管的私有代理。这仅在Visual Studio 2017中可用。要进行设置，请遵循以下位置的文档:<a href="https://docs.microsoft.com/en-us/vsts/build-release/actions/agents/v2-windows" class="calibre10">https://docs . Microsoft . com/en-us/vsts/build-release/actions/agents/v2-windows</a>。</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Creating a build definition in VSTS</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="49AH00-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">在VSTS创建构建定义</h1>
+                
+            
+            
+                
+<p class="calibre2">按照以下步骤在VSTS创建构建定义:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在VSTS项目网站上，点击顶部菜单中的构建和发布，然后选择构建。选择新定义。</li>
+<li value="2" class="calibre8">从空流程开始。</li>
+<li value="3" class="calibre8">在“任务”下，转到“处理”并从“代理队列”下拉列表中选择专用代理。在mssqlgirl帐户中，私有代理被命名为Default:</li>
+</ol>
+<div><img class="aligncenter78" src="img/00140.jpeg"/></div>
+<p>图8.17为构建中的任务选择私有代理(默认)</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">查看获取源中的选择。</li>
+</ol>
+<p><kbd class="calibre31">$(build.sourcesdirectory)</kbd>下的本地路径指的是私有代理的工作空间，用于构建和执行额外的任务。</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">单击Phase 1并用Build Phase替换Display name值。</li>
+<li value="6" class="calibre8">在顶部菜单上，从保存&amp;队列下拉列表中选择保存。</li>
+<li value="7" class="calibre8">查看保存构建定义并添加注释。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="8" class="calibre14">
+<li value="8" class="calibre8">通过单击加号将任务添加到构建阶段。</li>
+<li value="9" class="calibre8">在添加任务中，搜索MS Build，然后单击添加。</li>
+<li value="10" class="calibre8">将项目更改为<kbd class="calibre11">$/SQL Server R Services Book/SQL Server R Services Book/SQL Server R Services Book.sln</kbd>。</li>
+</ol>
+<p>默认值是<kbd class="calibre31">**/*.sln</kbd>，它指的是VSTS项目中的所有解决方案文件。</p>
+<ol start="11" class="calibre14">
+<li value="11" class="calibre8">在构建阶段，添加另一个名为发布构建工件的任务。这允许我们获得以后可能很重要的文件，比如DACPAC文件。</li>
+<li value="12" class="calibre8">在“发布构建工件”任务中，指定以下详细信息:<ol class="calibre15">
+<li value="1" class="calibre8">发布路径:<kbd class="calibre11">$(Build.Repository.LocalPath)\SQL Server R Services Book\Ch08\bin\Debug</kbd></li>
+<li value="2" class="calibre8">神器名称:<kbd class="calibre11">DACPAC</kbd></li>
+<li value="3" class="calibre8">工件发布位置:<kbd class="calibre11">Visual Studio Team Services/TFS</kbd></li>
+</ol>
+</li>
+</ol>
+<p class="calibre34">在这一步中，我们只发布DACPAC文件。在Visual Studio Team Services区域中发布这个特定的文件允许我们以后在发布过程中引用这个DACPAC(一个连续的交付步骤)。</p>
+<ol start="13" class="calibre14">
+<li value="13" class="calibre8">点击Save &amp; Queue来测试构建定义。</li>
+<li value="14" class="calibre8">查看SQL Server R Services Book-CI的队列构建中的选项，然后单击队列。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="15" class="calibre14">
+<li value="15" class="calibre8">该页面将显示一个构建正在排队，如下所示:</li>
+</ol>
+<div><img src="img/00141.jpeg" class="calibre82"/></div>
+<p>图8.18添加发布工件任务</p>
+<p class="calibre34">如果构建成功，您将看到类似下面的内容。现在是熟悉构建概要页面和工件页面的好时机:</p>
+<div><img class="aligncenter79" src="img/00142.jpeg"/></div>
+<p>图8.19查看构建结果</p>
+<p class="calibre34">当您导航到Artifacts选项卡时，您应该能够看到<kbd class="calibre11">DACPAC</kbd>文件夹。通过单击Explore，您可以看到解决方案中的文件，包括与通过Visual Studio进行本地构建类似的构建输出:</p>
+<div><img class="aligncenter80" src="img/00143.jpeg"/></div>
+<p>图8.20探索从先前成功构建中发布的工件</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Deploying the build to a local SQL Server instance</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4A91I0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将生成部署到本地SQL Server实例</h1>
+                
+            
+            
+                
+<p class="calibre2">现在，通过私有代理上的VSTS的构建已经成功，让我们尝试将数据库部署到SQL Server实例。这样做的先决条件是专用代理必须能够访问SQL Server实例。<em class="calibre12">图8.21 </em>显示了如何使用具有本地(私有)代理的VSTS部署到多个本地服务器/环境:</p>
+<div><img src="img/00144.jpeg" class="calibre83"/></div>
+<p>图8.21 VSTS和本地代理/环境的高级布局</p>
+<p class="calibre2">来源:<a href="https://docs.microsoft.com/en-us/vsts/build-release/concepts/agents/agents" target="_blank" class="calibre10">https://docs . Microsoft . com/en-us/vsts/build-release/concepts/agents/agents</a></p>
+<p class="calibre2">生成SQL Server数据库项目时，它将生成一个可用于创建新数据库的DACPAC文件。因此，在SQL Server R Services Book-CI构建定义的构建阶段，我们将添加一个新任务:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">导航到SQL Server R服务手册-CI生成定义。</li>
+<li value="2" class="calibre8">单击构建阶段并添加一个新任务。</li>
+<li value="3" class="calibre8">搜索<kbd class="calibre11">WinRM - SQL Server DB Deployment</kbd>。然后，点击添加。</li>
+</ol>
+<p>如果不存在，请点击查看我们的市场。搜索<kbd class="calibre31">IIS Web App Deployment using WinRM</kbd>，在你的VSTS账户上安装。</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">在部署使用:DACPAC中，键入以下详细信息:<ol class="calibre15">
+<li value="1" class="calibre8">机器:<kbd class="calibre11">$(UATMachine)</kbd></li>
+<li value="2" class="calibre8">管理员登录:<kbd class="calibre11">$(UATAdminUser)</kbd></li>
+<li value="3" class="calibre8">密码:<kbd class="calibre11">$(UATAdminPwd)</kbd></li>
+<li value="4" class="calibre8">DACPAC文件:<kbd class="calibre11">$(Build.Repository.LocalPath)\SQL Server R Services Book\Ch08\bin\Debug\Ch08.dacpac</kbd></li>
+<li value="5" class="calibre8">使用<kbd class="calibre11">Publish Profile</kbd>指定SQL</li>
+<li value="6" class="calibre8">发布个人资料:<kbd class="calibre11">$(System.DefaultWorkingDirectory)$(UATPublishProfilePath)</kbd></li>
+</ol>
+</li>
+<li value="5" class="calibre8">添加以下新变量:</li>
+</ol>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">名称</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">值</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">秘密</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATMachine</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">{输入您在FQDN的机器名或IP地址，例如:<kbd class="calibre11">uatpc.mssqlgirl.com</kbd> }</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">不</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATAdminUser</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">{输入可以登录UAT机器的管理员用户}</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">不</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATAdminPwd</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">{输入管理员的管理员密码}</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">是</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATPublisProfilePath</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">\SQL Server R Services Book\Ch08\Ch08-UAT.publish.xml</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">不</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol start="6" class="calibre14">
+<li value="6" class="calibre8">单击Save and Queue测试构建。</li>
+</ol>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Adding the test phase to the build definition</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4B7I40-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将测试阶段添加到构建定义中</h1>
+                
+            
+            
+                
+<p class="calibre2">在本节中，您将学习如何向SQL Server R Services Book-CI构建定义添加测试阶段。这个测试阶段将执行我们之前已经完成的单元测试。</p>
+<p class="calibre2">在开始单元测试之前，我们需要为测试做准备。这包括填充<kbd class="calibre11">dbo.nyctaxisample</kbd>表:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">要添加一个新的测试阶段，转到流程<strong class="calibre1">，点击</strong>...<strong class="calibre1">、</strong>并选择添加代理相。</li>
+<li value="2" class="calibre8">在代理阶段，在显示名称中键入<kbd class="calibre11">Test Phase</kbd>。</li>
+<li value="3" class="calibre8">在测试阶段，添加一个新任务。</li>
+<li value="4" class="calibre8">搜索<kbd class="calibre11">Command Line</kbd>。然后，点击<kbd class="calibre11">Add</kbd>。</li>
+<li value="5" class="calibre8">在命令行任务中，键入以下详细信息:<ol class="calibre15">
+<li value="1" class="calibre8">工具:<kbd class="calibre11">bcp</kbd></li>
+<li value="2" class="calibre8">参数:<kbd class="calibre11">Ch08.dbo.nyctaxi_sample in "$(System.DefaultWorkingDirectory)$(UATSampleFilePath)" -c -t , -r \n -U $(UATDBUser) -P $(UATDBPwd)</kbd></li>
+</ol>
+</li>
+<li value="6" class="calibre8">点击保存。</li>
+</ol>
+<p class="calibre2">现在，我们可以添加创建和执行单元测试的步骤:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在测试阶段，添加一个新任务。</li>
+<li value="2" class="calibre8">搜索<kbd class="calibre11">Visual Studio Test</kbd>。然后，点击添加。</li>
+<li value="3" class="calibre8">在<kbd class="calibre11">Visual Studio Test</kbd>中，输入以下详细信息:<ol class="calibre15">
+<li value="1" class="calibre8">显示名称:<kbd class="calibre11">Unit Test</kbd></li>
+<li value="2" class="calibre8">使用<kbd class="calibre11">Test assemblies</kbd>选择测试</li>
+<li value="3" class="calibre8">测试组件:<kbd class="calibre11">**\Ch08_test*.dll</kbd></li>
+<li value="4" class="calibre8">搜索文件夹:<kbd class="calibre11">$(System.DefaultWorkingDirectory)</kbd></li>
+<li value="5" class="calibre8">测试平台站:<kbd class="calibre11">Visual Studio 2017</kbd></li>
+<li value="6" class="calibre8">测试运行标题:<kbd class="calibre11">Ch08 SQL Server Testing</kbd></li>
+</ol>
+</li>
+<li value="4" class="calibre8">点击保存&amp;队列。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">当您查看构建时，您应该能够看到如下内容:</li>
+</ol>
+<div><img class="aligncenter81" src="img/00145.jpeg"/></div>
+<p>图8.22成功的自动化测试</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Automating the build for CI</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4C62M0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">自动构建配置项</h1>
+                
+            
+            
+                
+<p class="calibre2">既然我们已经用构建阶段和测试阶段定义了SQL Server R Services Book-CI，我们就可以自动化它了:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在VSTS，编辑SQL Server R Services Book-CI。</li>
+<li value="2" class="calibre8">单击触发器选项卡。</li>
+<li value="3" class="calibre8">确保选中了启用持续集成。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">或者，单击+添加查看计划:</li>
+</ol>
+<div><img class="aligncenter82" src="img/00146.jpeg"/></div>
+<p>图8.23为配置项和特定时间表配置构建</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">单击选项选项卡。</li>
+<li value="6" class="calibre8">在构建属性|构建编号格式中，键入<kbd class="calibre11">Build_$(Date:yyyyMMdd)$(Rev:.r)</kbd>。</li>
+<li value="7" class="calibre8">点击保存。</li>
+</ol>
+<p class="calibre2">现在，为了测试自动化是否有效，让我们对解决方案进行更改，例如:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在Visual Studio中，打开SQL Server R Services Book解决方案。</li>
+<li value="2" class="calibre8">从Ch08项目中删除以下文件:<ol class="calibre15">
+<li value="1" class="calibre8"><kbd class="calibre11">nyc_taxi_models.sql</kbd></li>
+<li value="2" class="calibre8"><kbd class="calibre11">PersistModel.sql</kbd></li>
+<li value="3" class="calibre8"><kbd class="calibre11">PredictTipBatchMode.sql</kbd></li>
+<li value="4" class="calibre8"><kbd class="calibre11">PredictTipSingleMode.sql</kbd></li>
+</ol>
+</li>
+<li value="3" class="calibre8">现在让我们签入挂起的更改。右键单击解决方案节点，然后选择“签入”。</li>
+<li value="4" class="calibre8">或者，在单击“签入”按钮之前添加注释。</li>
+</ol>
+<p class="calibre34">成功签入后，您应该能够看到变更集编号:</p>
+<div><img class="aligncenter83" src="img/00147.jpeg"/></div>
+<p>图8.24检查Visual Studio的变更集信息</p>
+<p class="calibre2">在VSTS，您应该能够转到最新的版本并看到匹配的源代码版本，如下所示:</p>
+<div><img src="img/00148.jpeg" class="calibre27"/></div>
+<p>图8.25在VSTS通过变更集信息验证自动化配置项</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Setting up continuous delivery</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4D4J80-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">设置连续交货</h1>
+                
+            
+            
+                
+<p class="calibre2">持续交付旨在确保我们能够将良好的构建部署到期望的环境中。这可能意味着UAT环境或生产环境。在本节中，我们将使用VSTS来实现连续交付:</p>
+<ol start="1" class="calibre14">
+<li value="1" class="calibre8">在VSTS，转到SQL Server R Services Book项目。</li>
+<li value="2" class="calibre8">从顶部菜单导航到构建和发布|发布。</li>
+<li value="3" class="calibre8">点击+ |新定义。</li>
+<li value="4" class="calibre8">查看“选择模板”窗格。从这里，您可以从许多选项中进行选择，包括从测试管理器中运行自动化测试。强烈建议您使用该选项来定期检查现有模型的准确性，这将在下一步的手动过程中讨论。现在，让我们选择Empty并点击Add。</li>
+<li value="5" class="calibre8">在顶部标题上显示所有定义<strong class="calibre1"> | </strong>新发布定义，点击铅笔图标将名称编辑为<kbd class="calibre11">UAT Release</kbd>。</li>
+<li value="6" class="calibre8">让我们继续看“管道”选项卡。有两个盒子:工件和环境。</li>
+<li value="7" class="calibre8">在工件框中，点击添加工件。</li>
+<li value="8" class="calibre8">提供以下详细信息，然后单击添加:<ol class="calibre15">
+<li value="1" class="calibre8"><strong class="calibre1">项目</strong> : SQL Server R服务书</li>
+<li value="2" class="calibre8"><strong class="calibre1"> Source </strong>(构建定义):SQL Server R Services Book-CI</li>
+</ol>
+</li>
+<li value="9" class="calibre8">在“环境”框中，单击环境1中的1阶段0任务。</li>
+<li value="10" class="calibre8">在Tasks选项卡中，单击第一行Environment 1。将环境名称更改为<kbd class="calibre11">UAT</kbd>。</li>
+<li value="11" class="calibre8">在“任务”选项卡中，单击“代理”阶段，并提供以下详细信息:<ol class="calibre15">
+<li value="1" class="calibre8">显示名称:部署到UAT</li>
+<li value="2" class="calibre8">代理队列:默认</li>
+</ol>
+</li>
+</ol>
+<ol start="12" class="calibre14">
+<li value="12" class="calibre8">现在，添加一个部署到UAT的新任务。</li>
+<li value="13" class="calibre8">搜索<kbd class="calibre11">WinRM - SQL Server DB Deployment</kbd>并点击添加。</li>
+<li value="14" class="calibre8">在部署使用:Dacpac中，填写以下详细信息:<ol class="calibre15">
+<li value="1" class="calibre8">机器:<kbd class="calibre11">$(UATMachine)</kbd></li>
+<li value="2" class="calibre8">管理员登录:<kbd class="calibre11">$(UATAdminUser)</kbd></li>
+<li value="3" class="calibre8">密码:<kbd class="calibre11"><kbd class="calibre84">$(UATAdminPwd)</kbd> </kbd></li>
+<li value="4" class="calibre8">DACPAC文件:<kbd class="calibre11">$(System.ArtifactsDirectory)\$(Build.DefinitionName)\DACPAC\Ch08.dacpac</kbd></li>
+<li value="5" class="calibre8">服务器名称:<kbd class="calibre11">{specify the server name, for example: localhost}</kbd></li>
+<li value="6" class="calibre8">数据库名称:<kbd class="calibre11">NYCTaxiUAT</kbd></li>
+</ol>
+</li>
+<li value="15" class="calibre8">转到变量选项卡，添加以下变量:</li>
+</ol>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">名称</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">值</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">秘密</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATMachine</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">{输入您的计算机名(FQDN)或IP地址，例如:uatpc.mssqlgirl.com}</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">不</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATAdminUser</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">{输入可以登录UAT机器的管理员用户}</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">不</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">UATAdminPwd</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">{输入管理员的管理员密码}</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">是</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol start="16" class="calibre14">
+<li value="16" class="calibre8">然后，单击保存并接受默认值。</li>
+<li value="17" class="calibre8">要测试这个发布定义，在New Release Definition下，点击+ Release并选择Create <strong class="calibre1"> Release </strong>，然后选择....</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="18" class="calibre14">
+<li value="18" class="calibre8">在为新版本定义创建新版本上，在版本描述中键入<kbd class="calibre11">Test UAT deployment</kbd>。然后，单击创建，如下所示:</li>
+</ol>
+<div><img class="aligncenter84" src="img/00149.jpeg"/></div>
+<p>图8.26基于最新的成功构建为UAT环境创建一个新的版本</p>
+<p>可以部署到具有不同数据库连接设置的多个环境中。一个可以帮助你实现这一点的扩展是https://marketplace.visualstudio.com/items?的XDT变换:<br class="calibre30"/> <a href="https://marketplace.visualstudio.com/items?itemName=qetza.xdttransform" target="_blank" class="calibre40">itemName = qetza . xdt transform</a></p>
+<p class="calibre2">一旦发布完成，它将如下所示:</p>
+<div><img class="aligncenter85" src="img/00150.jpeg"/></div>
+<p>图8.27成功发布的结果</p>
+<p class="calibre2">要在发布中启用连续交付，您必须编辑定义:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">进入发布视图，点击...UAT发布，然后选择编辑。</li>
+<li value="2" class="calibre8">在Pipeline视图上，转到Artifacts框内的SQL Server R Services Book-CI。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">单击持续部署触发器，如下所示:</li>
+</ol>
+<div><img class="aligncenter86" src="img/00151.jpeg"/></div>
+<p>图8.28更改持续部署触发器</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">在“连续部署触发器”窗口中，确保“已启用”滑块处于打开状态。</li>
+<li value="5" class="calibre8">点击保存。</li>
+</ol>
+<p class="calibre2">要测试UAT版本的持续交付设置，您可以调用SQL Server R Services Book-CI上的新构建。视图应该是这样的:</p>
+<div><img class="aligncenter87" src="img/00152.gif"/></div>
+<p>图8.29通过持续开发成功发布的结果</p>
+<p class="calibre2">总结中，细节应该说发布是由SQL Server R Services Book-CI Build _ 2018 01 01.1触发的。因此，我们成功地创建了一个基本的连续交付流程。像设置集成测试和负载测试这样的高级步骤现在可以使用与前面显示的步骤相似的步骤添加到发布中。关于在VSTS设置这个的更多信息，请参考以下来自微软的教程:<a href="https://docs.microsoft.com/en-us/vsts/build-release/test/example-continuous-testing#configure-cd" class="calibre10">https://docs . Microsoft . com/en-us/vsts/build-release/test/example-continuous-testing # configure-CD</a>。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Monitoring the accuracy of the productionized model</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4E33Q0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">监控生产模型的准确性</h1>
+                
+            
+            
+                
+<p class="calibre2">在<a target="_blank" href="part0096.html#2RHM00-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第6章</a>、<em class="calibre12">预测建模</em>中，我们讨论了一些预测建模的例子。创建的模型基于训练数据。在现实世界的场景中，新的数据不断出现，例如，在线交易、出租车交易(还记得之前的纽约出租车例子)和航班延误预测。因此，应该定期检查数据模型，以确保它仍然令人满意，并且没有其他更好的模型可以为它生成。对于后者，一个优秀的数据科学家会不断地问至少四个这样的问题:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">由于数据的变化，是否需要考虑不同的算法？</li>
+</ol>
+<p class="calibre34">例如，如果当前模型使用逻辑回归(<kbd class="calibre11">rxLogit</kbd>)，决策树算法是否会因规模或预期结果的变化而更准确(<kbd class="calibre11">rxDTree</kbd>)。</p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">新交易的其他特征是否变得越来越重要？</li>
+</ol>
+<p class="calibre34">考虑下面的场景:目前，出租车上的小费预测使用乘客数量、行程距离、行程时间和直接距离。也许定期检查其他特征，例如一天中的某个时间、一周中的某一天、上车和/或下车的邮政编码、假期、出租车的清洁度或顾客评级，是否会对小费预测有更大的贡献。</p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">需求中是否有可以让位于改进业务或客户的行动的变化？</li>
+</ol>
+<p class="calibre34">在出租车乘车小费预测中，当前预测是二进制值，即真或假。企业可能有兴趣更多地了解出租车的清洁度或客户评级如何与无小费、小小费、中等小费或大小费相关联。出租车驾驶室的清洁是一个行动，司机可以使用它来推动更好的改善。</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">性能下降是由模型执行或输入数据瓶颈引起的吗？</li>
+</ol>
+<p class="calibre34">随着输入数据集/数据源的增长且未得到优化，端到端预测建模也可能会变慢。</p>
+<p class="calibre34">为了捕捉模型的性能，应该记录实际预测的性能或实际数据的合理表示。下面是日志表的一个示例:</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">值</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">数据类型</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">评论</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">LogID</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">INT</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">执行的顺序ID。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">Created On</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">DATETIME</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">模型生成和测试的日期。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">ModelID</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">INT</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">每个型号的唯一ID。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">Model</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">VARBINARY(MAX)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">这是模型的序列化表示。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">RxFunction</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">VARCHAR(50)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">这是模型中使用的rx函数。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">Formula</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">VARCHAR(1000)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">预测模型的公式。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">Training Input Query</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">VARCHAR(MAX)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">可重现的训练数据集</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">AUC</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">FLOAT</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">模型的AUC表示。这可以是您用来比较模型质量的任何其他指标。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">Training Row Count</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">INT</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">行数。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">CPU Time</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">INT</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">生成模型的秒数。</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="calibre2">一旦您捕获了执行，您就可以分析AUC值和CPU时间，如<em class="calibre12">图8.30 </em>所示:</p>
+<div><img class="aligncenter88" src="img/00153.jpeg"/></div>
+<p>图8.30 AUC和CPU时间的监控模型比较</p>
+<p class="calibre2">这些图表比较了以下型号的性能:</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"> </p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">公式B </strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">公式C </strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">rxDTree</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">型号ID 2</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">型号ID 3</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">rxLogit</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">型号ID 4</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">型号ID 5</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="calibre2"> </p>
+<p class="calibre2">描述如下:</p>
+<ul class="calibre7">
+<li class="calibre8">公式B为<em class="calibre12">小费~乘客数+行程距离+行程时间秒数+直达距离+支付类型</em></li>
+<li class="calibre8">公式C为<em class="calibre12">小费~乘客数+行程距离+行程时间秒数+支付类型</em></li>
+</ul>
+<p class="calibre2">每一个模型都是针对:</p>
+<ul class="calibre7">
+<li class="calibre8">过去2个月的数据</li>
+<li class="calibre8">随机前5%的数据</li>
+</ul>
+<p class="calibre2">基于前面提到的比较，我们可以看到，模型ID 4，也就是公式B的<kbd class="calibre11">rxLogit</kbd>，具有最高的AUC范围和最低的CPU时间。所以，这个模型是两个中最好的。下一步是决定这种型号是否应该取代生产中的型号。</p>
+<p class="calibre2">既然您已经学习了比较模型的技术和一些在预测建模中很重要的度量标准，那么您可以像前面显示的那样安排这个性能测试。调度可以是一个SQL代理作业，如第7章、<em xmlns:epub="http://www.idpf.org/2007/ops" class="calibre12">操作化R代码</em>所示，如果新的结果低于某个阈值，您可以得到警告。或者，您可以将它作为部署在VSTS的单独的SQL Server数据库单元项目的一部分来发布，以使用最新的事务数据检查数据库。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Useful references</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4F1KC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">有用的参考资料</h1>
+                
+            
+            
+                
+<ul class="calibre7">
+<li class="calibre8">将SQL Server 2017集成到您的DevOps管道中:<a href="https://www.microsoft.com/en-us/sql-server/developer-get-started/sql-devops/" class="calibre10">https://www . Microsoft . com/en-us/SQL-Server/developer-get-started/SQL-devo PS/</a></li>
+<li class="calibre8">Visual Studio团队服务(VSTS):【https://www.visualstudio.com/team-services/ T2】</li>
+<li class="calibre8">对比Visual Studio 2017 IDEs:【https://www.visualstudio.com/vs/compare/ T4】</li>
+<li class="calibre8">在VS 2017中配置托管代理:<a href="https://docs.microsoft.com/en-us/vsts/build-release/actions/agents/v2-windows" class="calibre10">https://docs . Microsoft . com/en-us/vsts/build-release/actions/agents/v2-windows</a></li>
+<li class="calibre8">连续交付:<a href="https://www.visualstudio.com/learn/what-is-continuous-delivery/" class="calibre10">https://www . visual studio . com/learn/what-is-continuous-Delivery/</a></li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Summary</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="4G04U0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">摘要</h1>
+                
+            
+            
+                
+<p class="calibre2">Visual Studio 2017是一个强大的IDE，用于数据科学家/开发人员管理他们的代码、单元测试和版本控制。与Visual Studio Team Services相结合，它们形成了一个完整的工具包来执行数据库生命周期管理，也可以很容易地适应DevOps实践。本章详细描述了如何将SQL Server机器学习服务与SQL Server数据库项目、DevOps实践和CI/CD工作流中的R集成。最后，您还学习了如何随着时间的推移监控预测模型的准确性。</p>
+<p class="calibre2">在下一章，我们将讨论DBA如何利用r的机器学习服务。</p>
+
+
+            
+
+            
+        
+    </body></html>
+</body></html>

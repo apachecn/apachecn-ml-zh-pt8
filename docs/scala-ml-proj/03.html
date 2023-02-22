@@ -1,0 +1,1391 @@
+<html><head/><body>
+
+
+    
+        <title>High Frequency Bitcoin Price Prediction from Historical and Live Data</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">基于历史和实时数据的高频比特币价格预测</h1>
+                
+            
+            
+                
+<p>比特币是一种全球性的加密货币和数字支付系统，被认为是第一种去中心化的数字货币，因为该系统没有中央存储库或单一管理员。近年来，它在世界各地的人们中受到了广泛的欢迎和关注。</p>
+<p>在本章中，我们将了解如何使用Scala、Spark ML、Cryptocompare API和比特币历史(和实时)数据来开发一个真实项目，以预测未来一周、一个月等的价格，帮助我们对在线加密货币做出自动化决策。除此之外，我们将看到如何为在线比特币交易生成一个简单的信号。</p>
+<p>简而言之，我们将在这个端到端项目中学习以下主题:</p>
+<ul>
+<li>比特币、加密货币和在线交易</li>
+<li>历史和实时价格数据收集</li>
+<li>原型的高层管道</li>
+<li>用于比特币价格预测的梯度增强树回归</li>
+<li>使用Scala play框架进行演示预测和信号生成</li>
+<li>未来展望—对其他数据集使用相同的技术</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Bitcoin, cryptocurrency, and online trading</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">比特币、加密货币和在线交易</h1>
+                
+            
+            
+                
+<p>按发行日期和市值(截至2017年12月)计算，比特币是第一种加密货币，它吸引了投资者和交易者，因为它易于开始交易，能够保持伪匿名，当然，在其历史上也有显著增长(一些统计数据见<em>表1 </em>和<em>图1 </em>)。这吸引了长期投资者；它的高波动性也吸引了日内交易者。</p>
+<p>然而，很难预测比特币的长期价值，因为比特币背后的价值不太明显。价格主要反映市场看法，并高度依赖于新闻、监管、政府和银行的合作、平台的技术问题(如交易费用和区块大小)、机构投资者将比特币纳入其投资组合的兴趣等:</p>
+<div><img src="img/49e8ae72-5c00-48ac-8a1b-ded0004f484f.png"/></div>
+<p>图1:比特币及其大幅涨价</p>
+<p>尽管如此，从短期角度来看，比特币价格是通常发生在一个平台上的市场活动的副产品，该平台被称为<strong>交易所</strong> (Bitstamp、比特币基地、北海巨妖和Bitfinex是最知名的<strong>交易所</strong>)。用户在注册并通过<strong> KYC </strong> ( <strong>了解你的客户</strong>)程序后，可以用比特币交易法定货币，如美元和欧元，以及其他加密货币，称为<strong>替代硬币</strong>或替代硬币(以太币、莱特币和Dash是众所周知的):</p>
+<p class="packt_figref CDPAlignLeft CDPAlign"><strong>表1–比特币历史价格变动</strong></p>
+<table class="MsoTableGrid">
+<tbody>
+<tr>
+<td>
+<p><strong>日期</strong></p>
+</td>
+<td>
+<p><strong>美元:1 BTC </strong></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2009年1月至2010年3月</p>
+</td>
+<td>
+<p>基本没有</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2010年3月</p>
+</td>
+<td>
+<p>$0.003</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2010年5月</p>
+</td>
+<td>
+<p>少于0.01美元</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2010年7月</p>
+</td>
+<td>
+<p>0.08美元<img src="img/90581ab4-0591-4dca-b5ed-443e38e1d7c0.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2011年2月至4月</p>
+</td>
+<td>
+<p>1.00美元<img src="img/90581ab4-0591-4dca-b5ed-443e38e1d7c0.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2011年7月8日</p>
+</td>
+<td>
+<p>31.00美元<img src="img/90581ab4-0591-4dca-b5ed-443e38e1d7c0.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2011年12月</p>
+</td>
+<td>
+<p>2.00美元<img src="img/a45968d6-6644-4ea0-b057-04ae1126bf6d.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2012年12月</p>
+</td>
+<td>
+<p>$13.00</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2013年4月11日</p>
+</td>
+<td>
+<p>266美元<img src="img/90581ab4-0591-4dca-b5ed-443e38e1d7c0.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2013年5月</p>
+</td>
+<td>
+<p>130美元<img src="img/a45968d6-6644-4ea0-b057-04ae1126bf6d.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2013年6月</p>
+</td>
+<td>
+<p>100美元<img src="img/a45968d6-6644-4ea0-b057-04ae1126bf6d.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2013年11月</p>
+</td>
+<td>
+<p>350美元到1，242美元<img src="img/b6f31e88-ab89-497f-80de-74f781252588.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2013年12月</p>
+</td>
+<td>
+<p>600美元到1000美元<img src="img/5a96adb5-2395-4d3f-aafe-9a5611dcf169.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2014年1月</p>
+</td>
+<td>
+<p>750美元到1000美元<img src="img/32d8f6a6-d273-4f99-8151-9439ab44d07a.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2014年2月</p>
+</td>
+<td>
+<p>550美元到750美元<img src="img/1ca1dfd2-722d-4c6b-96a9-2e0f148bca0b.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2014年3月</p>
+</td>
+<td>
+<p>450美元到700美元<img src="img/5057f2fa-69b0-44ff-9c33-b7a637d18f48.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2014年4月</p>
+</td>
+<td>
+<p>340美元到530美元<img src="img/56ee8714-fe1c-4fc1-9388-9f959cf22b1b.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2014年5月</p>
+</td>
+<td>
+<p>440美元到630美元<img src="img/0cb1f1cf-928d-4ec2-8d06-23fad044b50a.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2015年3月</p>
+</td>
+<td>
+<p>200美元到300美元<img src="img/9e3940a9-ff01-4626-be01-e8dbebe89654.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2015年11月初</p>
+</td>
+<td>
+<p>395美元到504美元<img src="img/d0532b1c-66e1-4127-b5a3-6528ce9a8fe7.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2016年5月至6月</p>
+</td>
+<td>
+<p>450美元到750美元<img src="img/bd67159a-b317-4476-9ad2-d26a9c13b868.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2016年7月至9月</p>
+</td>
+<td>
+<p>600美元到630美元<img src="img/0610538f-261e-4188-a43d-a0bca9d5be7c.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2016年10月至11月</p>
+</td>
+<td>
+<p>600美元到780美元<img src="img/45f5cbb4-1622-4d1a-b774-43651f28fa2d.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年1月</p>
+</td>
+<td>
+<p>800美元到1，150美元<img src="img/68fe4e41-afe2-4443-970f-12f2f1828000.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年1月5日至12日</p>
+</td>
+<td>
+<p>750美元到920美元<img src="img/9fe99d9e-0593-41b5-8e75-2065a34c5e6e.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年3月2日至3日</p>
+</td>
+<td>
+<p>1，290美元+ <img src="img/de8a003e-b813-4e3c-9391-aff3af19b018.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年4月</p>
+</td>
+<td>
+<p>1，210美元至1，250美元<img src="img/736f9408-d05a-43f0-b2cf-95381b850962.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年5月</p>
+</td>
+<td>
+<p>2000美元<img src="img/e74ec91a-4184-4ab1-9baf-6381881e32d1.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年5月至6月</p>
+</td>
+<td>
+<p>2，000美元至3，200美元+ <img src="img/3039f1b3-23ee-4a3f-86af-496ac578b85d.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年8月</p>
+</td>
+<td>
+<p>4400美元<img src="img/090e34d8-4208-49d0-931f-2dc81ddd3f91.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年9月</p>
+</td>
+<td>
+<p>5000美元<img src="img/cc407ad7-fc7f-419c-9f30-9f77f5b14b48.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年9月12日</p>
+</td>
+<td>
+<p>2900美元<img src="img/3b77d917-ab15-4e2a-8fc6-a48fd221c8af.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年10月13日</p>
+</td>
+<td>
+<p>5600美元<img src="img/3afb31a2-f86b-4345-a3ef-c960f07632b7.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年10月21日</p>
+</td>
+<td>
+<p>6180美元<img src="img/4646b186-f179-4514-abe8-74eef5a3aa0d.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年11月6日</p>
+</td>
+<td>
+<p>7300美元<img src="img/ae5187a3-3bd3-4bcb-a9da-7f08c8ba90db.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年11月12日</p>
+</td>
+<td>
+<p>5519美元兑6295美元<img src="img/b1721a3b-6f03-4de9-8551-2f2f9be53230.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年11月17日至20日</p>
+</td>
+<td>
+<p>7，600美元到8，100美元<img src="img/2fdfb5d0-b68b-46a9-a6bc-85cb52ed1acb.png"/></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2017年12月15日</p>
+</td>
+<td>
+<p>17900<img src="img/c5c30f2c-62d2-4287-acbb-18d6e63baebc.png"/></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p> </p>
+<p>交易所维护订单簿——所有买卖订单的列表，包括数量和价格——并在发现有人买有人卖时执行。此外，交易所还保存并提供有关交易状态的统计数据，通常以交易商pai的两种货币的OCHL和交易量的形式捕获。对于这个项目，我们将使用BTC/美元加密货币对。</p>
+<p>这些数据是按周期汇总的，从几秒到几天，甚至几个月。有专门的服务器为专业交易员和机构收集比特币数据。虽然不能指望所有的订单数据都是免费的，但其中一些数据是公众可以访问和使用的。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>State-of-the-art automated trading of Bitcoin</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">最先进的比特币自动化交易</h1>
+                
+            
+            
+                
+<p>在传统的证券领域，比如一家公司的股票，过去是由人来进行分析、预测股票价格和交易。今天，<strong>机器学习</strong> ( <strong> ML </strong>)的发展和数据的日益可用，几乎已经将人类从高频交易中淘汰，作为一个普通人无法捕捉和处理所有数据，情绪影响一个人的决策；所以它被投资机构的自动交易系统所主导。</p>
+<p>目前，与传统交易所相比，比特币交易量相对较低；传统上谨慎和规避风险的金融机构还没有涉足比特币交易(至少，它不是众所周知的)。原因之一是加密货币监管的高费用和不确定性。</p>
+<p>所以今天，主要是个人买卖比特币，所有非理性行为的后果都与此相关，但已经有人尝试自动化比特币交易。最著名的是麻省理工学院的一篇论文，另一篇是斯坦福大学的研究人员在2014年发表的。许多事情都变了，考虑到这三年期间比特币价格的大幅上涨，任何购买并持有的人都会对结果感到足够满意:</p>
+<div><img src="img/f706ebab-7205-4b72-9e9b-b46121b5d0c3.png"/></div>
+<p>图2:比特币买卖单(截至2017年11月)</p>
+<p>毫无疑问，一些交易者使用ML进行交易，这样的应用看起来很有前景。到目前为止，从研究论文中确定的最佳可能方法如下。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Training</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">培养</h1>
+                
+            
+            
+                
+<p>使用订单簿数据，而不是派生的OHLC +量数据。因此，对于定型和预测，请使用如下所示的数据:</p>
+<ul>
+<li>将数据拆分成某个<kbd>size</kbd>(T1是要调的参数)的时间序列。</li>
+<li>将时间序列数据聚类到<kbd>K</kbd>聚类中(<kbd>K</kbd>是一个要调整的参数)。假设具有一些自然趋势的集群将会出现(价格的急剧下降/上升等等)。</li>
+<li>对于每个分类，训练回归和分类器分别预测价格和价格变化。</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Prediction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">预言；预测；预告</h1>
+                
+            
+            
+                
+<p>这种方法考虑具有特定窗口大小的最近时间序列，并训练模型。然后，它将数据分类如下:</p>
+<ul>
+<li>采用最近的时间序列和用于训练的窗口大小</li>
+<li>对其进行分类-它属于哪个聚类？</li>
+<li>使用该分类的ML模型来预测价格或价格变化</li>
+</ul>
+<p>这个解决方案可以追溯到2014年，但它仍然提供了一定程度的鲁棒性。在这个项目中，由于需要识别许多参数，并且不容易获得订单簿历史数据，所以我们使用了一种更简单的方法和数据集。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>High-level data pipeline of the prototype</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">原型的高级数据管道</h1>
+                
+            
+            
+                
+<p>本章的目标是开发一个系统原型，该系统将预测比特币价格的短期变化，使用历史数据来训练算法，使用实时数据来预测和选择性能更好的算法。在这个项目的范围内，没有试图预测美元的实际价格，而只是预测它是否会增加。这是因为比特币价格在某种程度上实际上与价格无关，而是与市场预期有关。这可以被看作是交易者行为的模式，在更高的层面上，是由先前的价格本身所代表的。</p>
+<div><img height="459" width="736" src="img/4031f5ff-0aa6-415e-89a1-8303f1ab3c2c.png"/></div>
+<p>图3:原型的高级数据管道</p>
+<p>当然，比特币伴随着一个客观的价格；矿工愿意出售比特币获利。因此，可以通过了解所有矿工为他们开采的比特币支付的所有账单来估计基价，但这不在本项目的范围内。</p>
+<p>从这个角度来看，与其试图预测美元价格，不如寻找价格上涨、下跌或保持不变的趋势，并据此采取行动。第二个目标是建立一个实验工具，允许我们尝试不同的方法来预测价格，并根据现实生活中的数据轻松进行评估。代码必须灵活、健壮、易于扩展。</p>
+<p>因此，概括地说，该系统有三个主要组成部分:</p>
+<ul>
+<li>用于将历史数据预处理成所需格式的Scala脚本</li>
+<li>Scala应用程序训练ML模型</li>
+<li>预测未来价格的Scala web服务</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Historical and live-price data collection</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">历史和实时价格数据收集</h1>
+                
+            
+            
+                
+<p>如前所述，我们将利用历史数据和实时数据。我们将使用Kaggle的比特币历史价格数据。对于实时数据，将使用Cryptocompare API。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Historical data collection</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">历史数据收集</h1>
+                
+            
+            
+                
+<p>为了训练ML算法，Kaggle(版本10)上有一个<kbd>Bitcoin Historical Price Data</kbd>数据集可供公众使用。数据集可以从https://www.kaggle.com/mczielinski/bitcoin-historical-data/的<a href="https://www.kaggle.com/mczielinski/bitcoin-historical-data/">下载。它有几个交易所的BTC美元对的1分钟OHLC数据。</a></p>
+<p>在项目初期，对他们中的大多数人来说，数据是从2012年1月1日到2017年5月31日；但对于Bitstamp exchange，它的可用时间截止到2017年10月20日(对于比特币基地也是如此，但该数据集后来才可用):</p>
+<div><img src="img/3fcf81e6-a1ed-4dc7-b3b5-35d4c0f7ec32.png"/></div>
+<p>图Kaggle上的比特币历史数据集</p>
+<p>请注意，您需要成为注册用户并登录才能下载该文件。我们正在使用的文件是<kbd>bitstampUSD_1-min_data_2012-01-01_to_2017-10-20.csv</kbd> <em>。现在，让我们得到现有的数据。它有八列:</em></p>
+<ul>
+<li><strong>时间戳</strong>:从1970年1月1日开始经过的时间，以秒为单位。第一行是1，325，317，920，第二行是1，325，317，920。(理智检查！相差60秒)。</li>
+<li><strong>开盘</strong>:时段开盘时的价格。一共是4.39美元。因此，这是在<strong>时间戳</strong>之后发生的第一笔交易的价格(在第一行的情况下为1，325，317，920)。</li>
+<li><strong>收盘</strong>:时段收盘时的价格。</li>
+<li><strong>高</strong>:区间内执行的所有订单的最高价格。</li>
+<li><strong>低</strong>:与<strong>高</strong>相同，但为最低价。</li>
+<li><strong> Volume_(BTC) </strong>:该时间间隔内被转移的所有比特币的总和。因此，取所选时间间隔内发生的所有交易，并对每笔交易的BTC值求和。</li>
+<li><strong> Volume_(Currency) </strong>:所有转出美元的总和。</li>
+<li><strong>加权价格</strong>:来源于BTC和美元的交易量。将所有交易的美元除以所有比特币，我们可以得到这一分钟内BTC的加权平均价格。所以<kbd>Weighted_Price=Volume_(Currency)/Volume_(BTC)</kbd>。</li>
+</ul>
+<p>数据科学管道中仅次于数据收集的最重要的部分之一(从某种意义上说是外包的；我们使用他人收集的数据)是数据预处理——清除数据集并转换它以适应我们的需要。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Transformation of historical data into a time series</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">将历史数据转换为时间序列</h1>
+                
+            
+            
+                
+<p>从我们的目标出发——预测价格变化的方向——我们可能会问自己，<em>用美元计算实际价格有助于实现这一目标吗？从历史上看，比特币的价格通常是上涨的，因此如果我们试图拟合线性回归，它将显示出进一步的指数增长(从长远来看这是否属实还有待观察)。</em></p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Assumptions and design choices</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">假设和设计选择</h1>
+                
+            
+            
+                
+<p>这个项目的一个假设如下:无论我们在考虑2016年11月价格约为700美元的比特币交易，还是2017年11月价格在6500-7000美元范围内的交易，人们交易的模式都是相似的。现在，我们还有其他几个假设，如以下几点所述:</p>
+<ul>
+<li>假设一:从前面所说的，我们可以忽略实际价格，而是看它的变化。为了衡量这一点，我们可以采用开盘价和收盘价之间的差值。如果是正数，意味着价格在那一分钟上涨；如果是负数，价格下降，如果delta = 0，价格保持不变。<br/>下图我们可以看到，观测到的第一分钟Delta为-1.25，第二分钟为-12.83，第三分钟为-0.23。有时，开盘价可能与前一分钟的收盘价相差很大(尽管Delta在观察的三分钟内都是负的，但第三分钟显示的价格实际上比第二分钟的收盘价高)。但这种事情并不常见，通常开盘价与前一分钟的收盘价相比不会有明显变化。</li>
+<li><strong>假设二</strong>:接下来需要考虑的...在<strong>黑箱</strong>环境中预测价格变化。我们不使用其他来源的信息，如新闻、Twitter信息和其他信息来预测市场对这些信息的反应。这是一个更高级的话题。我们使用的唯一数据是价格和数量。为了简化原型，我们可以只关注价格并构建时间序列数据。<br/>时间序列预测是根据一个参数过去的值对该参数进行预测。最常见的例子之一是温度预测。虽然有许多超级计算机使用卫星和传感器数据来预测天气，但简单的时间序列分析可以得出一些有价值的结果。例如，我们预测T+60秒的价格，基于T、T-60秒、T-120秒的价格等等。</li>
+<li><strong>假设三</strong>:数据集中并非所有数据都有价值。最初的600，000条记录信息不足，因为价格变化很少，交易量也很小。这可能会影响我们正在训练的模型，从而使最终结果变得更糟。这就是为什么前600，000行将从数据集中删除。</li>
+<li><strong>假设四</strong>:我们需要<kbd>Label </kbd>我们的数据，以便我们可以使用监督的ML算法。这是最简单的方法，不用担心交易费用。</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Data preprocessing</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">数据预处理</h1>
+                
+            
+            
+                
+<p>考虑到数据准备的目标，Scala被选为操作数据的一种简单和交互式的方式:</p>
+<pre><strong>val</strong> priceDataFileName: String = "bitstampUSD_1-min_data_2012-01-01_to_2017-10-20.csv"<br/><br/><strong>val</strong> spark = SparkSession<br/>    .builder()<br/>    .master("local[*]")<br/>    .config("spark.sql.warehouse.dir", "E:/Exp/")<br/>    .appName("Bitcoin Preprocessing")<br/>    .getOrCreate()<br/><br/><strong>val</strong> data = spark.read.format("com.databricks.spark.csv").option("header", "true").load(priceDataFileName)<br/>data.show(10)<br/>&gt;&gt;&gt;</pre>
+<div><img height="384" width="924" src="img/c6304756-3dc9-45f6-af8d-71eef2a2a4c7.png"/></div>
+<p>图5:比特币历史价格数据集一瞥</p>
+<pre>println((data.count(), data.columns.size))</pre>
+<p class="mce-root">&gt;&gt;&gt;</p>
+<pre>(3045857, 8)</pre>
+<p>在前面的代码中，我们从Kaggle下载的文件中加载数据，并查看里面的内容。如前所述，数据集中有<kbd>3045857</kbd>行和<kbd>8</kbd>列。然后我们创建<kbd>Delta</kbd>列，包含收盘价和开盘价之间的差异(也就是说，只考虑有意义的交易已经开始发生的数据):</p>
+<pre><strong>val</strong> dataWithDelta = data.withColumn("Delta", data("Close") - data("Open"))</pre>
+<p>下面的代码通过将1赋给<kbd>Delta</kbd>值为正的行来标记我们的数据；否则分配<kbd>0</kbd>:</p>
+<pre><strong>import</strong> org.apache.spark.sql.functions._<br/><strong>import</strong> spark.sqlContext.implicits._<br/><br/><strong>val</strong> dataWithLabels = dataWithDelta.withColumn("label", when($"Close" - $"Open" &gt; 0, 1).otherwise(0))<br/>rollingWindow(dataWithLabels, 22, outputDataFilePath, outputLabelFilePath)</pre>
+<p>这段代码将原始数据集转换成时间序列数据。它获取<kbd>WINDOW_SIZE</kbd>行的Delta值(在本实验中为<kbd>22</kbd>),并从中创建一个新行。这样，第一行具有从<kbd>t0</kbd>到<kbd>t21</kbd>的<kbd>Delta</kbd>值，第二行具有从<kbd>t1</kbd>到<kbd>t22</kbd>的值。然后我们用标签(<kbd>1</kbd>或<kbd>0</kbd>)创建相应的数组。</p>
+<p>最后，我们将<kbd>X</kbd>和<kbd>Y</kbd>保存到文件中，其中<kbd>612000</kbd>行是从原始数据集中截取的；<kbd>22</kbd>表示滚动窗口大小，2类表示标签为二进制<kbd>0</kbd>和<kbd>1</kbd>:</p>
+<pre><strong>val</strong> dropFirstCount: Int = 612000<br/><br/><strong>def</strong> rollingWindow(data: DataFrame, window: Int, xFilename: String, yFilename: String): Unit = {<br/><strong>    var</strong> i = 0<br/><strong>    val</strong> xWriter = <strong>new</strong> BufferedWriter(<strong>new</strong> FileWriter(<strong>new</strong> File(xFilename)))<br/><strong>    val</strong> yWriter = <strong>new</strong> BufferedWriter(<strong>new</strong> FileWriter(<strong>new</strong> File(yFilename)))<br/><strong>    val</strong> zippedData = data.rdd.zipWithIndex().collect()<br/>    System.gc()<br/><strong>    val</strong> dataStratified = zippedData.drop(dropFirstCount)//slice 612K<br/><br/><strong>    while</strong> (i &lt; (dataStratified.length - window)) {<br/><strong>        val</strong> x = dataStratified<br/>                .slice(i, i + window)<br/>                    .map(r =&gt; r._1.getAs[Double]("Delta")).toList<br/><strong>        val</strong> y = dataStratified.apply(i + window)._1.getAs[Integer]("label")<br/><strong>        val</strong> stringToWrite = x.mkString(",")<br/>        xWriter.write(stringToWrite + "n")<br/>        yWriter.write(y + "n")<br/>        i += 1<br/><br/><strong>        if</strong> (i % 10 == 0) {<br/>            xWriter.flush()<br/>            yWriter.flush()<br/>            }<br/>        }<br/>    xWriter.close()<br/>    yWriter.close()<br/>}</pre>
+<p>在前面的代码段中:</p>
+<pre><strong>val</strong> outputDataFilePath: String = "output/scala_test_x.csv"<br/><strong>val</strong> outputLabelFilePath: String = "output/scala_test_y.csv"</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Real-time data through the Cryptocompare API</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">通过Cryptocompare API的实时数据</h1>
+                
+            
+            
+                
+<p>对于实时数据，使用crypto compare API(<a href="https://www.cryptocompare.com/api/">https://www.cryptocompare.com/api/#</a>)，更具体地说是histo minute(<a href="https://www.cryptocompare.com/api/#-api-data-histominute-">https://www.cryptocompare.com/api/#-api-data-histominute-</a>)，它让我们最多可以访问过去七天的OHLC数据。API的细节将在专门讨论实现的章节中讨论，但是API响应与我们的历史数据集非常相似，并且该数据是使用常规HTTP请求检索的。例如，来自https://min-api.cryptocompare.com/data/histominute?fsym=BTC的简单JSON响应具有以下结构:</p>
+<pre>{<br/>    "Response":"Success",<br/>    "Type":100,<br/>    "Aggregated":false,<br/>    "Data":<br/>    [{"time":1510774800,"close":7205,"high":7205,"low":7192.67,"open":7198,                                             "volumefrom":81.73,"volumeto":588726.94},<br/>        {"time":1510774860,"close":7209.05,"high":7219.91,"low":7205,"open":7205,                                 "volumefrom":16.39,"volumeto":118136.61},<br/>        ... (other price data)<br/>        ],<br/>    "TimeTo":1510776180,<br/>    "TimeFrom":1510774800,<br/>    "FirstValueInArray":true,<br/>    "ConversionType":{"type":"force_direct","conversionSymbol":""}<br/>}</pre>
+<p>通过Cryptocompare HistoMinute，我们可以从每一分钟的历史数据中得到<kbd>open</kbd>、<kbd>high</kbd>、<kbd>low</kbd>、<kbd>close</kbd>、<kbd>volumefrom</kbd>、<kbd>volumeto</kbd>。该数据仅存储7天；如果需要更多，请使用每小时或每天的路径。如果由于硬币不是以指定的货币进行交易而导致数据不可用，则使用BTC换算:</p>
+<div><img height="562" width="898" src="img/15833859-b3f2-4974-9f9d-3ae6f49d9630.png"/></div>
+<p>图6:通过Cryptocompare HistoMinute的开盘、盘高、盘低、收盘和成交量值</p>
+<p>现在，下面的方法获取Cryptocompare API的正确格式的URL(<a href="https://www.cryptocompare.com/api/#-api-data-histominute-">https://www.cryptocompare.com/api/#-api-data-histominute-</a>)，这是一个完整格式的URL，包含所有参数，比如指定的货币、限额和聚合。它最终返回future，该future将有一个解析到数据模型中的响应主体，价格列表将在较高的级别进行处理:</p>
+<pre><strong>import</strong> javax.inject.Inject<br/><strong>import</strong> play.api.libs.json.{JsResult, Json}<br/><strong>import</strong> scala.concurrent.Future<br/><strong>import</strong> play.api.mvc._<br/><strong>import</strong> play.api.libs.ws._<br/><strong>import</strong> processing.model.CryptoCompareResponse<br/><br/><strong>class</strong> RestClient @Inject() (ws: WSClient) {<br/><strong>    def</strong> getPayload(url : String): Future[JsResult[CryptoCompareResponse]] = {<br/>        val request: WSRequest = ws.url(url)<br/>        val future = request.get()<br/>        implicit val context = play.api.libs.concurrent.Execution.Implicits.defaultContext<br/>        future.map {<br/>            response =&gt; response.json.validate[CryptoCompareResponse]<br/>            }<br/>        }<br/>    }</pre>
+<p>在前面的代码段中，<kbd>CryptoCompareResponse</kbd>类是API的模型，它采用以下参数:</p>
+<ul>
+<li><kbd>Response</kbd></li>
+<li><kbd>Type</kbd></li>
+<li><kbd>Aggregated</kbd></li>
+<li><kbd>Data</kbd></li>
+<li><kbd>FirstValueInArray</kbd></li>
+<li><kbd>TimeTo</kbd></li>
+<li><kbd>TimeFrom</kbd></li>
+</ul>
+<p>现在，它有以下签名:</p>
+<pre><strong>case class</strong> CryptoCompareResponse(Response : String,<br/>    Type : Int,<br/>    Aggregated : Boolean,<br/>    Data : List[OHLC],<br/>    FirstValueInArray : Boolean,<br/>    TimeTo : Long,<br/>    TimeFrom: Long)<br/><br/><strong>object</strong> CryptoCompareResponse {<br/>    implicit val cryptoCompareResponseReads = Json.reads[CryptoCompareResponse]<br/>    }</pre>
+<p>同样，前面的两个代码段<strong>开盘-盘高-盘低-收盘</strong>(也称为<strong> OHLC </strong>)，是用于映射CryptoAPI响应<kbd>data</kbd>数组内部的模型类。它采用这些参数:</p>
+<ul>
+<li><kbd>Time</kbd>:以秒为单位的时间戳，例如<kbd>1508818680</kbd>。</li>
+<li><kbd>Open</kbd>:给定分钟间隔的开盘价。</li>
+<li><kbd>High</kbd>:最高价。</li>
+<li><kbd>Low</kbd>:最低价格。</li>
+<li><kbd>Close</kbd>:区间收盘价格。</li>
+<li><kbd>Volumefrom</kbd>:以<kbd>from</kbd>币种计算的交易量。在我们的例子中是BTC。</li>
+<li><kbd>Volumeto</kbd>:以<kbd>to</kbd>货币表示的交易量，本例中为美元。</li>
+<li>用<kbd>Volumeto</kbd>除以<kbd>Volumefrom</kbd>得到BTC的加权价格。</li>
+</ul>
+<p>现在，它有以下签名:</p>
+<pre><strong>case class</strong> OHLC(time: Long,<br/>    open: Double,<br/>    high: Double,<br/>    low: Double,<br/>    close: Double,<br/>    volumefrom: Double,<br/>    volumeto: Double)<br/><br/>    <strong>object</strong> OHLC {<br/>    implicit val implicitOHLCReads = Json.reads[OHLC]<br/>        }</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Model training for prediction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">用于预测的模型训练</h1>
+                
+            
+            
+                
+<p>在项目内部，包文件夹<kbd>prediction.training</kbd>中，有一个名为<kbd>TrainGBT.scala</kbd>的Scala对象。在启动之前，您必须指定/更改四项内容:</p>
+<ul>
+<li>在代码中，您需要在计算机上的某个实际位置设置<kbd>spark.sql.warehouse.dir</kbd>，该位置有几千兆字节的空闲空间:<kbd>set("spark.sql.warehouse.dir", "/home/user/spark")</kbd></li>
+<li><kbd>RootDir</kbd>是主文件夹，所有的文件和火车模型都在这里<kbd>stored:rootDir = "/home/user/projects/btc-prediction/"</kbd></li>
+<li>确保<kbd>x</kbd>文件名与上一步中Scala脚本生成的文件名相匹配:<kbd>x = spark.read.format("com.databricks.spark.csv ").schema(xSchema).load(rootDir + "scala_test_x.csv")</kbd></li>
+<li>确保<kbd>y</kbd>文件名与Scala脚本生成的文件名相匹配:<kbd>y_tmp=spark.read.format("com.databricks.spark.csv").schema(ySchema).load(rootDir + "scala_test_y.csv")</kbd></li>
+</ul>
+<p>用于训练的代码使用Apache Spark ML库(以及它所需的库)来训练分类器，这意味着它们必须存在于您的<kbd>class</kbd>路径中才能运行它。最简单的方法(因为整个项目都使用SBT)是通过键入<kbd>sbt</kbd> <kbd>run-main prediction.training.TrainGBT</kbd>从项目根文件夹中运行它，这将解析所有的依赖项并启动培训。</p>
+<p>根据迭代次数和深度，训练模型可能需要几个小时。现在让我们看看如何在梯度增强树模型的例子上执行训练。首先，我们需要创建一个<kbd>SparkSession</kbd>对象:</p>
+<pre><strong>val</strong> spark = SparkSession<br/>        .builder()<br/>        .master("local[*]")<br/>        .config("spark.sql.warehouse.dir", ""/home/user/spark/")<br/>        .appName("Bitcoin Preprocessing")<br/>        .getOrCreate()</pre>
+<p>然后，我们为<kbd>x</kbd>和<kbd>y</kbd>定义一个数据模式。我们将这些列重命名为<kbd>t0</kbd> - <kbd>t21,</kbd>，以表明这是一个时间序列:</p>
+<pre><strong>val</strong> xSchema = StructType(Array(<br/>    StructField("t0", DoubleType, true),<br/>    StructField("t1", DoubleType, true),<br/>    StructField("t2", DoubleType, true),<br/>    StructField("t3", DoubleType, true),<br/>    StructField("t4", DoubleType, true),<br/>    StructField("t5", DoubleType, true),<br/>    StructField("t6", DoubleType, true),<br/>    StructField("t7", DoubleType, true),<br/>    StructField("t8", DoubleType, true),<br/>    StructField("t9", DoubleType, true),<br/>    StructField("t10", DoubleType, true),<br/>    StructField("t11", DoubleType, true),<br/>    StructField("t12", DoubleType, true),<br/>    StructField("t13", DoubleType, true),<br/>    StructField("t14", DoubleType, true),<br/>    StructField("t15", DoubleType, true),<br/>    StructField("t16", DoubleType, true),<br/>    StructField("t17", DoubleType, true),<br/>    StructField("t18", DoubleType, true),<br/>    StructField("t19", DoubleType, true),<br/>    StructField("t20", DoubleType, true),<br/>    StructField("t21", DoubleType, true))<br/>    )</pre>
+<p>然后，我们读取为模式定义的文件。在Scala中为数据和标签生成两个独立的文件更方便，所以这里我们必须将它们合并成一个数据帧:</p>
+<pre><strong>import</strong> spark.implicits._<br/><strong>val</strong> y = y_tmp.withColumn("y", 'y.cast(IntegerType))<br/><strong>import</strong> org.apache.spark.sql.functions._<br/><br/><strong>val</strong> x_id = x.withColumn("id", monotonically_increasing_id())<br/><strong>val</strong> y_id = y.withColumn("id", monotonically_increasing_id())<br/><strong>val</strong> data = x_id.join(y_id, "id")</pre>
+<p>Spark要求的下一步是—我们需要对特征进行矢量化:</p>
+<pre><strong>val</strong> featureAssembler = new VectorAssembler()<br/>        .setInputCols(Array("t0", "t1", "t2", "t3",<br/>                            "t4", "t5", "t6", "t7",<br/>                            "t8", "t9", "t10", "t11",<br/>                            "t12", "t13", "t14", "t15",<br/>                            "t16", "t17", "t18", "t19",<br/>                            "t20", "t21"))<br/>        .setOutputCol("features")</pre>
+<p>我们按照75%比25%的比例将数据随机分为训练集和测试集。我们设置了种子，以便在我们运行训练的所有时间中分割是相等的:</p>
+<pre><strong>val</strong> Array(trainingData,testData) = dataWithLabels.randomSplit(Array(0.75, 0.25), 123)</pre>
+<p>然后我们定义模型。它指出哪些列是要素，哪些是标注。它还设置参数:</p>
+<pre><strong>val</strong> gbt = new GBTClassifier()<br/>        .setLabelCol("label")<br/>        .setFeaturesCol("features")<br/>        .setMaxIter(10)<br/>        .setSeed(123)</pre>
+<p>创建一个<kbd>pipeline</kbd>步骤——矢量组装特征并运行GBT:</p>
+<pre><strong>val</strong> pipeline = new Pipeline()<br/>            .setStages(Array(featureAssembler, gbt))</pre>
+<p>定义评估函数-模型如何知道它做得好不好。因为我们只有两个不平衡的类，所以准确性是一个不好的度量；ROC曲线下的面积更好:</p>
+<pre><strong>val</strong> rocEvaluator = new BinaryClassificationEvaluator()<br/>        .setLabelCol("label")<br/>        .setRawPredictionCol("rawPrediction")<br/>        .setMetricName("areaUnderROC")</pre>
+<p>使用k倍交叉验证来避免过度拟合；它在每次迭代中取出五分之一的数据，在剩余的数据上训练模型，然后在这五分之一上进行测试:</p>
+<pre><strong>val</strong> cv = new CrossValidator()<br/>        .setEstimator(pipeline)<br/>        .setEvaluator(rocEvaluator)<br/>        .setEstimatorParamMaps(paramGrid)<br/>        .setNumFolds(numFolds)<br/>        .setSeed(123)<br/><strong>val</strong> cvModel = cv.fit(trainingData)</pre>
+<p>在我们得到训练好的模型后(根据我们想要迭代的迭代次数和参数，可能需要一个小时或更长时间，在<kbd>paramGrid</kbd>中指定)，我们然后计算测试数据的预测:</p>
+<pre><strong>val</strong> predictions = cvModel.transform(testData)</pre>
+<p class="mce-root">此外，评估预测的质量:</p>
+<pre><strong>val</strong> roc = rocEvaluator.evaluate(predictions)</pre>
+<p>已训练的模型被保存以供预测服务以后使用:</p>
+<pre><strong>val</strong> gbtModel = cvModel.bestModel.asInstanceOf[PipelineModel]<br/>gbtModel.save(rootDir + "__cv__gbt_22_binary_classes_" + System.nanoTime() / 1000000 + ".model")</pre>
+<p>总之，模型训练的代码如下所示:</p>
+<pre><strong>import</strong> org.apache.spark.{ SparkConf, SparkContext }<br/><strong>import</strong> org.apache.spark.ml.{ Pipeline, PipelineModel }<br/><br/><strong>import</strong> org.apache.spark.ml.classification.{ GBTClassificationModel, GBTClassifier, RandomForestClassificationModel, RandomForestClassifier}<br/><strong>import</strong> org.apache.spark.ml.evaluation.{BinaryClassificationEvaluator, MulticlassClassificationEvaluator}<br/><strong>import</strong> org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorAssembler, VectorIndexer}<br/><strong>import</strong> org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}<br/><strong>import</strong> org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}<br/><strong>import</strong> org.apache.spark.sql.SparkSession<br/><br/><strong>object</strong> TrainGradientBoostedTree {<br/>    <strong>def</strong> main(args: Array[String]): Unit = {<br/>        val maxBins = Seq(5, 7, 9)<br/>        val numFolds = 10<br/>        val maxIter: Seq[Int] = Seq(10)<br/>        val maxDepth: Seq[Int] = Seq(20)<br/>        val rootDir = "output/"<br/>        val spark = SparkSession<br/>            .builder()<br/>            .master("local[*]")<br/>            .config("spark.sql.warehouse.dir", ""/home/user/spark/")<br/>            .appName("Bitcoin Preprocessing")<br/>            .getOrCreate()<br/><br/>        val xSchema = StructType(Array(<br/>            StructField("t0", DoubleType, true),<br/>            StructField("t1", DoubleType, true),<br/>            StructField("t2", DoubleType, true),<br/>            StructField("t3", DoubleType, true),<br/>            StructField("t4", DoubleType, true),<br/>            StructField("t5", DoubleType, true),<br/>            StructField("t6", DoubleType, true),<br/>            StructField("t7", DoubleType, true),<br/>            StructField("t8", DoubleType, true),<br/>            StructField("t9", DoubleType, true),<br/>            StructField("t10", DoubleType, true),<br/>            StructField("t11", DoubleType, true),<br/>            StructField("t12", DoubleType, true),<br/>            StructField("t13", DoubleType, true),<br/>            StructField("t14", DoubleType, true),<br/>            StructField("t15", DoubleType, true),<br/>            StructField("t16", DoubleType, true),<br/>            StructField("t17", DoubleType, true),<br/>            StructField("t18", DoubleType, true),<br/>            StructField("t19", DoubleType, true),<br/>            StructField("t20", DoubleType, true),<br/>            StructField("t21", DoubleType, true)))<br/><br/>        val ySchema = StructType(Array(StructField("y", DoubleType,<br/>        true)))<br/>        val x = spark.read.format("csv").schema(xSchema).load(rootDir +<br/>        "scala_test_x.csv")<br/>        val y_tmp =<br/>        spark.read.format("csv").schema(ySchema).load(rootDir +<br/>        "scala_test_y.csv")<br/><br/>        import spark.implicits._<br/>        val y = y_tmp.withColumn("y", 'y.cast(IntegerType))<br/><br/>        import org.apache.spark.sql.functions._<br/>        //joining 2 separate datasets in single Spark dataframe<br/>        val x_id = x.withColumn("id", monotonically_increasing_id())<br/>        val y_id = y.withColumn("id", monotonically_increasing_id())<br/>        val data = x_id.join(y_id, "id")<br/>        val featureAssembler = new VectorAssembler()<br/>            .setInputCols(Array("t0", "t1", "t2", "t3", "t4", "t5", <br/>                                "t6", "t7", "t8", "t9", "t10", "t11", <br/>                                "t12", "t13", "t14", "t15", "t16",<br/>                                "t17","t18", "t19", "t20", "t21"))<br/>            .setOutputCol("features")<br/>        val encodeLabel = udf[Double, String] { case "1" =&gt; 1.0 case<br/>                                                "0" =&gt; 0.0 }<br/>        val dataWithLabels = data.withColumn("label",<br/>                                encodeLabel(data("y")))<br/><br/>        //123 is seed number to get same datasplit so we can tune<br/>        params<br/>        val Array(trainingData, testData) =<br/>        dataWithLabels.randomSplit(Array(0.75, 0.25), 123)<br/>        val gbt = new GBTClassifier()<br/>            .setLabelCol("label")<br/>            .setFeaturesCol("features")<br/>            .setMaxIter(10)<br/>            .setSeed(123)<br/>        val pipeline = new Pipeline()<br/>            .setStages(Array(featureAssembler, gbt))<br/>        // ***********************************************************<br/>        println("Preparing K-fold Cross Validation and Grid Search")<br/>        // ***********************************************************<br/>        val paramGrid = new ParamGridBuilder()<br/>            .addGrid(gbt.maxIter, maxIter)<br/>            .addGrid(gbt.maxDepth, maxDepth)<br/>            .addGrid(gbt.maxBins, maxBins)<br/>            .build()<br/>        val cv = new CrossValidator()<br/>            .setEstimator(pipeline)<br/>            .setEvaluator(new BinaryClassificationEvaluator())<br/>            .setEstimatorParamMaps(paramGrid)<br/>            .setNumFolds(numFolds)<br/>            .setSeed(123)<br/>        // ************************************************************<br/>        println("Training model with GradientBoostedTrees algorithm")<br/>        // ************************************************************<br/>        // Train model. This also runs the indexers.<br/>        val cvModel = cv.fit(trainingData)<br/>        cvModel.save(rootDir + "cvGBT_22_binary_classes_" +<br/>        System.nanoTime() / 1000000 + ".model")<br/>        println("Evaluating model on train and test data and<br/>        calculating RMSE")<br/>        // **********************************************************************<br/>        // Make a sample prediction<br/>        val predictions = cvModel.transform(testData)<br/><br/>        // Select (prediction, true label) and compute test error.<br/>        val rocEvaluator = new BinaryClassificationEvaluator()<br/>            .setLabelCol("label")<br/>            .setRawPredictionCol("rawPrediction")<br/>            .setMetricName("areaUnderROC")<br/>        val roc = rocEvaluator.evaluate(predictions)<br/>        val prEvaluator = new BinaryClassificationEvaluator()<br/>            .setLabelCol("label")<br/>            .setRawPredictionCol("rawPrediction")<br/>            .setMetricName("areaUnderPR")<br/>        val pr = prEvaluator.evaluate(predictions)<br/>        val gbtModel = cvModel.bestModel.asInstanceOf[PipelineModel]<br/>        gbtModel.save(rootDir + "__cv__gbt_22_binary_classes_" +<br/>        System.nanoTime()/1000000 +".model")<br/><br/>        println("Area under ROC curve = " + roc)<br/>        println("Area under PR curve= " + pr)<br/>        println(predictions.select().show(1))<br/>        spark.stop()<br/>    }<br/>}</pre>
+<p>现在让我们看看训练进行得如何:</p>
+<pre>&gt;&gt;&gt; <br/>Area under ROC curve = 0.6045355104779828<br/>Area under PR curve= 0.3823834607704922</pre>
+<p>因此，我们没有获得非常高的准确性，因为ROC只有最好的GBT模型的60.50%。然而，如果我们调整超参数，我们将获得更好的精度。</p>
+<p>然而，由于我没有足够的时间，我没有迭代训练很长时间，但你一定要试试。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Scala Play web service</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">Scala Play web服务</h1>
+                
+            
+            
+                
+<p>作为一个应用程序框架，Play2被选为易于配置且健壮的框架。相比Spring(另一个流行的框架)，从零开始做一个小app需要的时间更少。该剧由Guice负责依赖注入，SBT担任包经理:</p>
+<ul>
+<li><strong>Spark ML</strong>:Spark ML库被选中是因为它是Java世界中维护得最好的库之一。许多库中没有的算法是由第三方开发人员实现的，可以在Spark上进行训练。Spark的一个缺点是它非常慢，因为根据设计，它应该是分布式的；所以它使用Hadoop，并在文件系统中写入大量内容。</li>
+<li><strong> Akka </strong>:这允许实现actor的模式——拥有几个独立对象的实例，并发地互相传递消息，这增加了健壮性。</li>
+<li>Anorm :在JDBC之上使用SQL的库。Slick是另一个选择，它更强大，但是Akka和Slick所需的库之间的兼容性问题使得选择另一个库是值得的。</li>
+<li><strong>H2</strong>:Play和Ruby-on-Rails的默认数据库，易于启动，可以将数据存储在本地数据库文件中，而无需安装DB服务器。这提供了可移植性并提高了开发速度。在以后的阶段，它可以被另一个替代，因为Scala代码不依赖于任何特定的数据库；所有这些都是在配置级别上完成的。</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Concurrency through Akka actors</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">通过Akka actors实现并发</h1>
+                
+            
+            
+                
+<p>并发是通过使用Akka Scala库的<kbd>actor</kbd>模型来实现的。参与者作为独立的实体，可以将异步消息传递给其他参与者。在这个项目中，有三个角色:<kbd>SchedulerActor</kbd>、<kbd>PredictionActor</kbd>和<kbd>TraderActor</kbd>:</p>
+<ul>
+<li><kbd>SchedulerActor</kbd>:请求价格数据，将它们存储到DB中，向<kbd>PredictionActor</kbd>发送带有价格的消息，接收回答，并将其传递给<kbd>TraderActor</kbd>。</li>
+<li><kbd>PredictionActor</kbd>:收到价格信息后，它会使用现有的最佳模型预测下一个价格(这必须在<kbd>application.conf</kbd>中选择)；我们将在后面看到细节)。它将带有预测的消息传递回<kbd>SchedulerActor</kbd>，使用<kbd>model</kbd>文件夹中的其余模式对以前的数据进行预测，并使用最新的价格来评估预测。这种预测的结果存储在数据库中。</li>
+<li><kbd>TraderActor</kbd>:在收到一条关于预测的消息后，使用<kbd>rules</kbd>(此时就像<em>如果预测价格上涨</em> <em>则买入，否则不做任何事情</em>)将其决定写入日志。它可以向一个URL发送一个HTTP请求来触发这个决定。</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Web service workflow</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">Web服务工作流</h1>
+                
+            
+            
+                
+<p>现在让我们更深入地看看代码是如何执行预测的。如前所示，每60秒，该应用程序被触发从Cryptocompare获取数据，将价格存储到数据库中，并运行预测，保存关于质量预测的回溯测试结果。</p>
+<p>在这一节中，我们将深入探讨哪些Scala类在这个项目中扮演了重要的角色，以及它们是如何通信的。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>JobModule</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">作业模块</h1>
+                
+            
+            
+                
+<p>当应用程序启动时，一切都从<kbd>JobModule</kbd>开始。它配置<kbd>Scheduler</kbd>的创建，它以<kbd>application.conf</kbd>速率向<kbd>SchedulerActor</kbd>发送消息:</p>
+<pre><strong>class</strong> JobModule extends AbstractModule with AkkaGuiceSupport {<br/>  <strong>  def</strong> configure(): Unit = {<br/>        //configuring launch of price-fetching Actor<br/>        bindActor[SchedulerActor]("scheduler-actor")<br/>        bind(classOf[Scheduler]).asEagerSingleton()<br/>    }<br/>}</pre>
+<p>要启用此模块，在<kbd>application.conf</kbd>内，需要以下行:</p>
+<pre>play.modules.enabled += "modules.jobs.JobModule"</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Scheduler</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">调度程序</h1>
+                
+            
+            
+                
+<p><kbd>Scheduler</kbd>从<kbd>application.conf</kbd>获取频率常数，并使用<kbd>Actor</kbd>系统发送<kbd>update</kbd>消息(内容无关紧要；<kbd>SchedulerActor</kbd>对任何消息作出反应)到<kbd>SchedulerActor</kbd>每X秒:</p>
+<pre><strong>class</strong> Scheduler @Inject()<br/>    (val system: ActorSystem, @Named("scheduler-actor") val schedulerActor: ActorRef, configuration:     Configuration)(implicit ec: ExecutionContext) {<br/>    //constants.frequency is set in conf/application.conf file<br/>    val frequency = configuration.getInt("constants.frequency").get<br/>    var actor = system.scheduler.schedule(<br/>    0.microseconds, //initial delay: whether execution starts immediately after app launch<br/>    frequency.seconds, //every X seconds, specified above<br/>    schedulerActor,<br/>    "update")<br/>}</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>SchedulerActor</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">调度器</h1>
+                
+            
+            
+                
+<p>代码的相关部分被显示和解释。现在让我们看看如何获得价格数据:</p>
+<pre><strong>def</strong> constructUrl(exchange: String): String =<br/>{<br/> "https://min-api.cryptocompare.com/data/histominute?fsym=BTC&amp;tsym=USD&amp;limit=23&amp;aggregate=1&amp;e=" + exchange<br/> }</pre>
+<p><kbd>ConstructUrl</kbd>向Cryptocompare API返回完整格式的请求URL。更多详情见API相关章节:</p>
+<pre><strong>final val</strong> predictionActor = system.actorOf(Props(new PredictionActor(configuration, db)))<br/><strong>final val</strong> traderActor = system.actorOf(Props(new TraderActor(ws)))</pre>
+<p>创建<kbd>PredictionActor</kbd>和<kbd>TraderActor</kbd>的实例:</p>
+<pre><strong>override def</strong> receive: Receive = {</pre>
+<p><kbd>Receive</kbd>方法在<kbd>actor</kbd>特征中定义，并且必须被实现。当有人向这个<kbd>actor</kbd>(在我们的例子中是<kbd>Scheduler</kbd>)传递消息时，它被触发:</p>
+<pre><strong>case</strong> _ =&gt;<br/>   <strong> val</strong> futureResponse=restClient.getPayload(constructUrl(exchange))</pre>
+<p>在前面的代码中，<kbd>case _ =&gt;</kbd>表示我们对任何类型和内容的任何消息做出反应。首先通过之前指定的URL异步调用Cryptocompare API。这是在<kbd>RestClient</kbd>的帮助下完成的，T1用响应JSON返回<kbd>Future</kbd>。收到响应后(在完成回调的<kbd>futureResponse</kbd>内)，<kbd>.json</kbd>被映射到自定义案例类<kbd>CryptoCompareResponse</kbd>:</p>
+<pre><strong>case class</strong> CryptoCompareResponse(Response: String, Type: Int, Aggregated: Boolean, Data: List[OHLC],     FirstValueInArray: Boolean, TimeTo: Long,TimeFrom: Long)</pre>
+<p>case类类似于<strong> POJO </strong> ( <strong>普通老式Java对象</strong>)不需要编写构造函数和getter/setter:</p>
+<pre><strong>object</strong> CryptoCompareResponse {<br/><strong>        implicit</strong> <strong>val</strong> cryptoCompareResponseReads = Json.reads[CryptoCompareResponse]<br/>            }</pre>
+<p>将JSON映射到这个类需要这个伴随对象。<kbd>CryptocompareResponse</kbd>对象存储API的输出——一列OHLC数据、数据的时间范围以及其他与我们无关的内容。<kbd>OHLC</kbd>类对应实际价格数据:</p>
+<pre><strong>case class</strong> OHLC(time: Long, open: Double, <br/>                high: Double, <br/>                low: Double, <br/>                close: Double, <br/>                volumefrom: Double, <br/>                volumeto: Double)</pre>
+<p>数据准备好之后，通过调用<kbd>storePriceData(cryptoCompareResponse)</kbd>将价格存储在数据库中。首先，它将(使用Anorm的<strong> BatchSQL </strong>)批量插入到<kbd>PRICE_STAGING</kbd>表中，并根据时间戳通过重复数据删除重新插入到<kbd>PRICE</kbd>中，因为我们正在接收重叠的价格数据:</p>
+<pre><strong>val</strong> batch = <strong>BatchSql</strong>(<br/>        """|INSERT INTO PRICE_STAGING(TIMESTAMP,EXCHANGE,PRICE_OPEN,PRICE_CLOSED,VOLUME_BTC,             <br/>            VOLUME_USD)| VALUES({timestamp}, {exchange}, {priceOpen}, {priceClosed}, {volumeBTC},                   {volumeUSD})""".stripMargin,transformedPriceDta.head,transformedPriceDta.tail:_*)<br/><strong>val</strong> res: Array[Int] = batch.execute() // array of update count<br/><strong>val</strong> reInsert = <strong>SQL</strong>(<br/>        """<br/>          |INSERT INTO PRICE(TIMESTAMP, EXCHANGE, PRICE_OPEN, PRICE_CLOSED, VOLUME_BTC, VOLUME_USD)<br/>          |SELECT  TIMESTAMP, EXCHANGE, PRICE_OPEN, PRICE_CLOSED, VOLUME_BTC, VOLUME_USD<br/>          |FROM PRICE_STAGING AS s<br/>          |WHERE NOT EXISTS (<br/>          |SELECT *<br/>          |FROM PRICE As t<br/>          |WHERE t.TIMESTAMP = s.TIMESTAMP<br/>          |)<br/>        """.stripMargin).execute()<br/>      Logger.debug("reinsert " + reInsert)</pre>
+<p>存储到数据库后，<kbd>SchedulerActor</kbd>将OHLC数据转换为(timestamp，delta)元组，其中delta为(<kbd>closePrice</kbd> - <kbd>openPrice</kbd>)。所以这种格式适合ML模型。转换后的数据作为消息传递给<kbd>PredictionActor</kbd>,并明确等待响应。这通过使用<kbd>?</kbd>操作符来完成。我们问预测<kbd>actor</kbd>:</p>
+<pre>(predictionActor ? CryptoCompareDTOToPredictionModelTransformer.tranform(cryptoCompareResponse)).mapTo[CurrentDataWithShortTermPrediction].map {</pre>
+<p>它的响应被映射到<kbd>CurrentDataWithShortTermPrediction</kbd>类，并使用<kbd>!</kbd>操作符传递给<kbd>TraderActor</kbd>。与<kbd>?</kbd>不同，<kbd>!</kbd>操作器不需要响应:</p>
+<pre>predictedWithCurrent =&gt;<br/>traderActor ! predictedWithCurrent}</pre>
+<p>这是<kbd>SchedulerActor</kbd>的基本演练。我们从Cryptocompare API中读取数据，将其存储到数据库中，发送到<kbd>PredictionActor</kbd>并等待其响应。然后我们将它的响应转发给<kbd>TraderActor</kbd>。</p>
+<p>现在我们来看看<kbd>PredictionActor</kbd>内部发生了什么。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>PredictionActor and the prediction step</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">预测因子和预测步骤</h1>
+                
+            
+            
+                
+<p>Scala web应用程序每分钟从Cryptocompare API获取Bitstamp exchange上最新的比特币价格数据，使用经过训练的ML分类器来预测下一分钟的价格变化方向。它通知用户这个决定。</p>
+<p>现在，从项目类型为<kbd>sbt run</kbd>(或<kbd>$ sudo sbt run</kbd>的目录中启动它。现在让我们看看<kbd>application.conf</kbd>文件的内容:</p>
+<pre># This is the main configuration file for the application.<br/># Secret key<br/># The secret key is used to secure cryptographics functions.<br/># If you deploy your application to several instances be sure to use the same key!<br/><strong>application.secret="%APPLICATION_SECRET%"</strong><br/># The application languages<br/><strong>application.langs="en"</strong><br/># Global object class<br/># Define the Global object class for this application.<br/># Default to Global in the root package.sb<br/># application.global=Global<br/># Router<br/># Define the Router object to use for this application.<br/># This router will be looked up first when the application is starting up,<br/># so make sure this is the entry point.<br/># Furthermore, it's assumed your route file is named properly.<br/># So for an application router like `my.application.Router`,<br/># you may need to define a router file `conf/my.application.routes`.<br/># Default to Routes in the root package (and conf/routes)<br/># application.router=my.application.Routes<br/># Database configuration<br/># You can declare as many datasources as you want.<br/># By convention, the default datasource is named `default`<br/><strong>rootDir = "&lt;path&gt;/Bitcoin_price_prediction/"</strong><br/><strong>db.default.driver = org.h2.Driver</strong><br/><strong>db.default.url = "jdbc:h2: "&lt;path&gt;/Bitcoin_price_prediction/DataBase"</strong><br/><strong>db.default.user = user</strong><br/><strong>db.default.password = ""</strong><br/><strong>play.evolutions.db.default.autoApply = true</strong><br/># Evolutions<br/># You can disable evolutions if needed<br/># evolutionplugin=disabled<br/># Logger<br/># You can also configure logback (http://logback.qos.ch/),<br/># by providing an application-logger.xml file in the conf directory.<br/># Root logger:<br/><strong>logger.root=ERROR</strong><br/># Logger used by the framework:<br/><strong>logger.play=INFO</strong><br/># Logger provided to your application:<br/><strong>logger.application=DEBUG</strong><br/>#Enable JobModule to run scheduler<br/>play.modules.enabled += "modules.jobs.JobModule"<br/>#Frequency in seconds to run job. Might make sense to put 30 seconds, for recent data<br/><strong>constants.frequency = 30</strong><br/><strong>ml.model_version = "gbt_22_binary_classes_32660767.model"</strong></pre>
+<p>现在您可以理解，根据您的平台和选择，还有几个变量需要配置/更改:</p>
+<ul>
+<li>将<kbd>rootDir</kbd>目录更改为您在<kbd>TrainGBT</kbd>中使用过的目录:</li>
+</ul>
+<pre style="padding-left: 60px">rootDir = "&lt;path&gt;/ Bitcoin_price_prediction"</pre>
+<ul>
+<li>指定数据库文件的名称:</li>
+</ul>
+<pre style="padding-left: 60px">db.default.url = "jdbc:h2: "&lt;path&gt;/Bitcoin_price_prediction/DataBase"</pre>
+<ul>
+<li>指定用于实际预测的模型版本:</li>
+</ul>
+<pre style="padding-left: 60px">ml.model_version = "gbt_22_binary_classes_32660767.model"</pre>
+<p>注意，具有这样名称的文件夹必须在<kbd>rootDir</kbd>中。所以在<kbd>rootDir</kbd>里面，创建一个名为<kbd>models</kbd>的文件夹，把所有训练过的模型的文件夹复制到那里。</p>
+<p>这个类还实现了<kbd>actor</kbd>特征并覆盖了receive方法。它的最佳实践是在伴随对象中定义可以被<kbd>actor</kbd>接收的类型，从而为其他类建立一个接口:</p>
+<pre><strong>object</strong> PredictionActor {<br/>    <strong>def</strong> props = Props[PredictionActor]<br/>    <strong>case class</strong> PriceData(timeFrom: Long,<br/>                        timeTo: Long, <br/>                        priceDelta: (Long, Double)*)<br/>        }</pre>
+<p>首先，<kbd>PredictionActor</kbd>从<kbd>models</kbd>文件夹加载模型列表，并加载<kbd>etalon</kbd>模型:</p>
+<pre><strong>val</strong> models: List[(Transformer, String)] =<br/>            SubDirectoryRetriever.getListOfSubDirectories(modelFolder)<br/>            .map(modelMap =&gt; (PipelineModel.load(modelMap("path")),modelMap("modelName")))<br/>        .toList</pre>
+<p>首先，我们提取<kbd>models</kbd>文件夹中的子目录列表，并从每个子目录中加载训练好的<kbd>PipeLine</kbd>模型。以类似的方式，加载了<kbd>etalon</kbd>模型，但是我们已经知道了它的目录。下面是在<kbd>receive</kbd>方法中如何处理<kbd>PriceData</kbd>类型的消息:</p>
+<pre><strong>override def</strong> receive: Receive = {<br/>    <strong>case</strong> data: PriceData =&gt;<br/>        <strong>val</strong> priceData = shrinkData(data, 1, 22)<br/>        <strong>val</strong> (predictedLabelForUnknownTimestamp, details) =             <br/>            predictionService.predictPriceDeltaLabel(priceData,productionModel)</pre>
+<p>预测的标签(字符串)和分类细节被记录，所以是否可以看到每个类的概率分布？如果<kbd>actor</kbd>接收到另一种类型的消息，则显示一个错误，并且不执行任何操作。然后，结果被发送回<kbd>SchedulerActor</kbd>并在变量<kbd>predictedWithCurrent</kbd>中发送，如前面的代码所示:</p>
+<pre>sender() ! CurrentDataWithShortTermPrediction(predictedLabelForUnknownTimestamp, data)</pre>
+<p><kbd>sender</kbd>是对一个对象的<kbd>ActorRef</kbd>引用，该对象发送了我们目前正在处理的消息，因此我们可以用<kbd>!</kbd>操作符将消息传回。然后，对于我们在开始时加载的每个模型，我们预测1分钟前的数据的标签(总共23行中的第0-21行),并获得我们知道的最近一分钟的实际价格增量:</p>
+<pre>models.<strong>foreach</strong> { mlModel =&gt;<br/>    <strong>val</strong> (predictedLabel, details) =predictionService.predictPriceDeltaLabel(shrinkData(data, 0, 21),     mlModel._1)<br/>    <strong>val</strong> actualDeltaPoint = data.priceDelta.toList(22)</pre>
+<p>对于每个模型，我们在模型的DB名称中存储以下内容:每个测试预测的时间戳、模型预测的标签以及实际的增量。这些信息稍后将用于生成模型性能报告:</p>
+<pre>storeShortTermBinaryPredictionIntoDB( mlModel._2, actualDeltaPoint._1,<br/>predictedLabel, actualDeltaPoint._2)</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>TraderActor</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">贸易商</h1>
+                
+            
+            
+                
+<p><kbd>TraderActor</kbd>接收预测，并根据标签写入日志消息。它可以触发对指定端点的HTTP请求:</p>
+<pre><strong>override def</strong> receive: Receive = {<br/>    case data: CurrentDataWithShortTermPrediction =&gt;<br/>        Logger.debug("received short-term prediction" + data)<br/>        data.prediction match {<br/>            case "0" =&gt; notifySellShortTerm()<br/>            case "1" =&gt; notifyHoldShortTerm()<br/>    }</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Predicting prices and evaluating the model</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">预测价格和评估模型</h1>
+                
+            
+            
+                
+<p><kbd>ShortTermPredictionServiceImpl</kbd>是用给定的模型和数据实际执行预测的类。首先，通过调用<kbd>transformPriceData(priceData: PriceData)</kbd> <em>将<kbd>PriceData</kbd>转换成一个火花数据帧，其方案与用于训练的方案相对应。</em>然后，调用<kbd>model.transform(dataframe)</kbd>方法；我们提取我们需要的变量，写入调试器日志并返回给调用者:</p>
+<pre><strong>override def</strong> predictPriceDeltaLabel(priceData: PriceData, mlModel: org.apache.spark.ml.Transformer): (String, Row) = {<br/>        val df = transformPriceData(priceData)<br/>        val prediction = mlModel.transform(df)<br/>        val predictionData = prediction.select("probability", "prediction", "rawPrediction").head()<br/>        (predictionData.get(1).asInstanceOf[Double].toInt.toString, predictionData)<br/>        }</pre>
+<p>运行时，应用程序收集关于预测输出的数据:预测标签和实际价格增量。这些信息用于构建根网页，显示统计数据，如前面描述的<strong> TPR </strong> ( <strong>真阳性率</strong>)<strong>FPR</strong>(<strong>假阳性率</strong>)<strong>TNR</strong>(<strong>真阴性率</strong>)和<strong> FNR </strong> ( <strong>假阴性率</strong>)。</p>
+<p>这些统计数据是从<kbd>SHORT_TERM_PREDICTION_BINARY</kbd>表中即时计算出来的。基本上，通过使用<kbd>CASE-WHEN</kbd>结构，我们添加了新的列:TPR、FPR、TNR和FNR。它们的定义如下:</p>
+<ul>
+<li>如果预测标签为1，价格增量为&gt; <kbd>0</kbd>，则TPR值为<kbd>1</kbd>，否则为<kbd>0</kbd></li>
+<li>如果预测标签为1且价格增量为&lt; = <kbd>0</kbd>，则FPR值为<kbd>1</kbd>，否则值为<kbd>0</kbd></li>
+<li>如果预测标签为0且价格增量为&lt; = <kbd>0</kbd>，则TNR值为<kbd>1</kbd>，否则值为<kbd>0</kbd></li>
+<li>如果预测标签为0，价格差为&gt; <kbd>0</kbd>，则FNR值为<kbd>1</kbd>，否则为0</li>
+</ul>
+<p>然后，所有记录按车型名称分组，并将TPR、FPR、TNR和FNR相加，得出每个车型的总数量。下面是负责这项工作的SQL代码:</p>
+<pre><strong>SELECT</strong> MODEL, SUM(TPR) as TPR, SUM(FPR) as FPR, SUM(TNR) as TNR, <br/>    SUM(FNR) as FNR, COUNT(*) as TOTAL FROM (SELECT *,<br/>    <strong>case</strong> when PREDICTED_LABEL='1' and ACTUAL_PRICE_DELTA &gt; 0<br/>        then 1 else 0 end as TPR,<br/>    <strong>case</strong> when PREDICTED_LABEL='1' and ACTUAL_PRICE_DELTA &lt;=0<br/>        then 1 else 0 end as FPR,<br/>    <strong>case</strong> when PREDICTED_LABEL='0' and ACTUAL_PRICE_DELTA &lt;=0<br/>        then 1 else 0 end as TNR,<br/>    <strong>case</strong> when PREDICTED_LABEL='0' and ACTUAL_PRICE_DELTA &gt; 0<br/>        then 1 else 0 end as FNR<br/><strong>FROM</strong> SHORT_TERM_PREDICTION_BINARY)<br/><strong>GROUP</strong> BY MODEL</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Demo prediction using Scala Play framework</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">使用Scala Play框架进行演示预测</h1>
+                
+            
+            
+                
+<p>现在我们已经看到了这个项目的所有步骤，是时候看看现场演示了。我们将把整个应用程序包装成Scala Play web应用程序。嗯，在看演示之前，让我们启动并运行我们的项目。然而，了解一些使用Scala Play的RESTful架构的基础知识会有所帮助。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Why RESTful architecture?</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">为什么选择RESTful架构？</h1>
+                
+            
+            
+                
+<p>嗯，Play的架构默认是RESTful的。其核心是，Play基于模型-视图-控制器模式。每个入口点与一个HTTP动词配对，映射到一个控制器函数。控制器使视图可以是网页、JSON、XML或其他任何东西。</p>
+<p>Play的无状态架构支持水平扩展，非常适合服务许多传入请求，而不必在它们之间共享资源(如会话)。它处于反应式编程趋势的最前沿，在这种趋势下，服务器是基于事件的，并行处理被用来满足现代网站不断增长的需求。</p>
+<p>在某些配置中，Play可以在整个应用程序中实现完全异步和无阻塞的I/O。目的是通过高效的线程管理和并行处理，在web的可伸缩性方面达到新的高度，同时避免基于JavaScript的解决方案倾向于产生的<strong>回调地狱</strong>。</p>
+<p>AngularJs是一个基于JavaScript的开源前端web应用程序框架，主要由Google和一个由个人和公司组成的社区维护，以解决开发单页面应用程序时遇到的许多挑战。</p>
+<p>现在的问题是为什么是AngularJS？嗯，HTML对于声明静态文档来说很棒，但是当我们试图在web应用程序中使用它来声明动态视图时，它就变得不稳定了。AngularJS允许你为你的应用程序扩展HTML词汇。由此产生的环境非常具有表现力、可读性和开发速度。</p>
+<p>另一个问题是，没有其他选择吗？好的<strong>，</strong>其他框架通过抽象HTML、CSS和/或JavaScript或者通过提供一种操作DOM的强制性方法来处理HTML的缺点。这些都没有解决HTML不是为动态视图设计的这个根本问题。</p>
+<p>最后，扩展性是什么？AngularJS是一个工具集，用于构建最适合您的应用程序开发的框架。它是完全可扩展的，并且与其他库配合良好。每个功能都可以修改或替换，以适应您独特的开发工作流程和功能需求。请继续阅读，找出方法。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Project structure</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">项目结构</h1>
+                
+            
+            
+                
+<p>打包的Scala web ML应用程序具有以下目录结构:</p>
+<div><img height="171" width="386" class="alignnone size-full wp-image-524 image-border" src="img/7fa0cf7c-e77e-4a59-aec0-98d57b3b2c98.png"/></div>
+<p>图7: Scala ML web app目录结构</p>
+<p>在前面的结构中，<kbd>bitcoin_ml</kbd>文件夹有所有的后端和前端代码。<kbd>models</kbd>文件夹中有所有训练好的模型。在<kbd>gbt_22_binary_classes_32660767</kbd>文件夹中给出了一个示例训练模型。最后，数据库文件和跟踪分别在<kbd>DataBase.mv.db</kbd>和<kbd>DataBase.trace.db</kbd>文件中。</p>
+<p>然后让我们看看包含实际代码的<kbd>bitcoin_ml</kbd>文件夹的子文件夹结构:</p>
+<div><img height="319" width="362" class="alignnone size-full wp-image-525 image-border" src="img/90451c79-4115-4029-8ed0-e73b57b18799.png"/></div>
+<p>图8:比特币ml目录结构</p>
+<p>在上图中，<kbd>conf</kbd>文件夹中有Scala web app配置文件，<kbd>application.conf</kbd>包含必要的配置(如上所示)。所有的依赖关系都在<kbd>build.sbt</kbd>文件<em> </em>中定义，如下图<em> : </em></p>
+<pre>libraryDependencies ++= Seq(jdbc, evolutions,<br/> "com.typesafe.play" %% "anorm" % "2.5.1",<br/> cache, ws, specs2 % Test, ws)<br/><br/>unmanagedResourceDirectories in Test &lt;+= baseDirectory(_ / "target/web/public/test")<br/>resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"<br/><br/>resolvers ++= Seq(<br/>     "apache-snapshots" at "http://repository.apache.org/snapshots/")<br/>    routesGenerator := InjectedRoutesGenerator<br/>    val sparkVersion = "2.2.0"<br/>    libraryDependencies += "org.apache.spark" %% "spark-mllib" % sparkVersion<br/>    libraryDependencies += "org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.7.2"<br/>    libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.7.2"<br/>    libraryDependencies += "commons-io" % "commons-io" % "2.4"<br/>    libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.7" //fixing     "java.lang.ClassNotFoundException: de.unkrig.jdisasm.Disassembler" exception<br/><br/>    libraryDependencies ++= Seq(<br/>     "com.typesafe.slick" %% "slick" % "3.1.1",<br/>     "org.slf4j" % "slf4j-nop" % "1.6.4"<br/>)</pre>
+<p class="mce-root">坦率地说，在写作之初，我没有想到将这个应用程序包装成Scala Play web应用程序。因此，事情变得有点混乱。但是，不要担心去了解更多关于后端和前端的知识，参考<a href="c4a322da-d64b-4c40-a5b8-7ffec8381b41.xhtml" target="_blank">第七章</a>中的期权交易应用，<em>使用Q-Learning和Scala Play框架的期权交易</em>。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Running the Scala Play web app</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">运行Scala Play web应用</h1>
+                
+            
+            
+                
+<p>要运行该应用程序，只需遵循以下步骤:</p>
+<ol>
+<li>从<a href="https://www.kaggle.com/mczielinski/bitcoin-historical-data">https://www.kaggle.com/mczielinski/bitcoin-historical-data</a>下载历史比特币数据。然后解压并提取<kbd>.csv</kbd>文件。</li>
+<li>打开您喜欢的IDE(例如，Eclipse/IntelliJ)并创建Maven或SBT项目。</li>
+</ol>
+<p> </p>
+<ol start="3">
+<li>运行<kbd>Preprocess.scala</kbd>脚本，将历史数据转换成时间序列。这个脚本应该生成两个<kbd>.csv</kbd>文件(即<kbd>scala_test_x.csv</kbd>和<kbd>scala_test_y.csv</kbd>)。</li>
+<li>然后使用之前生成的文件训练<kbd>GradientBoostedTree</kbd>模型(使用<kbd>TrainGBT.scala</kbd>脚本)。</li>
+<li>保存包含所有管道步骤的最佳(即交叉验证的)<kbd>Pipeline</kbd>模型。</li>
+<li>然后从Packt资源库或者GitHub下载Scala Play app和所有文件(也就是<kbd>Bitcoin_price_prediction</kbd>)(详见书中)。</li>
+<li>然后把训练好的模型复制到<kbd>Bitcoin_price_prediction/models/</kbd>。</li>
+<li>然后:<kbd>$ cd Bitcoin_price_prediction/bitcoin_ml/conf/</kbd>并更新<kbd>application.conf</kbd>中的参数值，如前所示。</li>
+<li>最后，使用<kbd>$ sudo sbt run</kbd>命令运行项目。</li>
+</ol>
+<p>使用<kbd>$ sudo sbt run</kbd>启动后，应用程序将从<kbd>models</kbd>文件夹中读取所有型号，其中<kbd>etalon</kbd>型号由<kbd>ml.model_version</kbd>指定。每隔30秒(在<kbd>application.conf</kbd>的<kbd>constants.frequency = 30</kbd>中指定)，从Cryptocompare API中检索最新的价格数据。使用<kbd>etalon</kbd>模型进行预测，并在控制台中以日志消息的形式向用户显示结果，有可能触发对指定端点的HTTP请求。</p>
+<p>之后，<kbd>models</kbd>文件夹中的所有模型用于对之前的22分钟数据进行预测，并使用当前一分钟的最新价格数据作为检查预测质量的方法。每个模型做出的所有预测都存储在数据库文件中。当用户访问<kbd>http://localhost:9000</kbd>时，向用户显示一个带有预测汇总的表格:</p>
+<ul>
+<li class="MsoNormalCxSpMiddle">型号名称</li>
+<li class="MsoNormalCxSpMiddle">TPR，(实际上不是评级，在这种情况下，只是原始计数)——有多少次模型预测价格会上涨，有多少次是真</li>
+<li class="MsoNormalCxSpMiddle">FPR，有多少次模型预测价格上涨，但价格下降或保持不变</li>
+<li class="MsoNormalCxSpMiddle">TNR，有多少次模型预测价格不会上涨并且是正确的</li>
+<li class="MsoNormalCxSpMiddle">FNR，有多少次模型预测价格不会上涨并且是错误的</li>
+<li class="MsoNormalCxSpLast">模型所做预测的总数</li>
+</ul>
+<p>好了，在使用<kbd>$</kbd> sudo sbt <kbd>run</kbd>(在终端上)启动应用程序后，我们开始了:</p>
+<div><img src="img/a475c8d5-3fd1-4ab5-b796-7350d540ee9f.png"/></div>
+<p>图9:基于历史价格和实时数据的模型生成的示例信号</p>
+<p>上图显示了我们的模型基于历史价格和实时数据生成的一些样本信号。此外，我们可以看到模型的原始预测。当您尝试在<kbd>http://localhost:9000</kbd>从浏览器访问该应用程序时，您应该会看到以下内容(尽管数量会随着时间的推移而增加):</p>
+<div><img src="img/5876680a-d23f-4462-b4e1-4cda118482a4.png"/></div>
+<p>图10:使用Scala Play2框架模拟性能</p>
+<p>在上图中，性能并不令人满意，但我建议您使用最合适的超参数来训练模型，并进行更多次迭代，例如10，000次。此外，在下一节中，我试图提供更多的见解和改进指南。</p>
+<p style="margin-top: 6.0pt;text-align: justify" class="NormalPACKT">最后，如果您计划在进行一些扩展(如果有的话)后部署该应用程序，那么我建议快速浏览一下第七章<a href="c4a322da-d64b-4c40-a5b8-7ffec8381b41.xhtml" target="_blank">的最后一节，使用Q-Learning和Scala Play框架的<em>期权交易，在那里您将找到在服务器上作为web app公开的部署指南。</em></a></p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Summary</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">摘要</h1>
+                
+            
+            
+                
+<p>在这一章中，实施了一个完整的ML管道，从收集历史数据，到将其转换为适合测试假设、训练ML模型和对<kbd>Live</kbd>数据进行预测的格式，并且可以评估许多不同的模型并选择最佳模型。</p>
+<p>测试结果表明，如在原始数据集中一样，240万分钟中的大约600，000分钟可以被分类为<strong>涨价</strong>(收盘价高于开盘价)；数据集可以被认为是不平衡的。尽管随机森林通常在不平衡数据集上表现良好，但ROC曲线下0.74的区域并不是最好的。由于我们需要更少的假阳性(当我们触发<strong>购买</strong>并且价格下降时，次数更少)，我们可能会考虑以更严格的方式对此类错误进行惩罚。</p>
+<p>虽然分类器的结果不能用于盈利交易，但有一个基础，在此基础上可以相对快速地测试新方法。这里列出了进一步发展的一些可能方向:</p>
+<ul>
+<li>实现开始时讨论的管道:将您的时间序列数据转换成几个聚类，并为每个聚类训练回归模型/分类器；然后将最近的数据分类到其中一个分类中，并使用为该分类训练的预测模型。根据定义，ML是从数据中导出模式的<strong>，可能不会只有一种模式适合比特币的所有历史；这就是为什么我们需要理解一个市场可以处于不同的阶段，每个阶段都有自己的模式。</strong></li>
+<li>比特币价格预测的一个主要挑战可能是，在随机分割成训练测试集的过程中，训练数据(历史数据)与测试数据不属于同一分布。由于价格模式在2013年和2016年期间发生了变化，它们可能属于完全不同的分布。这可能需要手动检查数据和一些信息图表。大概，已经有人做过这个研究了。</li>
+<li>尝试的主要事情之一是训练两个<strong>一对一</strong>分类器:例如，一个被训练预测价格何时超过20美元。另一个预测价格下降20美元；所以分别做多/做空是有意义的。</li>
+<li>也许，预测下一分钟的delta不是我们需要的；我们宁愿预测平均价格。由于开盘价可能远高于上一分钟的收盘价，而下一分钟的收盘价可能略低于开盘价，但仍高于当前价，这将使它成为有利可图的交易。因此，如何准确标记数据也是一个悬而未决的问题。</li>
+<li>使用ARIMA时间序列预测模型尝试不同的时间序列窗口大小(甚至50分钟也可能适合)，因为它是使用最广泛的算法之一。然后试着预测价格变化，不是下一分钟，而是接下来的2-3分钟。另外，试着把交易量也考虑进去。</li>
+<li>如果价格在接下来的至少三分钟内上涨了20美元，将数据标记为<strong>价格上涨</strong>，这样我们就可以从交易中获利。</li>
+<li>目前，<kbd>Scheduler</kbd>与Cryptocompare分钟数不同步。这意味着我们可以在下一分钟的任何时间点(12:01:00或12:01:59)获得12:00:00 - 12:00:59分钟间隔的数据。在后一种情况下，进行交易是没有意义的，因为我们是基于已经<strong>的旧</strong>数据进行预测的。</li>
+<li>与其每分钟对旧的数据进行预测来累积对T1的预测结果，不如获取最大可用的HistoMinute数据(七天)，使用用于历史数据的Scala脚本将其拆分为时间序列数据，并预测七天的数据。每天将此作为计划作业运行一次；它应该会减少DB和<kbd>PredictionActor</kbd>上的负载。</li>
+<li>与行的顺序无关紧要的普通数据集相比，在比特币中，历史数据行按日期的升序排序，这意味着:<ul>
+<li>最新数据可能与今天的价格更相关，越少越好；采用较小的数据子集可能会获得更好的性能</li>
+<li>二次采样数据的方式很重要(分成训练测试集)</li>
+<li>最后，尝试用LSTM网络获得更好的预测准确性(参见第10章的一些线索)</li>
+</ul>
+</li>
+</ul>
+<p>对基因组序列变异的理解有助于我们识别易患常见疾病的人群，解决罕见疾病，并从更大的人群中找到相应的人群。尽管经典的最大似然技术允许研究人员识别相关变量的组(簇),但是对于大型和高维数据集，例如整个人类基因组，这些方法的准确性和有效性会降低。另一方面，深度神经网络架构(深度学习的核心)可以更好地利用大规模数据集来建立复杂的模型。</p>
+<p>在下一章中，我们将看到如何将K-means算法应用于来自1，000基因组项目的大规模基因组数据，该项目旨在在群体规模上聚类基因型变异。然后我们将训练一个基于H2O的深度学习模型来预测地理种族。最后，使用基于火花的随机森林来提高预测精度。</p>
+
+
+            
+
+            
+        
+    
+
+
+</body></html>

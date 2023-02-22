@@ -1,0 +1,247 @@
+<html><head/><body>
+
+
+
+<title>Chapter 6. Step 3 – Validating the Results</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch06"/>第六章。步骤3–验证结果</h1></div></div></div><p>在前一章中，我们从他们的国旗开始估算新国家的语言。为此，我们使用KNN算法，这是一种监督学习算法。我们构建了KNN，并测量了它的准确性，交叉验证了估计的语言。在本章中，我们将了解如何以更可靠的方式测量精度，并调整KNN参数以提高其性能。为了能够完成本章中的任务，您不必阅读前一章，尽管建议您阅读前一章，以便理解KNN算法是如何工作的。</p><p>在本章中，您将学习如何:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">验证算法的准确性</li><li class="listitem" style="list-style-type: disc">调整算法参数</li><li class="listitem" style="list-style-type: disc">选择最相关的数据特征</li><li class="listitem" style="list-style-type: disc">一起优化参数和特征</li></ul></div><div><div><div><div><h1 class="title"><a id="ch06lvl1sec32"/>验证机器学习模型</h1></div></div></div><p>从一个描述国家、旗帜及其语言的<a id="id317" class="indexterm"/>表开始，KNN从其旗帜属性开始估算一种新的国家语言。在这一章中，我们将评价KNN的表现。</p><div><div><div><div><h2 class="title"><a id="ch06lvl2sec36"/>衡量算法的准确性</h2></div></div></div><p>我们已经<a id="id318" class="indexterm"/>通过交叉验证估计的语言评估了<a id="id319" class="indexterm"/>算法的准确性。首先，我们将数据分成两部分，即训练集和测试集。然后，我们使用训练集建立KNN算法，以估计测试集国家的语言。通过计算估计的语言正确的次数，我们定义了一个准确性指数，即正确猜测的百分比。准确性取决于我们将哪些数据放入测试集。由于我们随机定义了训练集国家，因此每次重复交叉验证时，准确性都会发生变化。那么，这种方法的结果是不可靠的。</p><p>本章的目标是使用一种可靠的技术来评估KNN，在这种意义上，准确性不会改变两次验证同一个模型。多次重复训练/集合分割和验证，几乎每个国家都将至少一次同时处于训练和测试集合中。我们可以计算平均准确率，它将考虑训练集和测试集中的所有国家。在几次迭代之后，平均精度将是可靠的，因为它不会随着迭代次数的增加而显著改变。</p><p>在<a id="id320" class="indexterm"/>评估KNN之前，我们需要加载<code class="literal">kknn</code>和<code class="literal">data.table</code>包:</p><div><pre class="programlisting"># load the packages
+library('kknn')
+library('data.table')</pre></div><p>我们可以使用一组定义的参数和数据来定义函数构建和交叉验证KNN，以便我们可以快速评估任何配置的算法。由于R命令与前一章相似，我们将快速浏览一遍。这些函数的输入是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">包含数据的表格</li><li class="listitem" style="list-style-type: disc">包含我们使用的特征名称的向量</li><li class="listitem" style="list-style-type: disc">KNN参数</li></ul></div><p>步骤如下<a id="id321" class="indexterm"/>:</p><div><ol class="orderedlist arabic"><li class="listitem">定义哪些行属于定型集和测试集。我们构建<code class="literal">indexTrain</code>，它是一个向量，指定哪些行将出现在训练集中。我们设置一个标志在测试集中的概率为10%。在<a class="link" href="ch05.html" title="Chapter 5. Step 2 – Applying Machine Learning Techniques">第5章</a>、<em>第2步——应用机器学习技术</em>中，我们设定了20%的概率，但在本章中我们会多次重复验证，所以10%就足够了。</li><li class="listitem">从<code class="literal">indexTrain</code>开始，提取进入<code class="literal">dtTrain</code>和<code class="literal">dtTest</code>的行。</li><li class="listitem">定义定义要预测的特征和属性的公式。</li><li class="listitem">使用输入参数构建KNN。</li><li class="listitem">定义包含测试集估计语言的<code class="literal">languageFitted</code>向量。</li><li class="listitem">数一数<code class="literal">languageFitted</code>和真实语言有多少次是一样的。</li><li class="listitem">用预测语言和真实语言匹配的次数除以测试集中的国家数来计算准确性指数。</li></ol></div><p>这是构建<a id="id323" class="indexterm"/>函数的<a id="id322" class="indexterm"/> R代码。注释反映了编号的项目符号，如下所示:</p><div><pre class="programlisting">validateKnn &lt;- function(
+  dtFeatures, # data table with the features
+  arrayFeatures, # feature names array
+  k = 10, # knn parameter
+  kernel = 'rectangular', # knn parameter
+  distance = 1 # knn parameter
+){
+  
+  # 1 define the training/test set rows
+  indexTrain &lt;- sample(
+    x=c(TRUE, FALSE),
+    size=nrow(dtFeatures),
+    replace=TRUE,
+    prob=c(0.9, 0.1)
+  )
+  
+  # 2 define the training/test set
+  dtTrain &lt;- dtFeatures[indexTrain]
+  dtTest &lt;- dtFeatures[!indexTrain]
+  
+  # 3 define the formula
+  formulaOutput &lt;- 'language ~'
+  formulaFeatures &lt;- paste(arrayFeatures, collapse = ' + ')
+  formulaKnn &lt;- paste(formulaOutput, formulaFeatures)
+  formulaKnn &lt;- formula(formulaKnn)
+  
+  # 4 build the KNN model
+  modelKnn &lt;- kknn(
+    formula = formulaKnn,
+    train = dtTrain,
+    test = dtTest,
+    k = k,
+    kernel = kernel,
+    distance = distance
+  )
+  
+  # 5 defining the predicted language
+  languageFitted &lt;- modelKnn$fitted.values
+  
+  # 6 count the corrected predictions and the total
+  languageReal &lt;- dtTest[, language]
+  nRows &lt;- length(languageReal)
+  
+  # 7 define the accuracy index
+  percCorrect &lt;- sum(languageFitted == languageReal) / nRows
+  
+  return(percCorrect)
+}</pre></div><p>这里，<code class="literal">validateKnn</code> <a id="id324" class="indexterm"/>是验证KNN算法的<a id="id325" class="indexterm"/>起点。</p></div><div><div><div><div><h2 class="title"><a id="ch06lvl2sec37"/>定义平均精度</h2></div></div></div><p>为了使用<code class="literal">validateKnn</code>，我们需要在<a id="id326" class="indexterm"/>中定义输入，如下所示:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">该数据表具有该特性，如图所示:<div> <pre class="programlisting">setwd('&lt;INSER/YOUR/DIRECTORY/PATH&gt;") dfFeatures &lt;- read.table(file = 'dtFeatures.txt')</pre> </div></li><li class="listitem" style="list-style-type: disc">包含KNN所有可能特征的向量:<div> <pre class="programlisting">arrayFeatures &lt;- names(dfFeatures) arrayFeatures &lt;- arrayFeatures[arrayFeatures != 'language']</pre> </div></li><li class="listitem" style="list-style-type: disc">可以设置或保留默认值的KNN参数。</li></ul></div><p>现在，我们有了所有能够使用<code class="literal">validateKnn</code>的<a id="id327" class="indexterm"/>元素。我们可以使用它们的随机子集，例如，前10个特征。关于参数，我们可以保留所有参数的默认值，除了等于<code class="literal">8</code>的<code class="literal">k</code>，如图所示:</p><div><pre class="programlisting"># evaluate a model accuracy
+validateKnn(
+  dtFeatures = dtFeatures,
+  arrayFeatures = arrayFeatures[1:10],
+  k = 8
+)
+<strong>[1] 0.3571429</strong>
+</pre></div><p>运行<code class="literal">validateKnn</code>不止一次，我们可以注意到结果每次都有变化，正如预期的那样。然而，现在我们可以定义另一个多次运行<code class="literal">validateKnn</code>的函数。然后，我们计算准确度平均值，并将其用作可靠的性能指标。我们的新函数被称为<code class="literal">cvKnn</code>,因为它对KNN进行了规定次数的交叉验证。</p><p><code class="literal">cvKnn</code>参数是数据表、迭代次数、特征名称和KNN <a id="id328" class="indexterm"/>参数。让我们开始定义数据表和迭代次数。所有其他输入与<code class="literal">validateKnn</code>相同。为了有清晰紧凑的代码，我们可以使用省略号(...)指定我们可以添加其他参数。然后，我们可以再次使用省略号将这些参数传递给任何函数。这意味着当我们调用<code class="literal">validateKnn</code>时，我们可以使用<code class="literal">validateKnn(...)</code>来指定<code class="literal">cvKnn</code>的任何额外参数都将是<code class="literal">validateKnn</code>的输入。</p><p><a id="id329" class="indexterm"/>功能步骤是:</p><div><ol class="orderedlist arabic"><li class="listitem">定义一个<a id="id330" class="indexterm"/>空向量<code class="literal">arrayPercCorrect</code>，它将包含精度。</li><li class="listitem">运行<code class="literal">validateKnn</code>并定义<code class="literal">arrayPercCorrect</code>，包含精度。</li><li class="listitem">将精度<code class="literal">arrayPercCorrect</code>增加到<code class="literal">arrayPercCorrect</code>。</li></ol></div><p>这是构建该函数的代码:</p><div><pre class="programlisting">cvKnn &lt;- function(
+  dtFeatures, # data table with the features
+  nIterations=10, # number of iterations
+  ... # feature names array and knn parameters
+){
+  
+  # 1 initialize the accuracy array
+  arrayPercCorrect &lt;- c()
+  
+  for(iIteration in 1:nIterations){
+    
+    # 2 build and validate the knn
+    percCorrect &lt;- validateKnn(dtFeatures, ...)
+    
+    # 3 add the accuracy to the array
+    arrayPercCorrect &lt;- c(arrayPercCorrect, percCorrect)
+  }
+ 
+  return(arrayPercCorrect)
+}</pre></div><p>现在，我们可以使用<code class="literal">cvKnn</code>来构建和验证KNN 500次。然后，我们计算平均准确度作为KNN性能指数:</p><div><pre class="programlisting"># determine the accuracies
+arrayPercCorrect = cvKnn(
+  dtFeatures, nIterations=500,
+  arrayFeatures=arrayFeatures
+)
+# compute the average accuracy
+percCorrectMean &lt;- mean(arrayPercCorrect)
+percCorrectMean
+<strong>[1] 0.2941644</strong>
+</pre></div><p>我们<a id="id331" class="indexterm"/>定义<code class="literal">percCorrectMean</code>，可以作为精度指标。</p></div><div><div><div><div><h2 class="title"><a id="ch06lvl2sec38"/>可视化平均精度计算</h2></div></div></div><p>为了查看<a id="id333" class="indexterm"/>的结果在任何迭代中变化了多少，我们可以将每一步的准确度与它们的平均值进行比较。首先，我们使用<code class="literal">plot</code>建立一个图表，其中的精度和参数是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">x</code>:这是我们想要绘制的向量(<code class="literal">arrayPercCorrect</code>)。</li><li class="listitem" style="list-style-type: disc"><code class="literal">ylim</code>:精度是一个介于0和1之间的数字。使用<code class="literal">ylim = c(0, 1)</code>，我们指定我们可视化的区域在0和1之间。</li><li class="listitem" style="list-style-type: disc"><code class="literal">xlab</code>和<code class="literal">ylab</code>:这些是轴标签。</li><li class="listitem" style="list-style-type: disc"><code class="literal">main</code>:这是标题。</li></ul></div><p>代码如下:</p><div><pre class="programlisting"># plot the accuracy at each iteration
+plot(
+  x = arrayPercCorrect,
+  ylim = c(0, 1),
+  xlab = 'Iteration', ylab = 'Accuracy',
+  main = 'Accuracy at each iteration'
+)</pre></div><p>为了将精确度与其平均值进行比较，我们可以通过画一条带有<code class="literal">abline</code>的红色水平虚线来显示平均值，如图所示:</p><div><pre class="programlisting">help(abline)
+abline(h=percCorrectMean, col='red', lty='dashed')</pre></div><p>我们可以通过为最小和最大范围画一条水平线来显示值的范围，如下所示:</p><div><pre class="programlisting">abline(h=min(arrayPercCorrect), col='blue', lty='dashed')
+abline(h=max(arrayPercCorrect), col='blue', lty='dashed')</pre></div><p>获得的图如下:</p><div><img src="img/7740OS_06_01.jpg" alt="Visualizing the average accuracy computation"/></div><p>精确度从一次迭代到另一次迭代变化很大，范围在0%到70%之间。不出所料，单一精度完全不靠谱。500次迭代中的平均值呢？我们需要多少次迭代才能得到稳定的结果？</p><p>我们可以在第一次迭代中可视化精度指数，然后是前两次迭代的平均值，然后是前三次迭代的平均值，依此类推。如果在任何一点，平均值停止变化，我们就不需要再进一步。通过构建图表，我们可以观察达到稳定平均值需要多少次迭代。</p><p>首先，让<a id="id335" class="indexterm"/>定义包含累积平均值的<code class="literal">arrayCumulate</code>，累积平均值是每次迭代之前的部分平均值，如下所示:</p><div><pre class="programlisting"># plot the average accuracy until each iteration
+arrayCumulate &lt;- c()
+for(nIter in 1:length(arrayPercCorrect)){
+  cumulateAccuracy &lt;- mean(arrayPercCorrect[1:nIter])
+  arrayCumulate &lt;- c(arrayCumulate, cumulateAccuracy)
+}</pre></div><p>使用与之前相同的命令，我们构建一个新的图表。唯一的新参数是<code class="literal">type='l'</code>，它指定我们显示一条线而不是点。为了放大具有平均值的区域，我们删除了<code class="literal">ylim</code>参数，如下所示:</p><div><pre class="programlisting">plot(
+  x = arrayCumulate,
+  type = 'l',
+  xlab = 'Iteration', ylab = 'Cumulate accuracy',
+  main = 'Average accuracy until each iteration'
+)
+abline(h = percCorrectMean, col = 'red', lty = 'dashed')</pre></div><p>得到的图<a id="id336" class="indexterm"/>为<a id="id337" class="indexterm"/>如下:</p><div><img src="img/7740OS_06_02.jpg" alt="Visualizing the average accuracy computation"/></div><p>我们可以注意到，在100次迭代之后，精度几乎是稳定的。假设不同的参数配置不会改变太多，我们可以用100次迭代来验证KNN算法。</p><p>在本节中，我们已经了解了如何使用一组特定的特性和一些定义的参数来自动评估模型性能。在下面的章节中，我们将使用这个函数<a id="id338" class="indexterm"/>来<a id="id339" class="indexterm"/>优化模型的性能。</p></div></div></div>
+
+
+
+
+
+<title>Tuning the parameters</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch06lvl1sec33"/>调整参数</h1></div></div></div><p>本节<a id="id340" class="indexterm"/>向您展示如何通过调整参数来提高KNN的性能。我们正在处理定义邻居数量的<em> k </em>参数。使用这些步骤确定性能最佳的<em> k </em>参数:</p><div><ol class="orderedlist arabic"><li class="listitem">定义我们将要测试的<em> k </em>的值。KNN在本地工作，也就是说，给定一个新的国旗，它只能识别几个相似的国旗。我们最多应该用几个？由于总共只有不到200个标志，我们不想使用超过50个标志。然后，我们应该测试1到50之间的每个<em> k </em>，我们可以定义包含选项<div> <pre class="programlisting"># define the k to test arrayK &lt;- 1:50</pre> </div>的<code class="literal">arrayK</code></li><li class="listitem">定义迭代次数。对于<code class="literal">arrayK</code>中的每一个<em> k </em>，我们需要按照<code class="literal">nIterations</code>定义的足够高的次数来构建和验证KNN。在前一章中，我们了解到我们至少需要100次迭代才能获得有意义的KNN精度:<div> <pre class="programlisting">nIterations &lt;- 100</pre> </div></li><li class="listitem">评估每个<em> k </em>的精度。</li><li class="listitem">选择精度最高的<em> k </em>。</li></ol></div><p>最后两步更详细，我们将深入探讨。</p><p>为了测量每个<em> k </em>的精度，我们将<code class="literal">dtAccuracyK</code>定义为包含精度的空数据表。然后，我们使用一个<code class="literal">for</code>循环来运行KNN和<em>数组</em>中的每个<em> k </em>，并添加新的结果。步骤如下:</p><div><ol class="orderedlist arabic"><li class="listitem">使用<code class="literal">cvKnn</code>运行并验证KNN。</li><li class="listitem">定义我们将添加到<code class="literal">dtAccuracyK</code>的包含精度和<em> k </em>的行。</li><li class="listitem">使用<code class="literal">rbind</code> : <div> <pre class="programlisting"># validate the knn with different k dtAccuracyK &lt;- data.table() for(k in arrayK) {    # run the KNN and compute the accuracies   arrayAccuracy &lt;- cvKnn(     dtFeatures,     nIterations=nIterations,     arrayFeatures = arrayFeatures,     k = k   )   # define the new data table rows   rowsAccuracyK &lt;- data.table(     accuracy = arrayAccuracy,     k = k   )   # add the new rows to the accuracy table   dtAccuracyK &lt;- rbind(     dtAccuracyK,     rowsAccuracyK     ) }</pre> </div>将新行添加到<code class="literal">dtAccuracyK</code></li></ol></div><p>现在，让我们来看看<code class="literal">result.head(dtAccuracyK)</code>:</p><div><pre class="programlisting">
+<strong>    accuracy k</strong>
+<strong>1: 0.3636364 1</strong>
+<strong>2: 0.4545455 1</strong>
+<strong>3: 0.4000000 1</strong>
+<strong>4: 0.2727273 1</strong>
+<strong>5: 0.3000000 1</strong>
+<strong>6: 0.2500000 1</strong>
+</pre></div><p><code class="literal">dtAccuracyK</code>的每一行包含KNN的一次迭代。第一列显示精度，第二列显示迭代中使用的<em> k </em>。</p><p>为了可视化结果，我们可以使用<code class="literal">plot</code>。我们想要可视化的两个维度是<em> k </em>和精度。输入如下所示:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">x</code>、<code class="literal">y</code>:这些是<code class="literal">k</code>和<code class="literal">accuracy</code>列的绘图尺寸</li><li class="listitem" style="list-style-type: disc"><code class="literal">xlab</code>、<code class="literal">ylab</code>:这些是轴标签，分别是<code class="literal">k</code>和<code class="literal">accuracy</code></li><li class="listitem" style="list-style-type: disc"><code class="literal">main</code>:这是图表标题</li><li class="listitem" style="list-style-type: disc"><code class="literal">ylim</code>:这些是<em> y </em>区域限制，即<code class="literal">0</code>和<code class="literal">1</code></li><li class="listitem" style="list-style-type: disc">这是灰色的点的颜色，以便强调我们稍后将添加的黑点</li></ul></div><p>代码如下:</p><div><pre class="programlisting"># plot all the accuracies
+plot(
+  x = dtAccuracyK[, k],
+  y = dtAccuracyK[, accuracy],
+  xlab = 'K', ylab = 'Accuracy',
+  main = 'KNN accuracy using different k',
+  ylim = c(0, 1),
+  col = 'grey'
+)</pre></div><p>获得的图如下:</p><div><img src="img/7740OS_06_03.jpg" alt="Tuning the parameters"/></div><div><div><h3 class="title"><a id="tip04"/>提示</h3><p>也可以用<code class="literal">type = 'str(dtCvK)'</code>代替<code class="literal">type = 'o'</code>。</p></div></div><p>根据<em> k </em>，我们无法注意到任何相关的差异。原因是每次迭代的精确度都有很大的不同。为了识别表现更好的<em> k </em>，我们可以计算每个<em> k </em>的平均表现。我们将新的数据表称为<code class="literal">dtCvK</code>，因为我们正在交叉<a id="id342" class="indexterm"/>验证模型，如下所示:</p><div><pre class="programlisting"># compute the average accuracy
+dtCvK &lt;- dtAccuracyK[
+  , list(accuracy = mean(accuracy)),
+  by='k'
+  ]
+View(dtCvK)</pre></div><p>这里，<code class="literal">dtCvK</code>包含每个<em> k </em>的平均精度。我们可以使用points将它添加到图表中，这是一个向当前图表添加新点的函数。为了使这些点更加清晰可见，我们使用<code class="literal">pch = 16</code>显示完整的点，如图所示:</p><div><pre class="programlisting"># add the average accuracy to the chart
+help(points)
+points(
+  x = dtCvK[, k],
+  y = dtCvK[, accuracy],
+  pch = 16
+)</pre></div><p>剧情如下:</p><div><img src="img/7740OS_06_04.jpg" alt="Tuning the parameters"/></div><p>平均<a id="id343" class="indexterm"/>精度在<em> k </em>之间变化，但很难注意到差异，因为它总是在0.3到0.4左右。为了更清楚地看到差异，我们可以只绘制平均值，而不可视化<em> y </em>极限，如下所示:</p><div><pre class="programlisting"># plot the average accuracy
+plot(
+  x = dtCvK[, k],
+  y = dtCvK[, accuracy],
+  xlab = 'k', ylab = 'accuracy',
+  main = 'average knn accuracy using different k',
+  type = 'o'
+)</pre></div><div><div><h3 class="title"><a id="tip13"/>提示</h3>
+You can also use <code class="literal">type = 'str(dtCvK)'</code> instead of type = <code class="literal">'o'</code>.
+</div></div><p>我们可以确定表现最佳的<em> k </em>，并使用<code class="literal">abline</code>将其添加到图表中:</p><div><pre class="programlisting"># identify the k performing best
+kOpt &lt;- dtCvK[accuracy == max(accuracy), k]
+abline(v = kOpt, col = 'red')</pre></div><div><div><h3 class="title"><a id="tip05"/>提示</h3><p>也可以用<code class="literal">kOpt &lt;- 27</code>代替<code class="literal">kOpt &lt;- dtCvK[accuracy == max(accuracy), k]</code>。</p></div></div><p>获得的图如下:</p><div><img src="img/7740OS_06_05.jpg" alt="Tuning the parameters"/></div><p>最佳的<em> k </em>是27，如果<em> k </em>在22到30的范围内，KNN表现很好。</p><p>在本章中，我们<a id="id344" class="indexterm"/>确定了<em> k </em>的最佳表现。但是，还有其他参数我们没有优化，比如距离法。此外，我们可以改进选择要包含的特性的算法，我们将在下一节中对此进行探讨。</p></div>
+
+
+
+
+
+<title>Selecting the data features to include in the model</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch06lvl1sec34"/>选择要包含在模型中的数据特征</h1></div></div></div><p>在前面的<a id="id345" class="indexterm"/>部分，我们设置了一个KNN参数<a id="id346" class="indexterm"/>来最大化性能。另一个调优选项是定义我们用来构建模型的数据。我们的表格描述了使用37个特征的标志，并且我们将它们全部包含在模型中。然而，如果只包括其中的一部分，KNN可能会表现得更好。</p><p>选择特性的最简单方法是使用过滤器(如<a class="link" href="ch04.html" title="Chapter 4. Step 1 – Data Exploration and Feature Engineering">第4章</a>、<em>步骤1-数据探索和特性工程</em>中的<em>使用过滤器或降维对特性进行排序</em>部分所预期的那样)，该过滤器估计每个特性的影响，并且仅包括最相关的特性。在根据相关性对所有特性进行排序后，我们可以定义<code class="literal">n</code>参数，指定我们在模型中包含多少特性。然后，我们可以使用类似于上一节的方法，根据<code class="literal">n</code>最大化精度。</p><p>第一步是定义如何对特性进行排序。我们可以使用信息增益比过滤器来估计每个特征的影响，而忽略其他特征。我们已经讨论过<a id="id347" class="indexterm"/>信息增益比及其<a id="id348" class="indexterm"/>局限性(参见<a class="link" href="ch04.html" title="Chapter 4. Step 1 – Data Exploration and Feature Engineering">第4章</a>、<em>步骤1-数据探索和特征工程</em>中的<em>使用过滤器或降维对特征进行排序</em>部分)，我们将使用相同的R命令，如下所示:</p><div><pre class="programlisting"># rank the features
+library('FSelector')
+dfGains &lt;- information.gain(
+  language~., dtFeatures
+  )
+dfGains$feature &lt;- row.names(dfGains)
+dtGains &lt;- data.table(dfGains)
+dtGains &lt;- dtGains[order(attr_importance, decreasing = T)]
+arrayFeatures &lt;- dtGains[, feature]</pre></div><p>这里，<code class="literal">arrayFeatures</code>包含了按相关性排序的特征。现在，我们可以选择顶级<em> n </em>特性来构建模型。<em> n </em>的选项是<code class="literal">1</code>和特征总数之间的数字，我们定义包含它们的<code class="literal">arrayN</code>，如图所示:</p><div><pre class="programlisting"># define the number of features to test
+arrayN &lt;- 1:length(arrayFeatures)</pre></div><p>为了存储每次迭代的准确性，我们将<code class="literal">dtAccuracyN</code>定义为一个空数据表，并使用<code class="literal">for</code>循环迭代地添加行。步骤如下:</p><div><ol class="orderedlist arabic"><li class="listitem">使用<code class="literal">cvKnn</code>验证KNN，并将精度存储在<code class="literal">arrayAccuracy</code>中。我们设置<em> k </em>参数等于<code class="literal">kOpt (27)</code>，也就是上一节定义的最优<em> k </em>。</li><li class="listitem">用要添加的行定义<code class="literal">rowsAccuracyN</code>数据表。</li><li class="listitem">使用<code class="literal">rbind</code>将新行添加到<code class="literal">dtAccuracyN</code>。</li></ol></div><p>这是生成<code class="literal">for</code>循环的代码:</p><div><pre class="programlisting">for(n in arrayN)
+{
+  # 1 run the KNN and compute the accuracies
+  arrayAccuracy &lt;- cvKnn(
+    dtFeatures,
+    nIterations = nIterations,
+    arrayFeatures = arrayFeatures[1:n],
+    k = kOpt
+  )
+  
+  # 2 define the new data table rows
+  rowsAccuracyN &lt;- data.table(
+    accuracy = arrayAccuracy,
+    n = n
+  )
+  
+  # 3 add the new rows to the accuracy table
+  dtAccuracyN &lt;- rbind(
+    dtAccuracyN,
+    rowsAccuracyN
+  )
+}</pre></div><p>这里，<code class="literal">dtAccuracyN</code>包含每次迭代精度，取决于<em> n </em>。通过使用以下步骤，我们可以构建一个图表，其中包含<a id="id349" class="indexterm"/>所有精度及其在<em> n </em>的不同值上的平均值<a id="id350" class="indexterm"/>:</p><div><ol class="orderedlist arabic"><li class="listitem">构建一个图表，显示每次迭代的精确度:<div> <pre class="programlisting">plot(   x = dtAccuracyN[, n],   y = dtAccuracyN[, accuracy],   xlab = 'N', ylab = 'Accuracy',   main = 'KNN accuracy using different features',   ylim = c(0, 1),   col = 'grey' )</pre> </div></li><li class="listitem">从<code class="literal">dtAccuracyN</code>开始，计算每次迭代的平均精度:<div> <pre class="programlisting">dtCvN &lt;- dtAccuracyN[   , list(accuracy = mean(accuracy)),   by='n'   ]</pre> </div></li><li class="listitem">将具有平均准确度的点添加到图表中:<div> <pre class="programlisting">Points(   x = dtCvN[, n],   y = dtCvN[, accuracy],   xlab = 'n', ylab = 'accuracy',   pch = 16 )</pre> </div></li></ol></div><p>获得的图如下:</p><div><img src="img/7740OS_06_06.jpg" alt="Selecting the data features to include in the model"/></div><p>图表显示<a id="id351" class="indexterm"/>我们使用<a id="id352" class="indexterm"/>高值的<em> n </em>获得了最佳精度。为了找出最好的T21，我们可以画出它们的平均值。然后，我们将表现最好的<em> n </em>定义为<code class="literal">nOpt</code>,并添加一条与之对应的红色垂直线，如图所示:</p><div><pre class="programlisting"># plot the average accuracy
+plot(
+  x = dtCvN[, n],
+  y = dtCvN[, accuracy],
+  xlab = 'N', ylab = 'Accuracy',
+  main = 'Average knn accuracy using different features',
+  type = 'o'
+)
+
+# identify the n performing best
+nOpt &lt;- dtCvN[accuracy == max(accuracy), n]
+abline(v = nOpt, col = 'red')</pre></div><p>获得的图如下:</p><div><img src="img/7740OS_06_07.jpg" alt="Selecting the data features to include in the model"/></div><p>性能最佳的功能数量为<strong> 15 </strong>，此后性能缓慢下降。</p><p>在图表中，我们可以注意到有一些点增加了一个新的特征，精度下降了很多(例如<strong> 3 </strong>、<strong> 11 </strong>、<strong> 13 </strong>)。在这几点上，我们增加了一个降低性能的特性。如果我们只是决定不包括它呢？我们可以开始仅使用最相关的特征来构建模型<a id="id353" class="indexterm"/>，然后<a id="id354" class="indexterm"/>添加第二相关的特征。如果性能提高了，我们保留第二个特性；否则，我们丢弃它。之后，我们对第三个特征进行同样的操作，并重复这一操作，直到我们添加或丢弃了每个特征。这种方法被称为包装器，它允许我们定义比过滤器更好的特性集。</p><p>在本节中，我们确定了最佳的<em> n </em>和最佳的<em> k </em>，因此我们使用它们来构建具有良好性能的KNN。</p></div>
+
+
+
+
+
+<title>Tuning features and parameters together</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch06lvl1sec35"/>一起调谐特性和参数</h1></div></div></div><p>在<a id="id355" class="indexterm"/>前两节中，我们使用所有特征(<code class="literal">n=37</code>)确定了最佳的<em> k </em>。然后，使用最佳的<em> k </em>，我们确定了最佳的<em> n </em>。如果用<code class="literal">k=30</code>和<code class="literal">n=25</code>算法表现更好呢？我们还没有探索这种组合以及许多其他选项，因此可能有一种组合比<code class="literal">k=27</code>和<code class="literal">n=15</code>表现得更好。</p><p>为了<a id="id356" class="indexterm"/>确定最佳方案，最简单的方法是测试所有的备选方案。然而，如果变量之间有太多可能的组合，我们就没有足够的计算能力来测试所有的组合。在这种情况下，我们可以使用优化算法(如梯度下降)来确定最佳参数。</p><p>幸运的是，在我们的例子中，我们只调优了两个参数，并且我们可以测试它们可能值的一部分。例如，如果我们选择20个值的<em> n </em>和20个值的<em> k </em>，我们就有400种组合。为此，我们执行以下步骤:</p><div><ol class="orderedlist arabic"><li class="listitem">定义<em> k </em>的选项。包括所有功能，KNN在<code class="literal">k=26</code>时表现最好，在<code class="literal">40</code>后表现很差。但是，设置一个较低的<em> n </em>，事情可能会发生变化，所以我们需要测试所有可能的<em> k </em>。为了限制选项的数量，我们可以将测试限制在奇数。让我们使用<code class="literal">seq</code>生成1到49之间的所有奇数。<code class="literal">from</code>和<code class="literal">to</code>参数定义了序列的开始和结束。<code class="literal">by</code>参数定义了产生奇数的增量2。使用<code class="literal">seq</code>，我们构建包含<em> k </em>所有选项的<code class="literal">arrayK</code>，如下所示:<div> <pre class="programlisting">arrayK &lt;- seq(from = 1, to =  49, by = 2)</pre> </div></li><li class="listitem">定义<em> n </em>的选项。我们已经看到，仅使用一个小的特征集，算法的性能非常差，因此我们可以在10和特征总数之间测试<em> n </em>，即37。类似于<em> k </em>，我们只包括奇数:<div> <pre class="programlisting">arrayN &lt;- seq(from = 11, to = 37, by = 2)</pre> </div></li><li class="listitem">生成<em> k </em>和<em> n </em>之间所有可能的组合。为此，我们可以使用<code class="literal">expand.grid</code>。给定两个或多个向量，<code class="literal">expand.grid</code>生成一个包含所有可能组合的数据帧。在我们的例子中，我们从<code class="literal">arrayK</code>开始生成一个<code class="literal">k</code>列，从<code class="literal">arrayN</code>开始生成一个<code class="literal">n</code>列，如下所示:<div> <pre class="programlisting">dfParameters &lt;- expand.grid(k=arrayK, n=arrayN)</pre> </div></li><li class="listitem">将<code class="literal">dfParameters</code>转换成数据表:<div> <pre class="programlisting">dtParameters &lt;- data.table(dfParameters)</pre> </div></li></ol></div><p>现在，我们可以用<code class="literal">head</code>来看看<code class="literal">dtParameters</code>:</p><div><pre class="programlisting">head(dtParameters)
+<strong>    k  n</strong>
+<strong>1:  1 11</strong>
+<strong>2:  3 11</strong>
+<strong>3:  5 11</strong>
+<strong>4:  7 11</strong>
+<strong>5:  9 11</strong>
+<strong>6: 11 11</strong>
+</pre></div><p>这里，<code class="literal">dtParameters</code>包含350种组合中的每一种。我们需要确定精确度，并将它们存储在一个名为<code class="literal">accuracy</code>的新列中。为了做到这一点，我们使用了一个<code class="literal">for</code>循环来遍历这些行。<code class="literal">iConfig</code>变量是行索引，定义为1和行数<code class="literal">nrow(dtParameters)</code>之间的一个数字。有不同的组合，所以运行这部分代码可能需要一段时间。每次迭代后，我们使用行中包含的参数构建模型，这些参数是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><strong> k </strong>:有<code class="literal">dtParameters[iConfig, k]</code>参数</li><li class="listitem" style="list-style-type: disc"><strong> n </strong>:有<code class="literal">dtParameters[iConfig, n]</code>参数</li></ul></div><p>考虑下面的<a id="id357" class="indexterm"/>代码:</p><div><pre class="programlisting"># validate the knn with different k and nFeatures
+for(iConfig in 1:nrow(dtParameters)){  
+  
+  arrayAccuracy &lt;- cvKnn(
+    dtFeatures, nIterations = nIterations,
+    arrayFeatures = arrayFeatures[1:dtParameters[iConfig, n]],
+    k = dtParameters[iConfig, k]
+  )</pre></div><p>现在，我们可以计算<code class="literal">arrayAccuracy</code>平均值，并将其加到<code class="literal">dtParameters</code>:</p><div><pre class="programlisting">  # add the average accuracy to dtParameters
+  dtParameters[iConfig, accuracy := mean(arrayAccuracy)]
+}</pre></div><p><code class="literal">dtParameters</code>的每一行包含一个参数集及其相关精度。为了更方便地查看精度<a id="id358" class="indexterm"/>，我们可以构建一个矩阵，其行对应于<code class="literal">n</code>，其列对应于<code class="literal">k</code>。矩阵的每个元素都显示了精确度。为了建立矩阵，我们可以使用<code class="literal">reshape</code>，如图所示:</p><div><pre class="programlisting"># reshape dtParameters into a matrix
+help(reshape)</pre></div><p><code class="literal">reshape</code>语法相当复杂。在我们的例子中，我们想要构建的矩阵是一个<code class="literal">wide</code>格式，所以我们需要指定<code class="literal">direction = "wide"</code>。其他参数定义了我们使用的列，它们是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">v.names</code>:该栏定义矩阵值(精度)</li><li class="listitem" style="list-style-type: disc"><code class="literal">idvar</code>:该列定义矩阵行(<code class="literal">n</code>的值)</li><li class="listitem" style="list-style-type: disc"><code class="literal">timevar</code>:该列定义矩阵列(<code class="literal">k</code>的值)</li></ul></div><p>使用<code class="literal">reshape</code>，我们可以构建<code class="literal">dfAccuracy</code>数据框，如图所示:</p><div><pre class="programlisting">dfAccuracy &lt;- reshape(
+  data = dtParameters,
+  direction = "wide",
+  v.names = "accuracy",
+  idvar = "n",
+  timevar = "k"
+)
+View(dfAccuracy)</pre></div><p><code class="literal">n</code>列包含<em> n </em>参数，我们将其移除，以便获得仅具有精度的数据帧。然后，我们将数据帧转换成矩阵，如下所示:</p><div><pre class="programlisting">dfAccuracy$n &lt;- NULL
+matrixAccuracy &lt;- as.matrix(dfAccuracy)</pre></div><p>现在我们<a id="id359" class="indexterm"/>可以将<code class="literal">n</code>和<code class="literal">k</code>分别指定为行名和列名<a id="id360" class="indexterm"/>，如图所示:</p><div><pre class="programlisting">rownames(matrixAccuracy) &lt;- arrayN
+colnames(matrixAccuracy) &lt;- arrayK
+View(matrixAccuracy)</pre></div><p>为了直观显示取决于参数的准确性，我们可以构建一个热图，它是一个表示矩阵的图表。两个图表尺寸为<code class="literal">k</code>和<code class="literal">n</code>，颜色代表数值。我们可以使用<code class="literal">image</code>来构建这个图表:</p><div><pre class="programlisting"># plot the performance depending on k and n
+help(image)</pre></div><p>我们使用的论据是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">这是矩阵</li><li class="listitem" style="list-style-type: disc"><code class="literal">x</code>和<code class="literal">y</code>:这些是维度名称，包含在<code class="literal">arrayN</code>和<code class="literal">arrayK</code>中</li><li class="listitem" style="list-style-type: disc"><code class="literal">xLab</code>和<code class="literal">yLab</code>:这些是轴标签</li><li class="listitem" style="list-style-type: disc"><code class="literal">col</code>:这是我们显示的颜色矢量(我们可以使用<code class="literal">heat.colors</code>函数)</li></ul></div><p>考虑以下代码:</p><div><pre class="programlisting">image(
+  x = arrayN, y = arrayK, z = matrixAccuracy,
+  xlab = 'n', ylab = 'k',
+  col = heat.colors(100)
+)</pre></div><p>获得的图如下:</p><div><img src="img/7740OS_06_08.jpg" alt="Tuning features and parameters together"/></div><p>浅黄色代表高精度，红色代表低精度。我们可以注意到，k<em>在9到19的范围内，n<em>在29到33的范围内，我们获得了最佳的精度。最差的性能是当<em> n </em>为低电平而<em> k </em>为高电平时。</em></em></p><p>让我们看看最佳组合是什么。考虑<a id="id361" class="indexterm"/>以下代码:</p><div><pre class="programlisting"># identify the best k-n combination
+kOpt &lt;- dtParameters[accuracy == max(accuracy), k]
+nOpt &lt;- dtParameters[accuracy == max(accuracy), n]</pre></div><p>最佳组合是<code class="literal">k=11</code>和<code class="literal">n=33</code>，我们无法分别确定最大化参数。原因是，只有当我们不包括所有功能时，KNN才能与<code class="literal">k=11</code>一起很好地运行。</p><p>在本节中，我们看到了优化两个参数的简单方法。在其他情况下，我们需要更先进的技术。</p><p>这种方法的一个局限是我们只调整了两个参数。我们可以实现更好的性能<a id="id362" class="indexterm"/>调整其他KNN参数<a id="id363" class="indexterm"/>如距离法。</p></div>
+
+
+
+
+
+<title>Summary</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch06lvl1sec36"/>总结</h1></div></div></div><p>在本章中，我们学习了如何用预测的平均准确度来评估模型的性能。我们知道如何确定一个准确的交叉验证指数来表达准确性。从交叉验证索引开始，我们调整了参数。此外，我们还学习了如何使用滤波器或滤波器选择特性，以及如何同时调整特性和参数。本章描述了构建机器学习解决方案的最后一部分，下一章概述了一些最重要的机器学习技术。</p></div>
+</body></html>

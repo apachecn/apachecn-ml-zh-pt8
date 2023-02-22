@@ -1,0 +1,1038 @@
+<html><head/><body>
+
+
+    
+        <title>Human Activity Recognition using Recurrent Neural Networks</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">基于递归神经网络的人体行为识别</h1>
+                
+            
+            
+                
+<div><p>一个<strong>递归神经网络</strong> ( <strong> RNN </strong>)是一类人工神经网络，其中单元之间的连接形成一个有向循环。rnn利用过去的信息。这样，他们可以对具有高度时间依赖性的数据进行预测。这创建了网络的内部状态，允许它展示动态的时间行为。</p>
+<p>RNN接受许多输入向量来处理它们并输出其他向量。与经典方法相比，使用具有<strong>长短期记忆</strong>细胞的RNN(<strong>lstm</strong>)不需要或者很少需要特征工程。数据可以直接输入神经网络，神经网络就像一个黑匣子，正确地模拟问题。这里的方法在预处理多少数据方面相当简单。</p>
+<p>在这一章中，我们将看到如何使用RNN实现来开发一个机器学习项目，该项目使用智能手机数据集，称为LSTM，用于<strong>人类活动识别</strong> ( <strong> HAR </strong>)。简而言之，我们的ML模型将能够从六个类别对运动类型进行分类:行走、上楼、下楼、坐着、站着和躺着。</p>
+<p>简而言之，在这个端到端项目中，我们将学习以下主题:</p>
+<ul>
+<li>使用递归神经网络</li>
+<li>RNN的长期依赖性和缺点</li>
+<li>开发用于人类活动识别的LSTM模型</li>
+<li>调谐LSTM和RNN</li>
+<li>摘要</li>
+</ul>
+</div>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Working with RNNs</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">使用rnn</h1>
+                
+            
+            
+                
+<p>在本节中，我们将首先提供一些关于RNNs的上下文信息。然后，我们将强调经典RNNs的一些潜在缺点。最后，我们将看到称为LSTM的RNNs的改进变体来解决这些缺点。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Contextual information and the architecture of RNNs</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">上下文信息和RNNs的体系结构</h1>
+                
+            
+            
+                
+<p>人类不是从零开始思考；人类大脑具有所谓的记忆持久性，即把过去和最近的信息联系起来的能力。相反，传统的神经网络忽略过去的事件。例如，在电影场景分类器中，神经网络不可能使用过去的场景来分类当前的场景。开发rnn是为了尝试解决这个问题:</p>
+<div><img height="168" width="99" src="img/19903995-1d34-4460-af08-79d4dab2a55f.png"/></div>
+<p>图1:rnn有环路</p>
+<p>与传统的神经网络相比，RNNs是一种具有环路的网络，允许信息保持不变(<em>图1 </em>)。在一个神经网络中比方说，<strong> A </strong>:在某个时刻<strong> t </strong>，输入<strong>x<sub>t</sub>T23】，输出一个值<strong> h <sub> t </sub> </strong>。因此，从图1中，我们可以把RNN想象成同一个网络的多个副本，每个副本都向后继者传递信息。现在，如果我们展开之前的网络，我们会收到什么？下图给了你一些启示:</strong></p>
+<div><img height="135" width="407" class="alignnone size-full wp-image-554 image-border" src="img/ce3d30f1-828f-4530-932c-9af098e2e36e.png"/></div>
+<p>图2:图1所示的同一RNN的展开图</p>
+<p>然而，前面展开的图没有提供关于rnn的详细信息。相反，RNN不同于传统的神经网络，因为它引入了一个转换权重<strong> W </strong>来在时间之间传递信息。RNNs一次处理一个顺序输入，更新一种包含序列中所有过去元素信息的向量状态。下图显示了一个神经网络，它将值<strong> X(t) </strong>作为输入，然后输出值<strong> Y(t) </strong>:</p>
+<div><img height="160" width="290" class="alignnone size-full wp-image-555 image-border" src="img/c664553f-02b8-4a9a-a128-625acf326972.png"/></div>
+<p>图3:RNN体系结构可以利用网络的先前状态</p>
+<p>如图<em>图1 </em>所示，神经网络的前半部分用函数<em> Z (t) = X (t) * W <sub> in </sub> </em>表示，神经网络的后半部分取形式为<em>Y(t)= Z(t)* W<sub>out</sub></em>。如果你愿意，整个神经网络只是函数<em>Y(t)=(X(t)* W</em><sub>in</sub><em>)* W</em><sub>out</sub>。</p>
+<p>每次<em> t </em>调用学习模型时，该架构不考虑关于先前运行的知识。这就像只看当天的数据来预测股市趋势一样。更好的办法是从一周或几个月的数据中挖掘总体模式:</p>
+<div><img height="215" width="501" class="alignnone size-full wp-image-556 image-border" src="img/eb70b26d-db1e-4a79-9670-e0d38d037b61.png"/></div>
+<p>图4:一个RNN架构，其中所有层中的所有权重都必须随时间学习</p>
+<p>在图4 中可以找到更明确的架构，其中除了<strong> w1 </strong>(用于输入层)和<strong> w3 </strong>(用于输出层)之外，还必须学习时间共享权重<strong> w2 </strong>(用于隐藏层)。</p>
+<p>令人难以置信的是，在过去的几年里，RNNs已经被用于各种各样的问题，例如语音识别、语言建模、翻译和图像字幕。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>RNN and the long-term dependency problem</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">RNN和长期依赖问题</h1>
+                
+            
+            
+                
+<p>rnn也非常强大和受欢迎。然而，通常，我们只需要查看最近的信息来执行当前的任务，而不是很久以前存储的信息。这在语言建模的NLP中很常见。让我们看一个常见的例子:</p>
+<div><img height="221" width="463" class="alignnone size-full wp-image-558 image-border" src="img/907bff1c-57b0-4927-9a45-0a2922d87fea.png"/></div>
+<p>图5:如果相关信息和需要它的地方之间的差距很小，RNNs可以学习使用过去的信息</p>
+<p>假设一个语言模型正试图根据前面的单词预测下一个单词。作为一个人，如果我们试图预测<em>天空是蓝色</em>中的最后一个词，在没有进一步上下文的情况下，我们最有可能预测的下一个词是<em>蓝色</em>。在这种情况下，相关信息和地方之间的差距很小。因此，RNNs可以很容易地学会使用过去的信息。</p>
+<p>但是考虑一个更长的句子:阿西夫在孟加拉国长大...他在韩国学习过...他说一口流利的孟加拉语，而我们需要更多的语境。在这个句子中，最近的信息告诉我们，下一个单词可能是一种语言的名称。然而，如果我们想缩小哪种语言的范围，我们需要从前面的单词中了解<em>孟加拉</em>的上下文:</p>
+<div><img height="201" width="540" class="alignnone size-full wp-image-559 image-border" src="img/44e0a9aa-4a4d-48df-87e7-a352f6f8b440.png"/></div>
+<p>图6:如果相关信息和需要它的地方之间的差距越来越大，RNNs就不能学习使用过去的信息</p>
+<p>这里，差距更大，所以rnn变得无法学习信息。这是RNN的一个严重缺点。然而，LSTM前来救援。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>LSTM networks</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">LSTM网络公司</h1>
+                
+            
+            
+                
+<p>一种类型的RNN模型是<strong> LSTM </strong>。LSTM的精确实现细节不在本书讨论范围之内。LSTM是一种特殊的RNN建筑，最初由Hochreiter和Schmidhuber于1997年构思。这种类型的神经网络最近在深度学习的背景下被重新发现，因为它没有消失梯度的问题，并且提供了出色的结果和性能。基于LSTM的网络是预测和分类时间序列的理想选择，正在取代许多传统的深度学习方法。</p>
+<p>这是一个搞笑的名字，但它的意思正是它听起来的意思。这个名字意味着短期模式不会被长期遗忘。LSTM网络由相互链接的单元(LSTM块)组成。每个LSTM模块包含三种类型的门:输入门、输出门和遗忘门，分别实现写、读和复位单元存储器的功能。这些门不是二元的，而是类比的(通常由映射在范围(0，1)中的s形激活函数管理，其中0表示完全抑制，1表示完全激活)。</p>
+<p>如果你认为LSTM电池是一个黑盒，它可以像基本电池一样使用，除了它会表现得更好；训练将更快地收敛，并且它将检测数据中的长期依赖性。那么LSTM细胞是如何工作的呢？基本LSTM单元的架构如图7所示:</p>
+<div><img height="258" width="514" src="img/68fcf3fa-5376-443f-94b4-41670eda6887.png"/></div>
+<p>图7:LSTM单元的框图</p>
+<p>现在，让我们看看这个架构背后的数学符号。如果我们不看LSTM盒子里面的东西，LSTM细胞本身看起来就像一个普通的记忆细胞，除了它的状态被分成两个向量，<strong> h(t) </strong>和<strong> c(t) </strong>:</p>
+<ul>
+<li><strong> c </strong>是单元格</li>
+<li><strong> h(t) </strong>是短期状态</li>
+<li><strong> c(t) </strong>是长期状态</li>
+</ul>
+<p>现在让我们打开盒子！关键思想是网络可以学习在长期状态下存储什么，扔掉什么，从中读取什么。当长期状态<strong> c <sub> (t-1) </sub> </strong>从左到右遍历网络时，可以看到它首先经过一个遗忘门，丢弃一些记忆，然后通过加法运算添加一些新的记忆(该运算添加由输入门选择的记忆)。产生的<strong> c(t) </strong>被直接发送出去，没有任何进一步的转换。</p>
+<p>因此，在每个时间戳，一些内存被删除，一些内存被添加。而且加法运算后，长项状态被复制并通过<strong> tanh </strong>函数传递，然后结果被输出门过滤。这产生了短期状态<strong> h(t) </strong>(等于该时间步<strong> y(t) </strong>的单元输出)。现在让我们看看新的记忆从何而来，以及门是如何工作的。首先，当前输入向量<strong> x(t) </strong>和先前的短期状态<strong> h(t-1) </strong>被馈送到四个不同的全连接层。</p>
+<p>这些门的存在允许LSTM细胞无限期地记忆信息；如果输入门低于激活阈值，单元将保留先前的状态，如果当前状态被启用，它将与输入值合并。顾名思义，遗忘门复位单元的当前状态(当其值清零时)，输出门决定单元的值是否必须执行。以下等式用于对单个实例的单元的长期状态、短期状态以及每个时间步长的输出进行LSTM计算:</p>
+<div><img height="232" width="316" src="img/72f5567e-1bd5-4ab9-abbd-452789a2b46b.png"/></div>
+<p>在上式中，<em> W <sub> xi </sub> </em>，<em> W <sub> xf </sub> </em>，<em> W <sub> xo </sub> </em>，<em> W <sub> xg </sub> </em>是四层中每一层与输入向量<em> x <sub> (t) </sub> </em>连接的权重矩阵。另一方面，<em> W <sub> hi </sub> </em>，<em> W <sub> hf </sub> </em>，<em> W <sub> ho </sub> </em>，<em> W <sub> hg </sub> </em>是四层中的每一层与前一个短期状态<em> h <sub> (t-1) </sub> </em>的连接的权重矩阵。最后，<em> b <sub> i </sub></em></p>
+<p>现在我们知道了所有这些，RNN和LSTM网络是如何工作的呢？是时候动手了。我们将开始为HAR实现一个基于MXNet和Scala的LSTM模型。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Human activity recognition using the LSTM model</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">基于LSTM模型的人体活动识别</h1>
+                
+            
+            
+                
+<p><strong>人类活动识别</strong> ( <strong> HAR </strong>)数据库是根据30名研究参与者进行日常生活 ( <strong> ADL </strong>)的<strong>活动的记录建立的，同时携带一部嵌入惯性传感器的腰部安装智能手机。目标是将活动分类为六个已执行活动中的一个。</strong></p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Dataset description</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">数据集描述</h1>
+                
+            
+            
+                
+<p>这些实验是由年龄在19 - 48岁之间的30名志愿者进行的。每个人通过在腰间佩戴一部三星Galaxy S II智能手机来完成六项活动，即行走、上楼、下楼、坐着、站着和躺着。使用加速度计和陀螺仪，作者以50 Hz的恒定速率捕获了三轴线性加速度和三轴角速度。</p>
+<p>只使用了两个传感器，即加速度计和陀螺仪。传感器信号通过应用噪声滤波器进行预处理，然后在2.56秒和50%重叠的固定宽度滑动窗口中采样。这给出了128个读数/窗口。来自传感器加速度信号的重力和身体运动分量通过巴特沃兹低通滤波器被分离成身体加速度和重力。</p>
+<p>欲了解更多信息，请参考本文:Davide Anguita、Alessandro Ghio、Luca Oneto、Xavier Parra和Jorge L. Reyes-Ortiz。使用智能手机进行<em>人类活动识别的公共领域数据集</em>。<em>第21届欧洲人工神经网络、计算智能和机器学习研讨会，ESANN </em> 2013。2013年4月24日至26日，比利时布鲁日。</p>
+<p>为简单起见，假设重力只有很少的低频分量。因此，使用0.3 Hz截止频率的滤波器。从每个窗口，通过计算来自时域和频域的变量找到特征向量。</p>
+<p>实验已被录像，以手动标记数据。获得的数据集被随机分成两组，其中70%的志愿者被选择用于生成训练数据，30%的志愿者被选择用于生成测试数据。现在，当我研究数据集时，训练集和测试集都具有以下文件结构:</p>
+<div><img height="397" width="159" src="img/88720740-0311-4da6-b5f1-01ee9d3670a0.png"/></div>
+<p>图8: HAR数据集文件结构</p>
+<p>对于数据集中的每条记录，提供以下信息:</p>
+<ul>
+<li>来自加速度计的三轴加速度和估计的身体加速度</li>
+<li>陀螺仪传感器的三轴角速度</li>
+<li>具有时域和频域变量的561特征向量</li>
+<li>它的活动标签</li>
+<li>进行实验的受试者的标识符</li>
+</ul>
+<p>现在我们知道了需要解决的问题，是时候探索技术和相关的挑战了。正如我已经说过的，我们将使用基于MXNet的LSTM实现。你可能会问:为什么我们不使用H2O或DeepLearning4j？嗯，答案是它们要么没有基于LSTM的实现，要么不能被应用来解决这个问题。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Setting and configuring MXNet for Scala</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">为Scala设置和配置MXNet</h1>
+                
+            
+            
+                
+<p>Apache MXNet是一个灵活高效的深度学习库。构建高性能深度学习库需要很多系统级的设计决策。在本设计笔记中，我们分享了设计MXNet时所做具体选择的基本原理。我们设想这些见解可能对深度学习实践者和其他深度学习系统的构建者都有用。</p>
+<p>对于这个项目，我们将需要不同的包和库:Scala，Java，OpenBLAS，ATLAS，OpenCV，以及总的来说，MXNet。现在让我们开始逐一配置这些工具。对于Java和Scala，我假设您已经配置了Java和Scala。现在下一个任务是安装构建工具和<kbd>git</kbd>,因为我们将使用来自GitHub库的MXNet。为此，只需在Ubuntu上执行以下命令:</p>
+<pre><strong>$ sudo apt-get update 
+$ sudo apt-get install -y build-essential git</strong> </pre>
+<p>然后我们需要安装OpenBLAS和ATLAS。MXNet执行的线性代数运算需要这些。要安装这些，只需执行以下命令:</p>
+<pre><strong>$ sudo apt-get install -y libopenblas-dev 
+$ sudo apt-get install -y libatlas-base-dev</strong> </pre>
+<p>我们还需要安装OpenCV进行图像处理。让我们通过执行以下命令来安装它:</p>
+<pre><strong> $ sudo apt-get install -y libopencv-dev</strong> </pre>
+<p>最后，我们需要生成预构建的MXNet二进制文件。为此，我们需要为Scala克隆和构建MXNet:</p>
+<pre><strong>$ git clone --recursive https://github.com/apache/incubator-mxnet.git mxnet --branch 0.12.0 
+$ cd mxnet 
+$ make -j $(nproc) USE_OPENCV=1 USE_BLAS=openblas 
+$ make scalapkg 
+$ make scalainsta</strong> </pre>
+<p>现在，如果前面的步骤进展顺利，MXNet的预构建二进制文件将在<kbd>/home/$user_name/mxnet/scala-package/assembly/linux-x86_64-cpu</kbd>(或者在Linux上配置了GPU的<kbd>linux-x86_64-gpu</kbd>，以及在macOS上的<kbd>osx-x86_64-cpu</kbd>)中生成。看看下面Ubuntu上的CPU截图:</p>
+<div><img height="241" width="503" src="img/037aaeb6-0dec-465d-8936-594577f7e5d9.png"/></div>
+<p>图9: MXNet预构建的二进制生成</p>
+<p>现在，在作为Maven(或SBT)项目开始在Eclipse(或IntelliJ)上编写Scala代码之前，下一个任务是将这个JAR包含在构建路径中。此外，我们需要Scala图和<kbd>args4j</kbd>的一些额外依赖:</p>
+<pre>&lt;dependency&gt;<br/>    &lt;groupId&gt;org.sameersingh.scalaplot&lt;/groupId&gt;<br/>    &lt;artifactId&gt;scalaplot&lt;/artifactId&gt;<br/>    &lt;version&gt;0.0.4&lt;/version&gt;<br/>&lt;/dependency&gt;<br/>&lt;dependency&gt;<br/>    &lt;groupId&gt;args4j&lt;/groupId&gt;<br/>    &lt;artifactId&gt;args4j&lt;/artifactId&gt;<br/>    &lt;version&gt;2.0.29&lt;/version&gt;<br/>&lt;/dependency&gt;</pre>
+<p>干得好！一切就绪，我们准备出发了！开始编码吧。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Implementing an LSTM model for HAR</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">为HAR实施LSTM模式</h1>
+                
+            
+            
+                
+<p>总体算法(<kbd>HumanAR.scala</kbd>)有如下工作流程:</p>
+<ul>
+<li>加载数据</li>
+<li>定义超参数</li>
+<li>使用命令式编程和超参数建立LSTM模型</li>
+<li>应用分批训练，即挑选批量数据，将其输入模型，然后在一些迭代中评估模型并打印批次损失和准确度</li>
+<li>输出训练和测试错误的图表</li>
+</ul>
+<p>可以通过流水线的方式遵循和构建前面的步骤:</p>
+<div><img height="235" width="468" src="img/9db9b808-6ecd-4cbf-aa7e-6ee6a098d27d.png"/></div>
+<p>图10: MXNet预构建的二进制生成</p>
+<p>现在让我们一步一步地开始实现。确保你理解每一行代码，然后在Eclipse或SBT中导入给定的项目。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 1 - Importing necessary libraries and packages</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤1 -导入必要的库和包</h1>
+                
+            
+            
+                
+<p>让我们现在开始编码。我们从头开始，即通过导入库和包:</p>
+<pre><strong>package</strong> com.packt.ScalaML.HAR <br/><br/><strong>import</strong> ml.dmlc.mxnet.Context 
+<strong>import</strong> LSTMNetworkConstructor.LSTMModel 
+<strong>import</strong> scala.collection.mutable.ArrayBuffer 
+<strong>import</strong> ml.dmlc.mxnet.optimizer.Adam 
+<strong>import</strong> ml.dmlc.mxnet.NDArray 
+<strong>import</strong> ml.dmlc.mxnet.optimizer.RMSProp 
+<strong>import</strong> org.sameersingh.scalaplot.MemXYSeries 
+<strong>import</strong> org.sameersingh.scalaplot.XYData 
+<strong>import</strong> org.sameersingh.scalaplot.XYChart 
+<strong>import</strong> org.sameersingh.scalaplot.Style._ 
+<strong>import</strong> org.sameersingh.scalaplot.gnuplot.GnuplotPlotter 
+<strong>import</strong> org.sameersingh.scalaplot.jfreegraph.JFGraphPlotter  </pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 2 - Creating MXNet context</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤2 -创建MXNet上下文</h1>
+                
+            
+            
+                
+<p>然后，我们为基于CPU的计算创建一个MXNet上下文。因为我是按CPU做的，所以我为CPU实例化。如果您已经通过提供设备ID进行了配置，请随意使用GPU:</p>
+<pre>// Retrieves the name of this Context object <strong><br/>val</strong> ctx = Context.cpu() </pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 3 - Loading and parsing the training and test set</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤3 -加载和解析训练和测试集</h1>
+                
+            
+            
+                
+<p>现在让我们加载数据集。我假设您已经将数据集复制到了<kbd>UCI_HAR_Dataset/</kbd>目录中。然后，如前所述放置其他数据文件:</p>
+<pre><strong>val</strong> datasetPath = "UCI_HAR_Dataset/" 
+<strong>val</strong> trainDataPath = s"$datasetPath/train/Inertial Signals" 
+<strong>val</strong> trainLabelPath = s"$datasetPath/train/y_train.txt" <br/><strong>val</strong> testDataPath = s"$datasetPath/test/Inertial Signals" 
+<strong>val</strong> testLabelPath = s"$datasetPath/test/y_test.txt" </pre>
+<p>现在是时候分别加载训练集和测试集了。为了做到这一点，我写了两个名为<kbd>loadData()</kbd>和<kbd>loadLabels()</kbd>的方法，它们在<kbd>Utils.scala</kbd>文件中。这两种方法及其签名将很快提供:</p>
+<pre><strong>val</strong> trainData = Utils.loadData(trainDataPath, "train") 
+<strong>val</strong> trainLabels = Utils.loadLabels(trainLabelPath) 
+<strong>val</strong> testData = Utils.loadData(testDataPath, "test") 
+<strong>val</strong> testLabels = Utils.loadLabels(testLabelPath) </pre>
+<p><kbd>loadData()</kbd>方法根据<kbd>INPUT_SIGNAL_TYPES</kbd>数组定义的输入信号类型以<kbd>Array[Array[Array[Float]]]</kbd>格式加载并映射来自每个<kbd>.txt</kbd>文件的数据:</p>
+<pre><strong>def</strong> loadData(dataPath: String, name: String): Array[Array[Array[Float]]] = { 
+    <strong>val</strong> dataSignalsPaths = INPUT_SIGNAL_TYPES.map( signal =&gt; s"$dataPath/${signal}${name}.txt" ) 
+    <strong>val</strong> signals = dataSignalsPaths.map { path =&gt;  
+      <strong>Source</strong>.fromFile(path).mkString.split("n").map { line =&gt;  
+        line.replaceAll("  ", " ").trim().split(" ").map(_.toFloat) } 
+    } 
+ 
+    <strong>val</strong> inputDim = signals.length 
+    <strong>val</strong> numSamples = signals(0).length 
+    <strong>val</strong> timeStep = signals(0)(0).length   
+ 
+    (0 <strong>until</strong> numSamples).map { n =&gt;  
+      (0 <strong>until</strong> timeStep).map { t =&gt; 
+        (0 <strong>until</strong> inputDim).map( i =&gt; signals(i)(n)(t) ).toArray 
+      }<br/>    .toArray 
+    }<br/>    .toArray 
+  } </pre>
+<p>如前所述，<kbd>INPUT_SIGNAL_TYPES</kbd>包含一些有用的常数:它们是神经网络的独立的、标准化的输入特征:</p>
+<pre><strong>private val</strong> INPUT_SIGNAL_TYPES = Array( 
+    "body_acc_x_", 
+    "body_acc_y_", 
+    "body_acc_z_", 
+    "body_gyro_x_", 
+    "body_gyro_y_", 
+    "body_gyro_z_", 
+    "total_acc_x_", 
+    "total_acc_y_", 
+    "total_acc_z_") </pre>
+<p>另一方面，<kbd>loadLabels()</kbd>也是一个用户定义的方法，用于仅加载训练和测试集中的标签:</p>
+<pre><strong>def</strong> loadLabels(labelPath: String): Array[Float] = {          <br/>       Source.fromFile(labelPath).mkString.split("n").map(_.toFloat - 1)<br/>            } </pre>
+<p>标签在另一个数组中定义，如下面的代码所示:</p>
+<pre>// Output classes: used to learn how to classify 
+<strong>private val</strong> LABELS = Array( 
+    "WALKING",  
+    "WALKING_UPSTAIRS",  
+    "WALKING_DOWNSTAIRS",  
+    "SITTING",  
+    "STANDING",  
+    "LAYING") </pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 4 - Exploratory analysis of the dataset</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤4 -数据集的探索性分析</h1>
+                
+            
+            
+                
+<p>现在让我们来看一些关于训练系列的数量(如前所述，每个系列之间有50%的重叠)、测试系列的数量、每个系列的时间步长的数量以及每个时间步长的输入参数的数量的统计数据:</p>
+<pre><strong>val</strong> trainingDataCount = trainData.length // No. of training series  
+<strong>val</strong> testDataCount = testData.length // No. of testing series 
+<strong>val</strong> nSteps = trainData(0).length // No. of timesteps per series 
+<strong>val</strong> nInput = trainData(0)(0).length // No. of input parameters per timestep <br/><br/>println("Number of training series: "+ trainingDataCount) 
+println("Number of test series: "+ testDataCount) 
+println("Number of timestep per series: "+ nSteps) 
+println("Number of input parameters per timestep: "+ nInput) <br/>&gt;&gt;&gt;</pre>
+<p>输出是:</p>
+<pre>Number of training series: 7352<br/>Number of test series: 2947<br/>Number of timestep per series: 128<br/>Number of input parameters per timestep: 9</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 5 - Defining internal RNN structure and LSTM hyperparameters</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤5 -定义内部RNN结构和LSTM超参数</h1>
+                
+            
+            
+                
+<p>现在，让我们为LSTM网络定义内部神经网络结构和超参数:</p>
+<pre><strong>val</strong> nHidden = 128 // Number of features in a hidden layer  
+<strong>val</strong> nClasses = 6 // Total classes to be predicted  
+ 
+<strong>val</strong> learningRate = 0.001f 
+<strong>val</strong> trainingIters = trainingDataCount * 100  // iterate 100 times on trainset: total 7352000 iterations 
+<strong>val</strong> batchSize = 1500 
+<strong>val</strong> displayIter = 15000  // To show test set accuracy during training 
+<strong>val</strong> numLstmLayer = 3 </pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 6 - LSTM network construction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">第六步- LSTM网络建设</h1>
+                
+            
+            
+                
+<p>现在，让我们用前面的参数和结构建立一个LSTM模型:</p>
+<pre><strong>val</strong> model = LSTMNetworkConstructor.setupModel(nSteps, nInput, nHidden, nClasses, batchSize, ctx = ctx) </pre>
+<p>在前面的一行中，<kbd>setupModel()</kbd>是实现这个技巧的方法。<kbd>getSymbol()</kbd>方法实际上构建了LSTM单元。稍后我们也会看到它的签名。它接受序列长度、输入数、隐藏层数、标签数、批量大小、LSTM层数、漏失MXNet上下文，并使用case类<kbd>LSTMModel</kbd>构建类型的LSTM模型:</p>
+<pre><strong>case class</strong> LSTMModel(exec: Executor, symbol: Symbol, data: NDArray, label: NDArray, argsDict: Map[String,                     NDArray], gradDict: Map[String, NDArray]) </pre>
+<p>下面是<kbd>setupModel()</kbd>的签名:</p>
+<pre><strong>def</strong> setupModel(seqLen: Int, nInput: Int, numHidden: Int, numLabel: Int, batchSize: Int, numLstmLayer: Int = 1, dropout: Float = 0f, ctx: Context = Context.cpu()): LSTMModel = { 
+//get the symbolic model 
+    <strong>val</strong> sym = LSTMNetworkConstructor.getSymbol(seqLen, numHidden, numLabel, numLstmLayer = numLstmLayer) 
+    <strong>val</strong> argNames = sym.listArguments() 
+    <strong>val</strong> auxNames = sym.listAuxiliaryStates() <br/>// defining the initial argument and binding them to the model 
+    <strong>val</strong> initC = for (l &lt;- 0 until numLstmLayer) yield (s"l${l}_init_c", (batchSize, numHidden)) 
+    <strong>val</strong> initH = for (l &lt;- 0 until numLstmLayer) yield (s"l${l}_init_h", (batchSize, numHidden)) 
+    <strong>val</strong> initStates = (initC ++ initH).map(x =&gt; x._1 -&gt; Shape(x._2._1, x._2._2)).toMap 
+    <strong>val</strong> dataShapes = Map("data" -&gt; Shape(batchSize, seqLen, nInput)) ++ initStates 
+    <strong>val</strong> (argShapes, outShapes, auxShapes) = sym.inferShape(dataShapes) 
+ 
+    <strong>val</strong> initializer = new Uniform(0.1f) 
+    <strong>val</strong> argsDict = argNames.zip(argShapes).map { case (name, shape) =&gt; 
+       <strong>val</strong> nda = NDArray.zeros(shape, ctx) 
+       <strong>if</strong> (!dataShapes.contains(name) &amp;&amp; name != "softmax_label") { 
+         initializer(name, nda) 
+       } 
+       name -&gt; nda 
+    }.toMap 
+ 
+    <strong>val</strong> argsGradDict = argNames.zip(argShapes) 
+         .filter(x =&gt; x._1 != "softmax_label" &amp;&amp; x._1 != "data") 
+         .map( x =&gt; x._1 -&gt; NDArray.zeros(x._2, ctx) ).toMap 
+ 
+    <strong>val</strong> auxDict = auxNames.zip(auxShapes.map(NDArray.zeros(_, ctx))).toMap 
+    <strong>val</strong> exec = sym.bind(ctx, argsDict, argsGradDict, "write", auxDict, null, null) 
+    <strong>val</strong> data = argsDict("data") 
+    <strong>val</strong> label = argsDict("softmax_label")  <br/>    LSTMModel(exec, sym, data, label, argsDict, argsGradDict)<br/>} </pre>
+<p>在前面的方法中，我们使用<kbd>getSymbol()</kbd>方法获得了深层RNN的符号模型，如下所示。我已经提供了详细的注释，相信这将足以理解代码的工作流程:</p>
+<pre><strong>  private def</strong> getSymbol(seqLen: Int, numHidden: Int, numLabel: Int, numLstmLayer: Int = 1, <br/>                        dropout: Float = 0f): Symbol = {  
+                //symbolic training and label variables 
+               <strong> var</strong> inputX = Symbol.Variable("data") 
+                <strong>val</strong> inputY = Symbol.Variable("softmax_label") 
+ 
+                //the initial parameters and cells 
+               <strong> var</strong> paramCells = Array[LSTMParam]() 
+                <strong>var</strong> lastStates = Array[LSTMState]() <br/>                //numLstmLayer is 1  
+                <strong>for</strong> (i &lt;- 0 until numLstmLayer) { 
+                    paramCells = paramCells :+ LSTMParam(i2hWeight =<br/>                    Symbol.Variable(s"l${i}_i2h_weight"), 
+                    i2hBias = Symbol.Variable(s"l${i}_i2h_bias"),                                                                                     <br/>                    h2hWeight = Symbol.Variable(s"l${i}_h2h_weight"),                                                                                                                                   <br/>                    h2hBias = Symbol.Variable(s"l${i}_h2h_bias")) 
+                    lastStates = lastStates :+ LSTMState(c =<br/>                    Symbol.Variable(s"l${i}_init_c"),                                                                      <br/>                    h = Symbol.Variable(s"l${i}_init_h")) 
+            } 
+            <strong>assert</strong>(lastStates.length == numLstmLayer) <br/>            <strong>val</strong> lstmInputs = Symbol.SliceChannel()(inputX)(Map("axis" <br/>            &gt; 1, "num_outputs" -&gt; seqLen,       <br/>            "squeeze_axis" -&gt; 1)) 
+ 
+            <strong>var</strong> hiddenAll = Array[Symbol]() 
+           <strong> var</strong> dpRatio = 0f 
+            <strong>var</strong> hidden: Symbol = null 
+     
+//for each one of the 128 inputs, create a LSTM Cell 
+           <strong> for</strong> (seqIdx &lt;- 0 until seqLen) { 
+                  hidden = lstmInputs.get(seqIdx) 
+// stack LSTM, where numLstmLayer is 1 so the loop will be executed only one time 
+                  <strong>for</strong> (i &lt;- 0 until numLstmLayer) { 
+                        <strong>if</strong> (i == 0) dpRatio = 0f else dpRatio = dropout 
+//for each one of the 128 inputs, create a LSTM Cell 
+                        <strong>val</strong> nextState = lstmCell(numHidden, inData = hidden, 
+                          prevState = lastStates(i), 
+                          param = paramCells(i), 
+                          seqIdx = seqIdx, layerIdx = i, dropout =<br/>                        dpRatio) 
+                    hidden = nextState.h // has no effect 
+                    lastStates(i) = nextState // has no effect 
+              } 
+// adding dropout before softmax has no effect- dropout is 0 due to numLstmLayer == 1 
+          <strong>    if</strong> (dropout &gt; 0f) hidden = Symbol.Dropout()()(Map("data" -&gt; hidden, "p" -&gt; dropout)) 
+// store the lstm cells output layers 
+                  hiddenAll = hiddenAll :+ hidden<br/>    } </pre>
+<p>总之，该算法并行使用128个LSTM单元，我将所有128个单元连接起来，并将其馈送到输出激活层。让我们连接细胞，输出:</p>
+<pre><strong>val</strong> finalOut = hiddenAll.reduce(_+_) </pre>
+<p>然后，我们将它们连接到对应于6标签的输出层:</p>
+<pre><strong> val</strong> fc = Symbol.FullyConnected()()(Map("data" -&gt; finalOut, "num_hidden" -&gt; numLabel)) 
+ //softmax activation against the label 
+ Symbol.SoftmaxOutput()()(Map("data" -&gt; fc, "label" -&gt; inputY)) </pre>
+<p class="mce-root">在前面的代码段中，<kbd>LSTMState</kbd>和<kbd>LSTMParam</kbd>是两个case类，用于定义每个LSTM单元的状态，后者接受构建LSTM单元所需的参数。结案类<kbd>LSTMState(c: Symbol, h: Symbol)</kbd>结案类<kbd>LSTMParam(i2hWeight: Symbol, i2hBias: Symbol, h2hWeight: Symbol, h2hBias: Symbol)</kbd>。</p>
+<p class="mce-root CDPAlignLeft CDPAlign">现在该讨论最重要的一步了，那就是LSTM细胞的构建。我们将使用一些图表和图例，如下图所示:</p>
+<div><img height="69" width="479" class="alignnone size-full wp-image-561 image-border" src="img/fb82303a-6dd0-4ddc-b518-940435467dcb.png"/></div>
+<p>图11:下面用来描述LSTM细胞的图例</p>
+<p>LSTM中的重复模块包含四个交互层，如下图所示:</p>
+<div><img height="365" width="863" class="alignnone size-full wp-image-562 image-border" src="img/47c687ee-3a27-4670-bc63-8f825d976de1.png"/></div>
+<p>图12:在LSTM单元中，也就是说，LSTM中的重复模块包含四个相互作用的层</p>
+<p>LSTM单元由其统计数据和参数定义，如前两个case类所定义的:</p>
+<ul>
+<li><strong> LSTM状态</strong> : <strong> c </strong>是在训练期间使用的单元状态(其记忆知识),而<strong> h </strong>是输出</li>
+<li><strong> LSTM参数</strong>:由训练算法优化</li>
+<li><strong> i2hWeight </strong>:输入隐藏重量</li>
+<li><strong> i2hBias </strong>:隐藏偏置的输入</li>
+<li><strong>h2hwweight</strong>:隐藏到隐藏重量</li>
+<li><strong> h2hBias </strong>:隐藏到隐藏偏置</li>
+<li><strong> i2h </strong>:输入数据的神经网络</li>
+<li><strong> h2h </strong>:前一个<strong> h </strong>的NN</li>
+</ul>
+<p>在代码中，两个完全连接的层被创建、连接，并通过以下代码转换为四个副本。让我们添加一个大小为<kbd>numHidden * 4</kbd> ( <kbd>numHidden</kbd>设置为28)的隐藏层，它将<kbd>inputdata</kbd>作为输入:</p>
+<pre><strong>val</strong> i2h = Symbol.FullyConnected(s"t${seqIdx}_l${layerIdx}_i2h")()(Map("data" -&gt; inDataa, "weight" -&gt;                 param.i2hWeight, "bias" -&gt; param.i2hBias, "num_hidden" -&gt; numHidden * 4)) </pre>
+<p>然后，我们添加一个大小为<kbd>numHidden * 4</kbd> ( <kbd>numHidden</kbd>设置为28)的隐藏层，它将单元格的先前输出作为输入:</p>
+<pre><strong>val</strong> h2h = Symbol.FullyConnected(s"t${seqIdx}_l${layerIdx}_h2h")()(Map("data" -&gt; prevState.h,"weight" -&gt;             param.h2hWeight,"bias" -&gt; param.h2hBias,"num_hidden" -&gt; numHidden * 4)) </pre>
+<p>现在让我们将它们连接在一起:</p>
+<pre><strong>val</strong> gates = i2h + h2h </pre>
+<p>那么，在计算门之前，让我们复制四份门:</p>
+<pre><strong>val</strong> sliceGates = Symbol.SliceChannel(s"t${seqIdx}_l${layerIdx}_slice")(gates)(Map("num_outputs" -&gt; 4)) </pre>
+<p class="mce-root">然后我们计算门:</p>
+<pre><strong>val</strong> sliceGates = Symbol.SliceChannel(s"t${seqIdx}_l${layerIdx}_slice")(gates)(Map("num_outputs" -&gt; 4)) </pre>
+<p>现在，遗忘门的激活由以下代码表示:</p>
+<pre><strong>val</strong> forgetGate = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(2), "act_type" -&gt; "sigmoid")) </pre>
+<p>我们可以在下图中看到这一点:</p>
+<div><img height="265" width="761" class="alignnone size-full wp-image-565 image-border" src="img/11da362b-ef68-4a02-bd87-bf8c8ac8b0c0.png"/></div>
+<p>图13:忘记LSTM牢房中的门</p>
+<p>现在，in门和in转换的激活由以下代码表示:</p>
+<pre><strong>val</strong> ingate = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(0), "act_type" -&gt; "sigmoid"))   
+<strong>val</strong> inTransform = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(1), "act_type" -&gt; "tanh")) </pre>
+<p>我们也可以在<em>图14中看到这一点:</em></p>
+<div><img height="722" width="2284" class="alignnone size-full wp-image-566 image-border" src="img/358d8386-48d9-498a-92e8-e71974a4cd78.png"/></div>
+<p>图14:LSTM单元中的输入门和转换门</p>
+<p>下一个状态由以下代码定义:</p>
+<pre><strong>val</strong> nextC = (forgetGate * prevState.c) + (ingate * inTransform) </pre>
+<p>上述代码也可以用下图表示:</p>
+<div><img src="img/ed5bd699-4ed1-40d4-9dab-01afb9246576.png"/></div>
+<p>图15:LSTM单元中的下一个或传输门</p>
+<p>最后，输出门可以用以下代码表示:</p>
+<pre><strong>val</strong> nextH = outGate * Symbol.Activation()()(Map("data" -&gt; nextC, "act_type" -&gt; "tanh")) </pre>
+<p>上述代码也可以用下图表示:</p>
+<div><img height="730" width="2112" class="alignnone size-full wp-image-567 image-border" src="img/8bb371d3-d4e8-4768-a8c4-4aeecc5494b2.png"/></div>
+<p>图16:LSTM单元中的输出门</p>
+<p>太多了吗？别担心，这里我提供了这个方法的完整代码:</p>
+<pre>  // LSTM Cell symbol 
+  <strong>private def</strong> lstmCell( numHidden: Int, inData: Symbol, prevState: LSTMState, param: LSTMParam, 
+                        seqIdx: Int, layerIdx: Int, dropout: Float = 0f): LSTMState = { 
+        <strong>val</strong> inDataa = { 
+              <strong>if</strong> (dropout &gt; 0f) Symbol.Dropout()()(Map("data" -&gt; inData, "p" -&gt; dropout)) 
+              <strong>else</strong> inData 
+                } 
+        // add an hidden layer of size numHidden * 4 (numHidden set //to 28) that takes as input) 
+        <strong>val</strong> i2h = Symbol.FullyConnected(s"t${seqIdx}_l${layerIdx}_i2h")()(Map("data" -&gt; inDataa,"weight"                             -&gt; param.i2hWeight,"bias" -&gt; param.i2hBias,"num_hidden" -&gt; numHidden * 4)) <br/>        // add an hidden layer of size numHidden * 4 (numHidden set to 28) that takes output of the cell  
+       <strong> val</strong> h2h = Symbol.FullyConnected(s"t${seqIdx}_l${layerIdx}_h2h")()(Map("data" -&gt;                                    prevState.h,"weight" -&gt; param.h2hWeight,"bias" -&gt; param.h2hBias,"num_hidden" -&gt; numHidden * 4)) 
+ 
+        //concatenate them                                        
+        val gates = i2h + h2h  
+    
+        //make 4 copies of gates 
+        <strong>val</strong> sliceGates=Symbol.SliceChannel(s"t${seqIdx}_l${layerIdx}_slice")(gates)(Map("num_outputs" <br/>       -&gt; 4)) <br/>        // compute the gates 
+      <strong>  val</strong> ingate = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(0), "act_type" -&gt; "sigmoid")) 
+       <strong> val</strong> inTransform = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(1), "act_type" -&gt; "tanh")) 
+       <strong> val</strong> forgetGate = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(2), "act_type" -&gt; "sigmoid")) 
+       <strong> val</strong> outGate = Symbol.Activation()()(Map("data" -&gt; sliceGates.get(3), "act_type" -&gt; "sigmoid")) <br/>        // get the new cell state and the output 
+       <strong> val</strong> nextC = (forgetGate * prevState.c) + (ingate * inTransform) 
+      <strong>  val</strong> nextH = outGate * Symbol.Activation()()(Map("data" -&gt; nextC, "act_type" -&gt; "tanh")) 
+        LSTMState(c = nextC, h = nextH) 
+  } </pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 7 - Setting up an optimizer</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤7 -设置优化器</h1>
+                
+            
+            
+                
+<p>正如许多研究人员建议的那样，<kbd>RMSProp</kbd>优化器有助于LSTM网络快速收敛。因此，我决定在这里也使用它:</p>
+<pre><strong>val</strong> opt = new RMSProp(learningRate = learningRate) </pre>
+<p>此外，要优化的模型参数是其参数，除了训练数据和标签(权重和偏差):</p>
+<pre><strong>val</strong> paramBlocks = model.symbol.listArguments() 
+      .filter(x =&gt; x != "data" &amp;&amp; x != "softmax_label") 
+      .zipWithIndex.map { case (name, idx) =&gt; 
+        val state = opt.createState(idx, model.argsDict(name)) 
+        (idx, model.argsDict(name), model.gradDict(name), state, name) 
+      }<br/>    .toArray </pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 8 - Training the LSTM network</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤8 -训练LSTM网络</h1>
+                
+            
+            
+                
+<p>现在我们将开始训练LSTM网络。但是，在开始之前，让我们尝试定义一些变量来跟踪培训的表现:</p>
+<pre><strong>val</strong> testLosses = ArrayBuffer[Float]() 
+<strong>val</strong> testAccuracies = ArrayBuffer[Float]() 
+<strong>val</strong> trainLosses = ArrayBuffer[Float]() 
+<strong>val</strong> trainAccuracies = ArrayBuffer[Float]()     </pre>
+<p>然后，我们开始执行训练步骤，在每个循环中进行<kbd>batch_size</kbd>次迭代:</p>
+<pre><strong>var</strong> step = 1 
+<strong>while</strong> (step * batchSize &lt;= trainingIters) { 
+   <strong> val</strong> (batchTrainData, batchTrainLabel) = { 
+        <strong>val</strong> idx = ((step - 1) * batchSize) % trainingDataCount 
+        <strong>if</strong> (idx + batchSize &lt;= trainingDataCount) { 
+          <strong>val</strong> datas = trainData.drop(idx).take(batchSize) 
+          <strong>val</strong> labels = trainLabels.drop(idx).take(batchSize) 
+          (datas, labels) 
+        } <strong>else</strong> { 
+          <strong>val</strong> right = (idx + batchSize) - trainingDataCount 
+          <strong>val</strong> left = trainingDataCount - idx 
+          <strong>val</strong> datas = trainData.drop(idx).take(left) ++ trainData.take(right) 
+          <strong>val</strong> labels = trainLabels.drop(idx).take(left) ++ trainLabels.take(right) 
+          (datas, labels) 
+    }  <br/>} </pre>
+<p>不要偏离主题，而是快速浏览一下<em>步骤6 </em>，之前，我们已经实例化了LSTM模型。现在是向RNN提供输入和标签的时候了:</p>
+<pre>model.data.set(batchTrainData.flatten.flatten) 
+model.label.set(batchTrainLabel) </pre>
+<p>然后我们向前和向后传球:</p>
+<pre>model.exec.forward(isTrain = true) 
+model.exec.backward() </pre>
+<p>此外，我们需要使用在<em>步骤7 </em>中定义的<kbd>RMSProp</kbd>优化器来更新参数:</p>
+<pre>paramBlocks.foreach { <br/><strong>    case</strong> (idx, weight, grad, state, name) =&gt; opt.update(idx, weight, grad, state) 
+    } </pre>
+<p>获得训练错误等指标也很好，即训练数据的损失和准确性:</p>
+<pre><strong>val</strong> (acc, loss) = getAccAndLoss(model.exec.outputs(0), batchTrainLabel) 
+      trainLosses += loss / batchSize 
+      trainAccuracies += acc / batchSize </pre>
+<p>在前面的代码段中，<kbd>getAccAndLoss()</kbd>是一种计算损失和精度的方法，如下所示:</p>
+<pre><strong>def</strong> getAccAndLoss(pred: NDArray, label: Array[Float], dropNum: Int = 0): (Float, Float) = { 
+    <strong>val</strong> shape = pred.shape 
+   <strong> val</strong> maxIdx = NDArray.argmax_channel(pred).toArray 
+    <strong>val</strong> acc = { 
+      <strong>val</strong> sum = maxIdx.drop(dropNum).zip(label.drop(dropNum)).foldLeft(0f){ case (acc, elem) =&gt;  
+        <strong>if</strong> (elem._1 == elem._2) acc + 1 else acc 
+      } 
+      sum 
+    } 
+    <strong>val</strong> loss = pred.toArray.grouped(shape(1)).drop(dropNum).zipWithIndex.map { case (array, idx) =&gt; 
+        array(maxIdx(idx).toInt)   
+      }.map(-Math.log(_)).sum.toFloat    
+ (acc, loss)  
+} </pre>
+<p>此外，在某些步骤中只评估网络以加快培训速度也是令人兴奋的:</p>
+<pre><strong>if</strong> ( (step * batchSize % displayIter == 0) || (step == 1) || (step * batchSize &gt; trainingIters) ) { 
+        println(s"Iter ${step * batchSize}, Batch Loss = ${"%.6f".format(loss / batchSize)}, <br/>        Accuracy = ${acc / batchSize}") <br/>    }
+Iter 1500, Batch Loss = 1.189168, Accuracy = 0.14266667<br/> Iter 15000, Batch Loss = 0.479527, Accuracy = 0.53866667<br/> Iter 30000, Batch Loss = 0.293270, Accuracy = 0.83933336<br/> Iter 45000, Batch Loss = 0.192152, Accuracy = 0.78933334<br/> Iter 60000, Batch Loss = 0.118560, Accuracy = 0.9173333<br/> Iter 75000, Batch Loss = 0.081408, Accuracy = 0.9486667<br/> Iter 90000, Batch Loss = 0.109803, Accuracy = 0.9266667<br/> Iter 105000, Batch Loss = 0.095064, Accuracy = 0.924<br/> Iter 120000, Batch Loss = 0.087000, Accuracy = 0.9533333<br/> Iter 135000, Batch Loss = 0.085708, Accuracy = 0.966<br/> Iter 150000, Batch Loss = 0.068692, Accuracy = 0.9573333<br/> Iter 165000, Batch Loss = 0.070618, Accuracy = 0.906<br/> Iter 180000, Batch Loss = 0.089659, Accuracy = 0.908<br/> Iter 195000, Batch Loss = 0.088301, Accuracy = 0.87333333<br/> Iter 210000, Batch Loss = 0.067824, Accuracy = 0.9026667<br/> Iter 225000, Batch Loss = 0.060650, Accuracy = 0.9033333<br/> Iter 240000, Batch Loss = 0.045368, Accuracy = 0.93733335<br/> Iter 255000, Batch Loss = 0.049854, Accuracy = 0.96<br/> Iter 270000, Batch Loss = 0.062839, Accuracy = 0.968<br/> Iter 285000, Batch Loss = 0.052522, Accuracy = 0.986<br/> Iter 300000, Batch Loss = 0.060304, Accuracy = 0.98733336<br/> Iter 315000, Batch Loss = 0.049382, Accuracy = 0.9993333<br/> Iter 330000, Batch Loss = 0.052441, Accuracy = 0.9766667<br/> Iter 345000, Batch Loss = 0.050224, Accuracy = 0.9546667<br/> Iter 360000, Batch Loss = 0.057141, Accuracy = 0.9306667<br/> Iter 375000, Batch Loss = 0.047664, Accuracy = 0.938<br/> Iter 390000, Batch Loss = 0.047909, Accuracy = 0.93333334<br/> Iter 405000, Batch Loss = 0.043014, Accuracy = 0.9533333<br/> Iter 420000, Batch Loss = 0.054124, Accuracy = 0.952<br/> Iter 435000, Batch Loss = 0.044272, Accuracy = 0.95133334<br/> Iter 450000, Batch Loss = 0.058916, Accuracy = 0.96066666<br/> Iter 465000, Batch Loss = 0.072512, Accuracy = 0.9486667<br/> Iter 480000, Batch Loss = 0.080431, Accuracy = 0.94733334<br/> Iter 495000, Batch Loss = 0.072193, Accuracy = 0.9726667<br/> Iter 510000, Batch Loss = 0.068242, Accuracy = 0.972<br/> Iter 525000, Batch Loss = 0.057797, Accuracy = 0.964<br/> Iter 540000, Batch Loss = 0.063531, Accuracy = 0.918<br/> Iter 555000, Batch Loss = 0.068177, Accuracy = 0.9126667<br/> Iter 570000, Batch Loss = 0.053257, Accuracy = 0.9206667<br/> Iter 585000, Batch Loss = 0.058263, Accuracy = 0.9113333<br/> Iter 600000, Batch Loss = 0.054180, Accuracy = 0.90466666<br/> Iter 615000, Batch Loss = 0.051008, Accuracy = 0.944<br/> Iter 630000, Batch Loss = 0.051554, Accuracy = 0.966<br/> Iter 645000, Batch Loss = 0.059238, Accuracy = 0.9686667<br/> Iter 660000, Batch Loss = 0.051297, Accuracy = 0.9713333<br/> Iter 675000, Batch Loss = 0.052069, Accuracy = 0.984<br/> Iter 690000, Batch Loss = 0.040501, Accuracy = 0.998<br/> Iter 705000, Batch Loss = 0.053661, Accuracy = 0.96066666<br/> ter 720000, Batch Loss = 0.037088, Accuracy = 0.958<br/> Iter 735000, Batch Loss = 0.039404, Accuracy = 0.9533333</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Step 9 - Evaluating the model</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">步骤9 -评估模型</h1>
+                
+            
+            
+                
+<p>干得好！我们已经完成了训练。现在评估测试集怎么样:</p>
+<pre><strong>  val</strong> (testLoss, testAcc) = test(testDataCount, batchSize, testData, testLabels, model)         
+  println(s"TEST SET DISPLAY STEP:  Batch Loss = ${"%.6f".format(testLoss)}, Accuracy = $testAcc") 
+        testAccuracies += testAcc 
+        testLosses += testLoss 
+      } 
+      step += 1 
+    }     
+  <strong>val</strong> (finalLoss, accuracy) = test(testDataCount, batchSize, testData, testLabels, model) 
+  println(s"FINAL RESULT: Batch Loss= $finalLoss, Accuracy= $accuracy") </pre>
+<pre class="mce-root">TEST SET DISPLAY STEP: Batch Loss = 0.065859, Accuracy = 0.9138107<br/> TEST SET DISPLAY STEP: Batch Loss = 0.077047, Accuracy = 0.912114<br/> TEST SET DISPLAY STEP: Batch Loss = 0.069186, Accuracy = 0.90566677<br/> TEST SET DISPLAY STEP: Batch Loss = 0.059815, Accuracy = 0.93043774<br/> TEST SET DISPLAY STEP: Batch Loss = 0.064162, Accuracy = 0.9192399<br/> TEST SET DISPLAY STEP: Batch Loss = 0.063574, Accuracy = 0.9307771<br/> TEST SET DISPLAY STEP: Batch Loss = 0.060209, Accuracy = 0.9229725<br/> TEST SET DISPLAY STEP: Batch Loss = 0.062598, Accuracy = 0.9290804<br/> TEST SET DISPLAY STEP: Batch Loss = 0.062686, Accuracy = 0.9311164<br/> TEST SET DISPLAY STEP: Batch Loss = 0.059543, Accuracy = 0.9250085<br/> TEST SET DISPLAY STEP: Batch Loss = 0.059646, Accuracy = 0.9263658<br/> TEST SET DISPLAY STEP: Batch Loss = 0.062546, Accuracy = 0.92941976<br/> TEST SET DISPLAY STEP: Batch Loss = 0.061765, Accuracy = 0.9263658<br/> TEST SET DISPLAY STEP: Batch Loss = 0.063814, Accuracy = 0.9307771<br/> TEST SET DISPLAY STEP: Batch Loss = 0.062560, Accuracy = 0.9324737<br/> TEST SET DISPLAY STEP: Batch Loss = 0.061307, Accuracy = 0.93518835<br/> TEST SET DISPLAY STEP: Batch Loss = 0.061102, Accuracy = 0.93281305<br/> TEST SET DISPLAY STEP: Batch Loss = 0.054946, Accuracy = 0.9375636<br/> TEST SET DISPLAY STEP: Batch Loss = 0.054461, Accuracy = 0.9365456<br/> TEST SET DISPLAY STEP: Batch Loss = 0.050856, Accuracy = 0.9290804<br/> TEST SET DISPLAY STEP: Batch Loss = 0.050600, Accuracy = 0.9334917<br/> TEST SET DISPLAY STEP: Batch Loss = 0.057579, Accuracy = 0.9277231<br/> TEST SET DISPLAY STEP: Batch Loss = 0.062409, Accuracy = 0.9324737<br/> TEST SET DISPLAY STEP: Batch Loss = 0.050926, Accuracy = 0.9409569<br/> TEST SET DISPLAY STEP: Batch Loss = 0.054567, Accuracy = 0.94027823<br/> FINAL RESULT: Batch Loss= 0.0545671,<br/> Accuracy= 0.94027823</pre>
+<p>雅虎！我们已经达到了94%的准确率，这真的很了不起。在前面的代码中，<kbd>test()</kbd>是用于评估模型性能的方法。模型的签名在下面的代码中给出:</p>
+<pre><strong>def</strong> test(testDataCount: Int, batchSize: Int, testDatas: Array[Array[Array[Float]]], 
+      testLabels: Array[Float], model: LSTMModel): (Float, Float) = { 
+   <strong> var</strong> testLoss, testAcc = 0f 
+    <strong>for</strong> (begin &lt;- 0 until testDataCount by batchSize) { 
+     <strong> val</strong> (testData, testLabel, dropNum) = { 
+        <strong>if</strong> (begin + batchSize &lt;= testDataCount) { 
+          <strong>val</strong> datas = testDatas.drop(begin).take(batchSize) 
+          <strong>val</strong> labels = testLabels.drop(begin).take(batchSize) 
+          (datas, labels, 0) 
+        } <strong>else</strong> { 
+          <strong>val</strong> right = (begin + batchSize) - testDataCount 
+          <strong>val</strong> left = testDataCount - begin 
+          <strong>val</strong> datas = testDatas.drop(begin).take(left) ++ testDatas.take(right) 
+          <strong>val</strong> labels = testLabels.drop(begin).take(left) ++ testLabels.take(right) 
+          (datas, labels, right) 
+        } 
+      } 
+      //feed the test data to the deepNN 
+     <strong> model</strong>.data.set(testData.flatten.flatten) 
+      <strong>model</strong>.label.set(testLabel) 
+     
+      <strong>model</strong>.exec.forward(isTrain = false) 
+      <strong>val</strong> (acc, loss) = getAccAndLoss(model.exec.outputs(0), testLabel) 
+      testLoss += loss 
+      testAcc += acc 
+    } 
+    (testLoss / testDataCount, testAcc / testDataCount) 
+  } </pre>
+<p>完成后，销毁模型以释放资源是一个很好的实践:</p>
+<pre>model.exec.dispose() </pre>
+<p>我们之前看到，我们在测试集上实现了高达93%的准确率。在图表中查看以前的精度和误差如何:</p>
+<pre>    // visualize 
+    <strong>val</strong> xTrain = (0 until trainLosses.length * batchSize by batchSize).toArray.map(_.toDouble) 
+   <strong> val</strong> yTrainL = trainLosses.toArray.map(_.toDouble) 
+    <strong>val</strong> yTrainA = trainAccuracies.toArray.map(_.toDouble) <br/>    
+    <strong>val</strong> xTest = (0 until testLosses.length * displayIter by displayIter).toArray.map(_.toDouble) 
+    <strong>val</strong> yTestL = testLosses.toArray.map(_.toDouble) 
+    <strong>val</strong> yTestA = testAccuracies.toArray.map(_.toDouble) <br/>    <strong>var</strong> series = new MemXYSeries(xTrain, yTrainL, "Train losses") 
+    <strong>val</strong> data = new XYData(series)       
+    series = new MemXYSeries(xTrain, yTrainA, "Train accuracies") 
+    data += series <br/>    series = new MemXYSeries(xTest, yTestL, "Test losses") 
+    data += series     
+    series = new MemXYSeries(xTest, yTestA, "Test accuracies") 
+    data += series <br/>   <strong> val</strong> chart = new XYChart("Training session's progress over iterations!", data) 
+    chart.showLegend = true 
+    <strong>val</strong> plotter = new JFGraphPlotter(chart)<br/>    plotter.gui() <br/>&gt;&gt;&gt;</pre>
+<div><img height="376" width="609" src="img/60e98ce8-9c88-4c7d-9682-ec49100b8391.png"/></div>
+<p>图17:每次迭代的训练和测试损失和准确性</p>
+<p>从上图可以清楚地看出，只需几次迭代，我们的LSTM就能很好地收敛，并产生非常好的分类精度。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Tuning LSTM hyperparameters and GRU</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">调谐LSTM超参数和GRU</h1>
+                
+            
+            
+                
+<p>尽管如此，我仍然相信有更多的LSTM层可以达到100%的精确度。以下是我仍然会尝试调整以查看准确性的超参数:</p>
+<pre>// Hyper parameters for the LSTM training<br/><strong>val</strong> learningRate = 0.001f<br/><strong>val</strong> trainingIters = trainingDataCount * 1000 // Loop 1000 times on the dataset<br/><strong>val</strong> batchSize = 1500 // I would set it 5000 and see the performance<br/><strong>val</strong> displayIter = 15000 // To show test set accuracy during training<br/><strong>val</strong> numLstmLayer = 3 // 5, 7, 9 etc.</pre>
+<p>LSTM细胞还有许多其他的变种。一个特别受欢迎的变体是<strong>门控循环单元</strong> ( <strong> GRU </strong>)细胞，这是LSTM上的一个略微引人注目的变体。它还合并了单元格状态和隐藏状态，并进行一些其他更改。由此产生的模型比标准的LSTM模型更简单，并且越来越受欢迎。该单元由Kyunghyun Cho等人在2014年的一篇论文中提出，该论文还介绍了我们前面提到的编码器-解码器网络。</p>
+<p>对于这种类型的LSTM，感兴趣的读者应该参考以下出版物:<br/></p><ul>
+<li><em>使用用于统计机器翻译的RNN编码器-解码器学习短语表示</em>，K. Cho等人(2014)。</li>
+<li>Klaus Greff等人在2015年发表的一篇论文<em> LSTM:太空探索之旅</em>，似乎表明所有LSTM变体的表现大致相同。</li>
+</ul>
+
+<p>从技术上讲，GRU单元是LSTM单元的简化版本，其中两个状态向量合并成一个称为<strong> h(t) </strong>的向量。单个门控制器控制遗忘门和输入门。如果门控制器输出1，输入门打开，遗忘门关闭:</p>
+<div><img height="257" width="545" src="img/30895ce6-726f-4424-b456-f5c2ef15f40f.png"/></div>
+<p>图18:GRU细胞的内部结构</p>
+<p>另一方面，如果它输出0，则会发生相反的情况。每当必须存储一个存储器时，它将被存储的位置首先被擦除，这实际上是LSTM单元本身的一个常见变体。第二个简化是，由于在每个时间步长都输出完整的状态向量，因此没有输出门。但是，引入了一个新的门控制器，它控制先前状态的哪一部分将显示给主层。以下等式用于对单个实例的单元的长期状态、短期状态以及每个时间步长的输出进行GRU计算:</p>
+<div><img height="138" width="294" src="img/e585549b-3e79-453e-a74b-3e1c044ce67c.png"/></div>
+<p>LSTM和GRU细胞是近年来RNNs成功的主要原因之一，特别是在NLP中的应用。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Summary</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">摘要</h1>
+                
+            
+            
+                
+<p>在这一章中，我们已经看到了如何使用RNN实现开发一个ML项目，并使用智能手机数据集为HAR调用LSTM。我们的LSTM模型已经能够将运动类型分为六类:行走、上楼、下楼、坐着、站着和躺着。特别是，我们已经达到了高达94%的准确率。随后，我们讨论了利用GRU池进一步提高精度的一些可能的方法。</p>
+<p>一个<strong>卷积神经网络</strong> ( <strong> CNN </strong>)是一种前馈神经网络，其神经元之间的连接模式受到动物视觉皮层的启发。在过去的几年里，CNN在复杂的视觉任务中表现出了超人的性能，如图像搜索服务、自动驾驶汽车、自动视频分类、语音识别和<strong>自然语言处理</strong> ( <strong> NLP </strong>)。</p>
+<p>考虑到这些，在下一章我们将看到如何开发一个端到端的项目，在真实的Yelp图像数据集上使用基于Scala和Deeplearning4j框架的CNN来处理多标签(即每个实体可以属于多个类)图像分类问题。在开始之前，我们还将讨论CNN的一些理论方面。此外，我们将讨论如何调整超参数以获得更好的分类结果。</p>
+
+
+            
+
+            
+        
+    
+
+
+</body></html>

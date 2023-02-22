@@ -1,0 +1,375 @@
+<html><head/><body>
+
+
+
+<title>Chapter 2. R – A Powerful Tool for Developing Machine Learning Algorithms</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch02"/>第二章。r——开发机器学习算法的强大工具</h1></div></div></div><p>在使用机器学习技术之前，我们需要选择合适的软件。有许多编程语言和软件类型为用户提供了机器学习工具。事实上，最重要的部分是知道使用哪些技术以及如何构建新的技术，而软件只是一个工具。但是，选择正确的软件可以让您构建更快、更准确的解决方案。</p><p>在本章中，您将学习:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">构建机器学习解决方案的软件要求</li><li class="listitem" style="list-style-type: disc">R如何与RStudio结合，促进机器学习解决方案的开发</li><li class="listitem" style="list-style-type: disc">R的结构</li><li class="listitem" style="list-style-type: disc">R的工具</li><li class="listitem" style="list-style-type: disc">一些重要的R包</li></ul></div><div><div><div><div><h1 class="title"><a id="ch02lvl1sec13"/>为什么是R</h1></div></div></div><p>理解开发机器学习解决方案中的<a id="id46" class="indexterm"/>挑战有助于选择软件，让你以最简单和最有效的方式面对它们。本章说明了软件需求，并解释了为什么我们将使用r。</p><div><div><div><div><h2 class="title"><a id="ch02lvl2sec20"/>机器学习的互动方法</h2></div></div></div><p>开发一个<a id="id47" class="indexterm"/>机器学习解决方案由具有不同需求的步骤组成。此外，一个步骤的结果有助于改进前一个步骤，因此经常需要回来修改它。</p><p>在面对一个问题并构建其机器学习解决方案之前，我们希望尽可能多地了解挑战和可用资源。实际上，为了确定解决方案的正确途径，拥有所有可能的信息非常重要。为此，我们从数据出发，使用统计和机器学习工具从数据中提取业务洞察和模式。</p><p>一个简单的例子是，一家大型超市发起了一场针对特定客户的新营销活动。可用的数据是关于过去销售的交易。在建立任何机器学习技术之前，我们需要一些基本的信息，例如前一年的客户总数和总销售量。知道客户总数后，我们想确定客户的平均年支出。然后，下一步可以将客户分成具有同质购买习惯的组，并计算每个组的平均客户年支出。</p><p>提取一些基本信息后，我们对问题有了更详细的概述，经常会有新的问题冒出来。因此，我们需要通过应用其他统计和机器学习模型来识别新的模式和提取新的见解。这个过程将一直持续下去，直到信息允许我们确定最终的机器学习解决方案。</p><p>一个问题的解决方案通常有不同的选择。为了选择最合适的一个，我们可以构建其中的一些并比较它们的结果。此外，大多数算法都可以通过调整来提高性能，并且调整取决于结果。</p><p>总之，构建一个机器学习解决方案包括彼此紧密相关的不同步骤。一个新步骤的目标是基于对前一个步骤的分析，有时，一个步骤是基于以下结果进行修改的。从起点到终点没有一条明确定义的路径，软件应该允许这一点。</p><div><img src="img/7740OS_02_01.jpg" alt="An interactive approach to machine learning"/></div></div><div><div><div><div><h2 class="title"><a id="ch02lvl2sec21"/>对机器学习软件的期望</h2></div></div></div><p>机器学习软件有不同的选择，这一部分展示了我们对自己选择的期望。同时，软件应该为用户提供机器学习工具，并允许构建特定的解决方案。</p><p>最重要的机器学习技术由不同类型的软件和软件包提供。然而，使用尖端技术可以改善解决方案。大多数机器学习算法都是由学术界开发的，用于研究，所以在它们进入商业领域之前需要时间。此外，除了少数例外，公司没有足够的资源来开发先进的技术。因此，软件应该允许用户访问学术界开发的工具。在自由和开放源码软件的情况下，通常有一个国际社区为用户提供许多包含尖端工具的软件包。</p><p>另一个软件需求是允许用户开发快速有效的解决方案。解决机器学习问题的方法需要大量的交互，因为用户经常根据结果修改解决方案。一个好的用户友好的图形包对于探索每一步的结果和决定做什么是很重要的。因此，该工具应该允许用户快速构建用于数据探索、处理和可视化的可重用组件。</p><p>总之，软件要求是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">机器学习工具</li><li class="listitem" style="list-style-type: disc">图形包</li><li class="listitem" style="list-style-type: disc">组件的可重用性<a id="id49" class="indexterm"/></li></ul></div></div><div><div><div><div><h2 class="title"><a id="ch02lvl2sec22"/> R和RStudio</h2></div></div></div><p>我们<a id="id50" class="indexterm"/>将使用的软件是R，这一小节解释了为什么。</p><p><strong> R </strong>是为数据分析和机器学习而设计的<a id="id51" class="indexterm"/>编程语言。它是一种解释型语言，因为它直接执行命令，所以比其他编程语言更加用户友好。尽管与一些商业软件相比，R的学习曲线更陡峭，但与其他编程语言相比，R更容易学习。</p><p>r是最流行的统计编程语言，有一个庞大的国际社区支持它。它的存储库(CRAN)包含超过5000个带有统计和机器学习工具的包。这样，我们就可以使用国际社会提供的最先进的工具。</p><p>其他有用的R工具是它的图形包，只需要几行代码就可以生成漂亮而专业的图表。通过这种方式，在解决方案开发过程中探索数据和结果变得非常容易。</p><p>R的另一个优势是<strong> RStudio </strong>，这是一个为R设计的IDE。R studio包括一个交互式控制台和工具，用于访问R帮助、可视化/保存图表以及进行调试。r与RStudio相结合，允许用户相对快速地开发强大的机器学习解决方案。</p></div></div></div>
+
+
+
+
+
+<title>The R tutorial</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch02lvl1sec14"/>R教程</h1></div></div></div><p>我假设您已经熟悉一种编程语言，尽管不一定是R。本节包含一个简短的R教程，展示了一些对构建机器学习解决方案有用的工具。因为对R的正确介绍需要一整本书，所以本教程只关注一些相关的主题。</p><p>如果您已经熟悉R，您可以快速通读这一节。如果您是R新手，我建议您将本节与交互式在线教程结合起来，以获得更完整的概述。此外，为了获得更多的熟悉度，使用这些工具会非常有用。</p><p>在开始学习教程之前，我们需要安装R和RStudio。这两种类型的软件都是开源的，它们支持最相关的操作系统。阅读RStudio教程以了解如何使用这个强大的IDE也很有用。</p><p>我的建议是在RStudio环境中生成一个新的R脚本，并将代码复制粘贴到<a id="id52" class="indexterm"/>脚本中。您可以通过转到特定命令行并按下<em> Ctrl </em> + <em> Enter </em>来运行该命令。</p><div><div><div><div><h2 class="title"><a id="ch02lvl2sec23"/>R的基本工具</h2></div></div></div><p>R的基本结构非常简单。任何种类的变量都存储在一个<a id="id53" class="indexterm"/>对象中，通过输入其名称即可可视化。让我们开始定义一些数字:</p><div><pre class="programlisting">n1 &lt;- 2
+n2 &lt;- 3</pre></div><p>我们可以通过输入名称来可视化一个<a id="id54" class="indexterm"/>对象，如下所示:</p><div><pre class="programlisting">n1
+<strong>[1] 2</strong>
+</pre></div><p>我们可以对对象执行一些基本操作:</p><div><pre class="programlisting">n1 + n2
+<strong>[1] 5</strong>
+n1 * n2
+<strong>[1] 6</strong>
+</pre></div><p>任何操作的输出都可以存储在另一个对象中:</p><div><pre class="programlisting">nSum &lt;- n1 + n2
+nProd &lt;- n1 * n2
+nSum
+<strong>[1] 5</strong>
+</pre></div><p>用于向代码添加注释的标准语法包括以哈希开始一行，如下所示:</p><div><pre class="programlisting"># we performed some basic operations on the numbers</pre></div><p>我们可以对对象应用R函数，语法非常简单，因为参数总是在括号内:<code class="literal">result &lt;- functionName(argument1, argument2, …)</code>。</p><p>例如，我们可以使用<code class="literal">sum</code>来计算数值变量的和:</p><div><pre class="programlisting">sum(2, 3)
+<strong>[1] 5</strong>
+sum(2, 3, 4)
+<strong>[1] 9</strong>
+</pre></div><p>类似地，对于操作符，我们可以将函数的输出存储到另一个对象中，如下所示:</p><div><pre class="programlisting">s1 &lt;- sum(2, 3)
+s2 &lt;- sum(2, 3, 4)</pre></div><p>还有一些在控制台上打印消息的功能。例如，对于给定的任何对象，<code class="literal">print</code>都以相同的方式显示其内容，也就是说，只需键入对象名:</p><div><pre class="programlisting">print(s1)
+<strong>[1] 5</strong>
+</pre></div><p>用于定义新函数的语法很简单。例如，我们可以定义一个函数<code class="literal">funProd</code>，它计算两个参数的乘积:</p><div><pre class="programlisting">funProd &lt;- function(n1, n2)
+{
+  n &lt;- n1 * n2
+  return(n)
+}</pre></div><p><code class="literal">n1</code>和<code class="literal">n2</code>输入在括号内定义，操作包含在花括号内。<code class="literal">return</code> <a id="id55" class="indexterm"/>方法终止函数，给出结果作为输出。我们可以通过输入名字来可视化任何函数中的代码。</p><p>为了让<a id="id57" class="indexterm"/>跟踪函数正在做什么，我们可以在<a id="id58" class="indexterm"/>函数执行时打印变量，如下所示:</p><div><pre class="programlisting">funProdPrint &lt;- function(n1, n2){
+  n &lt;- n1 * n2
+  print(n1)
+  print(n2)
+  print(n)
+  return(n)
+}
+prod &lt;- funProdPrint(n1 = 2, n2 = 3)
+<strong>[1] 2</strong>
+<strong>[1] 3</strong>
+<strong>[1] 6</strong>
+</pre></div><div><div><h3 class="title"><a id="tip02"/>提示</h3><p><strong>下载示例代码</strong></p><p>你可以从你在<a class="ulink" href="http://www.packtpub.com">http://www.packtpub.com</a>的账户下载你购买的所有Packt Publishing书籍的示例代码文件。如果你在别处购买了这本书，你可以访问http://www.packtpub.com/support并注册，让文件直接通过电子邮件发送给你。</p></div></div><p>有不同的R函数与文档相关联。我们可以使用<code class="literal">help</code>来显示它们的描述，如图所示:</p><div><pre class="programlisting">help(sum)</pre></div><p>另一种选择是使用<code class="literal">sum</code>，但就个人而言，我更喜欢使用<code class="literal">help</code>，以便使用其他R函数的相同括号语法。</p><p>为了执行基本的R操作，我们必须将数据存储在向量中，向量是包含排序后的值集合的对象。我们可以使用<code class="literal">c</code>定义一个新的向量，它是一个连接其输入的函数，如下所示:</p><div><pre class="programlisting">a1 &lt;- c(1, 2, 3)
+a1
+<strong>[1] 1 2 3</strong>
+</pre></div><p>我们可以用方括号提取向量的一个元素。将<code class="literal">1</code>放入方括号中，可以提取第一个元素。请注意，R的索引不同于Python等其他编程语言<a id="id59" class="indexterm"/>，在Python中，第一个元素被索引为<code class="literal">0</code>而不是<code class="literal">1</code>，如下所示:</p><div><pre class="programlisting">a1[1]
+<strong>[1] 1</strong>
+</pre></div><p>我们可以通过在方括号内放置一个向量<a id="id61" class="indexterm"/>来同时提取多个元素，如下所示:</p><div><pre class="programlisting">a1[c(1, 2)]
+<strong>[1] 1 2</strong>
+</pre></div><p>我们还可以对向量执行一些基本操作:</p><div><pre class="programlisting">a sPaste &lt;- paste(s1, s2, sep = '_')
+1 + 1
+<strong>[1] 2 3 4</strong>
+a2 &lt;- c(1, 2, 3)
+a1 + a2
+<strong>[1] 2 4 6</strong>
+</pre></div><p>如果我们想定义一个包含整数序列的向量，我们可以使用这个符号:</p><div><pre class="programlisting">a3 &lt;- 1:10
+a3
+<strong>[1]  1  2  3  4  5  6  7  8  9 10</strong>
+</pre></div><p>向量可以包含未定义的值，这些值在R:</p><div><pre class="programlisting">a4 &lt;- c(1, NA, 2)</pre></div><p>如果我们对一个<code class="literal">NA</code>值执行操作，输出将是<code class="literal">NA</code>。</p><p>另一个重要的数据元素是布尔。布尔变量用<code class="literal">TRUE</code>和<code class="literal">FALSE</code>定义，基本运算符有<code class="literal">&amp;</code>或<code class="literal">&amp;&amp;</code>(与)、<code class="literal">|</code>或<code class="literal">||</code>(或)，还有<code class="literal">!</code>(非)。布尔元素可以是单个元素或向量。对于向量，短格式(<code class="literal">&amp;</code>和<code class="literal">|</code>)比较每个元素，长格式(<code class="literal">&amp;&amp;</code>和<code class="literal">||</code>)仅计算每个向量的第一个元素，如下所示:</p><div><pre class="programlisting">bool1 &lt;- TRUE
+bool2 &lt;- FALSE
+bool3 &lt;- bool1 &amp; bool2
+bool4 &lt;- bool1 | bool2
+bool5 &lt;- !bool1
+bool3
+<strong>[1] FALSE</strong>
+bool4
+<strong>[1] TRUE</strong>
+bool5
+<strong>[1] FALSE</strong>
+</pre></div><p>我们可以使用关系运算符<a id="id63" class="indexterm"/>来定义<a id="id62" class="indexterm"/>布尔变量，例如<code class="literal">==</code>(等于)、<code class="literal">!=</code>(不等于)、<code class="literal">&lt;=</code>(小于或等于)、<code class="literal">&gt;=</code>、<code class="literal">&lt;</code>和<code class="literal">&gt;</code>:</p><div><pre class="programlisting">x1 &lt;- 1
+x2 &lt;- 2
+bool5 &lt;- x1 == x2
+bool6 &lt;- x1 != x2
+bool7 &lt;- x1 &lt;= x2
+bool5
+<strong>[1] FALSE</strong>
+bool6
+<strong>[1] TRUE</strong>
+bool7
+<strong>[1] FALSE</strong>
+</pre></div><p>布尔变量可以包含在由<code class="literal">if</code>定义的<code class="literal">if</code>语句中，语法类似于函数。我们<a id="id64" class="indexterm"/>将条件放在括号内，操作在花括号内，如下所示:</p><div><pre class="programlisting">if(bool5){
+  x &lt;- 1
+}else{
+  x &lt;- 2
+}
+x
+<code class="literal">[1] 2</code>
+</pre></div><p>我们可以使用<code class="literal">for</code>定义<code class="literal">for</code>循环，它们的语法与<code class="literal">if</code>相同。括号包含变量名和带有值的向量，花括号包含操作，如下所示:</p><div><pre class="programlisting">vectorI &lt;- c(1, 2, 5)
+x &lt;- 0
+for(i in vectorI)
+{
+  if(i &gt; 1)
+  {
+    x &lt;- x + i
+  }
+}
+x
+<strong>[1] 7</strong>
+</pre></div><p>如果我们想重复一个操作固定的次数，我们可以定义一个包含第一个<em> n个</em> <a id="id65" class="indexterm"/>整数的向量:</p><div><pre class="programlisting">nIter &lt;- 10
+vectorIter &lt;- 1:nIter
+total &lt;- 0
+for(i in vectorIter){
+  total &lt;- total + 1
+}
+total
+<strong>[1] 10</strong>
+</pre></div><p>这一小节向<a id="id66" class="indexterm"/>展示了R的一些基本组件。下一小节<a id="id67" class="indexterm"/>展示了分析数据的R对象。</p></div><div><div><div><div><h2 class="title"><a id="ch02lvl2sec24"/>了解基本R对象</h2></div></div></div><p><a id="id68" class="indexterm"/>有不同种类的物体，我们见过其中的一些:<code class="literal">numeric</code>、<code class="literal">function</code>、<code class="literal">boolean</code>、<code class="literal">vector</code>。我们可以很容易地识别出前面例子中使用的对象<a id="id69" class="indexterm"/>的类别。</p><p>考虑下面这个<a id="id70" class="indexterm"/>的例子:</p><div><pre class="programlisting">class(n1)
+<strong>[1] "numeric"</strong>
+class(funProd)
+<strong>[1] "function"</strong>
+class(bool5)
+<strong>[1] "logical"</strong>
+class(a1)
+<strong>[1] "numeric"</strong>
+</pre></div><p><code class="literal">a1</code>向量属于<code class="literal">numeric</code>类，因为它的所有元素都是数字。同理，有逻辑元素的向量属于<code class="literal">logical</code>。</p><p>字符串使用单引号或双引号定义，如下所示:</p><div><pre class="programlisting">s1 &lt;- 'string1'
+s2 &lt;- "string2"</pre></div><p>有不同的字符串函数，如连接两个字符串的<code class="literal">paste</code>和从字符串中提取子集的<code class="literal">substring</code>，如下所示:</p><div><pre class="programlisting">sPaste &lt;- paste(s1, s2, sep = '_')
+sPaste
+<strong>[1] "string1_string2"</strong>
+sSub &lt;- substring(sPaste, 2, 5)
+sSub
+<strong>[1] "trin"</strong>
+</pre></div><p>可以像定义<code class="literal">numeric</code>或<code class="literal">logical</code>一样定义<code class="literal">string</code>向量:</p><div><pre class="programlisting">vectorStrings &lt;- c(s1, s2, sPaste, sSub)
+vectorStrings
+<strong>[1] "string1"         "string2"         "string1_string2" "trin"</strong>
+class(vectorStrings)
+<strong>[1] "character"</strong>
+</pre></div><p>一个向量可以包括<a id="id71" class="indexterm"/>任何种类的对象(甚至是潜在的函数)。如果我们定义一个包含字符串和数字的向量会发生什么？</p><div><pre class="programlisting">vectorStringsNum &lt;- c(s1, s2, 10, 1.3)
+vectorStringsNum
+<strong>[1] "string1" "string2" "10"      "1.3"   </strong>
+class(vectorStringsNum)
+<strong>[1] "character"</strong>
+</pre></div><p>如前面的<a id="id72" class="indexterm"/>代码所示，R将数字转换成字符，以得到一个齐次向量。然而，还有其他数据结构允许我们存储异构对象。</p><p>如果我们有categoric变量，我们可以使用字符串来存储它们，但还有另一个选项:<code class="literal">factors</code>。这个<a id="id73" class="indexterm"/> R对象包含一个变量，该变量的值属于一组定义的值，称为<code class="literal">levels</code>。每个级别都与一个整数相关联，数据可以被视为获得相同结果的整数或字符。因子也有助于创建序数变量。</p><p>从一个字符串开始，我们可以使用<code class="literal">factor</code>生成一个因子:</p><div><pre class="programlisting">vectorString &lt;- c('a', 'a', 'b', 'c')
+vectorFactor &lt;- factor(vectorString)
+class(vectorFactor)
+<strong>[1] "factor"</strong>
+</pre></div><p>使用级别，我们可以确定可能的值:</p><div><pre class="programlisting">levels(vectorFactor)</pre></div><p>另一个有用的函数是<code class="literal">table</code>，虽然不一定与因子相关，但它会计算每个级别的出现次数:</p><div><pre class="programlisting">table(vectorFactor)
+<strong>vectorFactor</strong>
+<strong>a b c </strong>
+<strong>2 1 1 </strong>
+</pre></div><p>另一个有用的数据元素是<code class="literal">Date</code>，它是用来存储日期的R选项之一。我们开始构建一个字符串，如<code class="literal">'2013-01-01'</code>，并在另一个字符串中定义年、月和日的位置，如下所示:</p><div><pre class="programlisting">stringDate &lt;- '2013-01-01'
+formatDate &lt;- '%Y-%m-%d'</pre></div><p>现在，使用<code class="literal">as.Date</code>，我们可以生成日期对象:</p><div><pre class="programlisting">date1 &lt;- as.Date(stringDate, format = formatDate)
+class(date1)
+<strong>[1] "Date"</strong>
+date1
+<strong>[1] "2013-01-01"</strong>
+</pre></div><p>我们可以对日期应用简单的<a id="id74" class="indexterm"/>操作，比如添加一个确定的天数:</p><div><pre class="programlisting">date2 &lt;- date1 + 10
+date2
+<strong>[1] "2013-01-11"</strong>
+</pre></div><p>我们还可以使用布尔运算符来匹配两个日期:</p><div><pre class="programlisting">date1 &gt; date2
+<strong>[1] FALSE</strong>
+</pre></div><p>另一种数据类型是<a id="id75" class="indexterm"/> <code class="literal">list</code>，它定义了<a id="id76" class="indexterm"/>数据元素的有序异构集合:</p><div><pre class="programlisting">l1 &lt;- list(1, a1, sPaste)
+l1
+<strong>[[1]]</strong>
+<strong>[1] 1</strong>
+
+<strong>[[2]]</strong>
+<strong>[1] 1 2 3</strong>
+
+<strong>[[3]]</strong>
+<strong>[1] "string1_string2"</strong>
+</pre></div><p>每个对象都可以与一个允许我们访问它的键相关联:</p><div><pre class="programlisting">l2 &lt;- list(elNumber = 1, elvector = a1, elString = sPaste)
+l2
+<strong>$elNumber</strong>
+<strong>[1] 1</strong>
+
+<strong>$elVector</strong>
+<strong>[1] 1 2 3</strong>
+
+<strong>$elString</strong>
+<strong>[1] "string1_string2"</strong>
+</pre></div><p>在这两种情况下，我们都可以使用双方括号和元素的位置从列表中提取元素，如下所示:</p><div><pre class="programlisting">l1[[1]]
+<strong>[1] 1</strong>
+l2[[1]]
+<strong>[1] 1</strong>
+</pre></div><p>在<code class="literal">l2</code>的例子中，我们已经为<a id="id77" class="indexterm"/>定义了它的键，所以我们可以使用<code class="literal">$</code>操作符来访问它的元素:</p><div><pre class="programlisting">l2$elNumber
+<strong>[1] 1</strong>
+</pre></div><p>我们可以使用<code class="literal">names</code>可视化所有的键名:</p><div><pre class="programlisting">names(l2)
+<strong>[1] "elNumber" "elVector"  "elString"</strong>
+</pre></div><p>还可以定义或更改键名:</p><div><pre class="programlisting">names(l1) &lt;- c('el1', 'el2', 'el3')
+names(l1)
+<strong>[1] "el1" "el2" "el3"</strong>
+</pre></div><p>为了从列表中提取一个<a id="id78" class="indexterm"/>子列表，我们可以使用单个方括号，类似于<a id="id79" class="indexterm"/>向量:</p><div><pre class="programlisting">l3 &lt;- l2[1]
+l3
+$elNumber
+<strong>[1] 1</strong>
+l4 &lt;- l2[c(1, 2)]
+l4
+$elNumber
+<strong>[1] 1</strong>
+
+$elVector
+<strong>[1] 1 2 3</strong>
+</pre></div><p>允许您存储表格数据的R对象是一个<code class="literal">matrix</code>。要生成一个新矩阵，将所有值放入一个向量中，并使用<code class="literal">matrix</code>，如下所示:</p><div><pre class="programlisting">vectorMatrix &lt;- c(1, 2, 3, 11, 12, 13)
+matrix1 &lt;- matrix(vectorMatrix, ncol = 2)
+matrix1
+<strong>     [,1] [,2]</strong>
+<strong>[1,]    1   11</strong>
+<strong>[2,]    2   12</strong>
+<strong>[3,]    3   13</strong>
+</pre></div><p>使用<code class="literal">t</code>，我们可以转置一个矩阵，这意味着我们可以交换行和列:</p><div><pre class="programlisting">matrix2 &lt;- t(matrix1)
+matrix2
+<strong>     [,1] [,2] [,3]</strong>
+<strong>[1,]    1    2    3</strong>
+<strong>[2,]   11   12   13</strong>
+</pre></div><p>如前面的代码所示，<code class="literal">matrix1</code>和<code class="literal">matrix2</code>只包含数字数据。使用<code class="literal">cbind</code>，我们可以添加另一列。如果我们添加一个字符列会发生什么？</p><div><pre class="programlisting">vector3 &lt;- c('a', 'b', 'c')
+matrix3 &lt;- cbind(matrix1, vector3)
+matrix3</pre></div><p>r将数字转换成<a id="id80" class="indexterm"/>字符。原因是矩阵和向量一样，只能包含同类数据。</p><p>矩阵可以有<a id="id81" class="indexterm"/>行和列名，我们可以使用<a id="id82" class="indexterm"/> <code class="literal">rownames</code>和<code class="literal">colnames</code>来显示它们:</p><div><pre class="programlisting">rownames(matrix3)
+<strong>NULL</strong>
+colnames(matrix3)
+<strong>[1] ""       ""       "vector3"</strong>
+</pre></div><p>我们通过向<code class="literal">matrix3</code>添加一列来定义<code class="literal">matrix3</code>。它的columns和R自动设置最后一列名等于vector名，即<code class="literal">vector3</code>。使用相同的函数，我们可以手动设置行和列的名称，如下所示:</p><div><pre class="programlisting">rownames(matrix3) &lt;- c('row1', 'row2', 'row3')
+colnames(matrix3) &lt;- c('col1', 'col2', 'col3')
+matrix3
+<strong>     col1 col2 col3</strong>
+<strong>row1 "1"  "11" "a" </strong>
+<strong>row2 "2"  "12" "b" </strong>
+<strong>row3 "3"  "13" "c" </strong>
+</pre></div><p>我们可以使用<code class="literal">View</code>可视化一个数据帧:</p><div><pre class="programlisting">View(df2)</pre></div><div><div><h3 class="title"><a id="tip03"/>提示</h3><p>关于数据帧，请参考本章的脚本。</p></div></div><p>有一些函数允许对向量、矩阵或列表的每个元素执行相同的操作。这些功能如下:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">apply</code>:对矩阵的每一行、列或元素应用<a id="id83" class="indexterm"/>函数</li><li class="listitem" style="list-style-type: disc"><code class="literal">sapply</code>:对向量的每个元素应用函数<a id="id84" class="indexterm"/></li><li class="listitem" style="list-style-type: disc"><code class="literal">lapply</code>:对<a id="id85" class="indexterm"/>列表的每个元素应用一个函数</li></ul></div><p><code class="literal">sapply</code>函数是最简单的，我们可以从它开始。我们可以用<code class="literal">1</code>和<code class="literal">10</code>之间的整数定义一个向量<code class="literal">x1</code>，以及一个函数<code class="literal">func1</code>，它返回输入的平方:</p><div><pre class="programlisting">x1 &lt;- 1:10
+func1 &lt;- function(el){
+  result &lt;- el ^ 2
+  return(result)
+}</pre></div><p>现在，我们可以通过指定参数来使用<code class="literal">sapply</code><a id="id86" class="indexterm"/>:<code class="literal">X</code>—数组，以及<code class="literal">FUN</code>—<a id="id87" class="indexterm"/>函数:</p><div><pre class="programlisting">sapply(X = x1, FUN = func1)
+<strong>[1]   1   4   9  16  25  36  49  64  81 100</strong>
+</pre></div><p>同样，我们可以<a id="id88" class="indexterm"/>用<code class="literal">lapply</code>:</p><div><pre class="programlisting">l1 &lt;- list(a = 1, b = 2, c = 3)
+lapply(X = l1, FUN = func1)
+<strong>$a</strong>
+<strong>[1] 1</strong>
+
+<strong>$b</strong>
+<strong>[1] 4</strong>
+
+<strong>$c</strong>
+<strong>[1] 9</strong>
+</pre></div><p>对矩阵执行操作的函数是<code class="literal">apply</code>。它可用于对每一行应用相同的函数。让我们首先定义一个矩阵:</p><div><pre class="programlisting">matrix4 &lt;- matrix(1:9, nrow = 3)
+matrix4
+<strong>     [,1] [,2] [,3]</strong>
+<strong>[1,]    1    4    7</strong>
+<strong>[2,]    2    5    8</strong>
+<strong>[3,]    3    6    9</strong>
+</pre></div><p>为了将<code class="literal">sum</code>函数应用于每一行，我们使用<code class="literal">apply</code>，将<code class="literal">MARGIN</code>输入定义为等于<code class="literal">1</code>，这指定我们对每一行执行操作:</p><div><pre class="programlisting">apply(X = matrix4, MARGIN = 1, FUN = sum)
+<strong>[1] 12 15 18</strong>
+</pre></div><p>定义<code class="literal">MARGIN = 2</code>，我们对每一列执行操作:</p><div><pre class="programlisting">apply(X = matrix4, MARGIN = 2, FUN = sum)
+<strong>[1]  6 15 24</strong>
+</pre></div><p>我们可以使用<code class="literal">MARGIN = c(1, 2)</code>将<a id="id89" class="indexterm"/>函数应用于矩阵的每个元素:</p><div><pre class="programlisting">apply(X = matrix4, MARGIN = c(1, 2), FUN = func1)
+<strong>     [,1] [,2] [,3]</strong>
+<strong>[1,]    1   16   49</strong>
+<strong>[2,]    4   25   64</strong>
+<strong>[3,]    9   36   81</strong>
+</pre></div><p>本节展示了一些与机器学习<a id="id91" class="indexterm"/>分析相关的对象和工具。然而，它们仍然只是基础。</p></div><div><div><div><div><h2 class="title"><a id="ch02lvl2sec25"/>R标准是什么？</h2></div></div></div><p>对于拥有一个干净和标准化的代码来说，有一些风格规则，这一小节展示了其中的一些。</p><p>与其他编程语言不同，R不需要任何缩进。但是，缩进代码会使它更易读、更整洁。R标准是使用两个空格，RStudio自动定义了这个缩进。</p><p><a id="id94" class="indexterm"/>给变量赋值的标准是使用<code class="literal">&lt;-</code>操作符，即使有可能使用<code class="literal">=</code>使R更类似于其他编程语言。但是，如果在函数输入中使用，这两个运算符有不同的含义。</p><p>标识符有不同的选项，就我个人而言，我喜欢小写的camel:</p><div><pre class="programlisting">lowerCamelCase</pre></div><p>但是R社区很大，有不同的约定。</p><p>每个运算符都应该用空格括起来，在函数的输入中，逗号后面应该总是有一个空格:</p><div><pre class="programlisting">x &lt;- 1
+sum(1, 2)</pre></div><p>还有一些其他的样式规则，你可以在<a class="ulink" href="https://google-styleguide.googlecode.com/svn/trunk/Rguide.xml">https://Google-style guide . Google code . com/SVN/trunk/rguide . XML</a>找到。</p></div></div>
+
+
+
+
+
+<title>Some useful R packages</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title">一些有用的R包</h1></div></div></div><p>有不同的R <a id="id95" class="indexterm"/>包为用户提供通用功能和特定技术。本章介绍两个强大的通用软件包:<code class="literal">data.table</code>和<code class="literal">plyr</code>。</p><p>有些包已经<a id="id96" class="indexterm"/>安装在r的基础版中，但是为了使用<code class="literal">data.table</code>和<code class="literal">plyr</code>，我们需要使用<code class="literal">install.packages</code>从官方CRAN库下载。让我们从<code class="literal">data.table</code>开始，它是一个包，提供了用于处理数据帧的附加工具:</p><div><pre class="programlisting">install.packages('data.table')</pre></div><p>如果该命令不起作用，您可以指定存储库:</p><div><pre class="programlisting">install.packages(
+  pkgs = 'data.table',
+  repos = 'http://cran.us.r-project.org'
+)</pre></div><p>安装<a id="id97" class="indexterm"/>软件包后，我们需要加载它才能使用它的功能。不幸的是，R将从包中导入所有函数，而不使用名称空间，有时不同的包之间可能会有名称冲突:</p><div><pre class="programlisting">library(data.table)</pre></div><p>这个包包含一个名为<code class="literal">data.table</code>的新类，它继承自<code class="literal">data.frame</code>。继承意味着数据表可以使用所有数据框工具，如果没有被覆盖的话，还可以使用其他工具。</p><p>为了使用该包，起点是我们将要分析的数据集。r为用户提供了一些数据集，我们可以使用<code class="literal">data</code>看到它们的列表和描述:</p><div><pre class="programlisting">data()</pre></div><p>我们将使用的数据集是<code class="literal">iris</code>。虽然对于教程来说这是一个非常标准的数据集，但是我决定使用它，因为它很适合用来显示数据表工具。我保证我会在接下来的章节中选择更多有趣的话题。首先，我们来看看数据描述:</p><div><pre class="programlisting">help(iris)</pre></div><p>数据集包含关于三种鸢尾花的数据:<code class="literal">setosa</code>、<code class="literal">versicolor</code>和<code class="literal">virginica</code>。这些数据显示了每朵花的萼片和花瓣的长度和宽度。</p><p><code class="literal">iris</code>数据集是一个数据框。首先，让我们使用<code class="literal">data.table</code>将其转换成数据表:</p><div><pre class="programlisting">class(iris)
+<strong>[1] "data.frame"</strong>
+dtIris &lt;- data.table(iris)
+class(dtIris)
+<strong>[1] "data.table" "data.frame"</strong>
+</pre></div><p>由于继承关系，<code class="literal">dtIris</code>对象属于<code class="literal">data.table</code>和<code class="literal">data.frame</code>类。在<a id="id98" class="indexterm"/>分析数据之前，我们可以使用<code class="literal">str</code>快速探索结构:</p><div><pre class="programlisting">str(dtIris)
+<strong>Classes 'data.table' and 'data.frame':  150 obs. of  5 variables:</strong>
+<strong> $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...</strong>
+<strong> $ Sepal.Width : num  3.5 3 3.2 3.1 3.6 3.9 3.4 3.4 2.9 3.1 ...</strong>
+<strong> $ Petal.Length: num  1.4 1.4 1.3 1.5 1.4 1.7 1.4 1.5 1.4 1.5 ...</strong>
+<strong> $ Petal.Width : num  0.2 0.2 0.2 0.2 0.2 0.4 0.3 0.2 0.2 0.1 ...</strong>
+<strong> $ Species     : Factor w/ 3 levels "setosa","versicolor",..: 1 1 1 1 1 1 1 1 1 1 ...</strong>
+<strong> - attr(*, ".internal.selfref")=&lt;externalptr&gt; </strong>
+</pre></div><p>正如我们所见，有四个数字列显示了花的属性，一个因子列<a id="id99" class="indexterm"/>显示了种类。现在，使用<code class="literal">print</code>，我们可以显示<a id="id100" class="indexterm"/>包含在<code class="literal">dtIris</code>中的数据:</p><div><pre class="programlisting">print(dtIris)
+<strong>     Sepal.Length Sepal.Width Petal.Length Petal.Width   Species</strong>
+<strong>  1:          5.1         3.5          1.4         0.2    setosa</strong>
+<strong>  2:          4.9         3.0          1.4         0.2    setosa</strong>
+<strong>  3:          4.7         3.2          1.3         0.2    setosa</strong>
+<strong>  4:          4.6         3.1          1.5         0.2    setosa</strong>
+<strong>  5:          5.0         3.6          1.4         0.2    setosa</strong>
+<strong> ---                                                            </strong>
+<strong>146:          6.7         3.0          5.2         2.3 virginica</strong>
+<strong>147:          6.3         2.5          5.0         1.9 virginica</strong>
+<strong>148:          6.5         3.0          5.2         2.0 virginica</strong>
+<strong>149:          6.2         3.4          5.4         2.3 virginica</strong>
+<strong>150:          5.9         3.0          5.1         1.8 virginica</strong>
+</pre></div><p>现在，我们可以看到第一行和最后五行。为了看到整个表格，我们可以使用<code class="literal">View</code>:</p><div><pre class="programlisting">View(dtIris)</pre></div><p>查看完数据，我们来看看基本操作。方括号允许我们执行多种操作。例如，通过将一个数字放在方括号中，我们提取相关的行:</p><div><pre class="programlisting">dtIris[1]
+<strong>   Sepal.Length Sepal.Width Petal.Length Petal.Width Species</strong>
+<strong>1:          5.1         3.5          1.4         0.2  setosa</strong>
+</pre></div><p>通过放置一个向量，我们可以提取更多的行:</p><div><pre class="programlisting">dtIris[1:3]
+<strong>   Sepal.Length Sepal.Width Petal.Length Petal.Width Species</strong>
+<strong>1:          5.1         3.5          1.4         0.2  setosa</strong>
+<strong>2:          4.9         3.0          1.4         0.2  setosa</strong>
+<strong>3:          4.7         3.2          1.3         0.2  setosa</strong>
+</pre></div><p>如果我们想要提取一个<a id="id101" class="indexterm"/>列，我们插入列名作为第二个参数:</p><div><pre class="programlisting">dtIris[, Species]
+<strong>[1] setosa     setosa     setosa     setosa     setosa     setosa   </strong>
+<strong>…</strong>
+<strong>[145] virginica  virginica  virginica  virginica  virginica  virginica </strong>
+<strong>Levels: setosa versicolor virginica</strong>
+</pre></div><p>我们可以使用列位置的编号来代替列名，在本例中是5。我们<a id="id102" class="indexterm"/>也可以同时提取行和列:</p><div><pre class="programlisting">dtIris[1:3, Species]
+<strong>[1] setosa setosa setosa</strong>
+<strong>Levels: setosa versicolor virginica</strong>
+</pre></div><p>如果我们想要<a id="id103" class="indexterm"/>定义一个只有前三列的数据表呢？我们可以使用类似的符号，将<code class="literal">Species</code>作为一个字符串，并将<code class="literal">with = F</code>作为第三个参数:</p><div><pre class="programlisting">dtIris[1:3, 'Species', with = F]
+<strong>   Species</strong>
+<strong>1:  setosa</strong>
+<strong>2:  setosa</strong>
+<strong>3:  setosa</strong>
+</pre></div><p>我们还可以提取一个包含两列或更多列<code class="literal">dtIris</code>的数据表:</p><div><pre class="programlisting">dtIris[1:3, c(5, 1, 2), with = F]
+<strong>   Species Sepal.Length Sepal.Width</strong>
+<strong>1:  setosa          5.1         3.5</strong>
+<strong>2:  setosa          4.9         3.0</strong>
+<strong>3:  setosa          4.7         3.2</strong>
+</pre></div><p>我们在第一个参数中放入一个向量来选择行。像数据帧和矩阵一样，我们可以选择定义逻辑向量的行，例如<code class="literal">dtIris$Sepal.Length &gt; 7</code>。在数据表的情况下，我们可以不使用<code class="literal">$</code>操作符直接访问列。然后，我们只需要将<code class="literal">Sepal.Length &gt; 7</code>作为第一个参数:</p><div><pre class="programlisting">dtIris[Sepal.Length &gt; 7]
+<strong>    Sepal.Length Sepal.Width Petal.Length Petal.Width   Species</strong>
+<strong> 1:          7.1         3.0          5.9         2.1 virginica</strong>
+<strong> 2:          7.6         3.0          6.6         2.1 virginica</strong>
+<strong> 3:          7.3         2.9          6.3         1.8 virginica</strong>
+<strong> 4:          7.2         3.6          6.1         2.5 virginica</strong>
+<strong> 5:          7.7         3.8          6.7         2.2 virginica</strong>
+<strong> 6:          7.7         2.6          6.9         2.3 virginica</strong>
+<strong> 7:          7.7         2.8          6.7         2.0 virginica</strong>
+<strong> 8:          7.2         3.2          6.0         1.8 virginica</strong>
+<strong> 9:          7.2         3.0          5.8         1.6 virginica</strong>
+<strong>10:          7.4         2.8          6.1         1.9 virginica</strong>
+<strong>11:          7.9         3.8          6.4         2.0 virginica</strong>
+<strong>12:          7.7         3.0          6.1         2.3 virginica</strong>
+</pre></div><p>要定义一个新列，我们可以在第二个方括号参数中使用<code class="literal">:=</code>操作符。我们只需输入其他列的名称就可以访问它们。例如，我们可以将<code class="literal">Sepal.Area</code>定义为<a id="id104" class="indexterm"/>与<code class="literal">Sepal.Length * Sepal.Width</code>的乘积:</p><div><pre class="programlisting">dtIris[, Sepal.Area := Sepal.Length * Sepal.Width]
+dtIris[1:6]
+<strong>   Sepal.Length Sepal.Width Petal.Length Petal.Width Species Sepal.Area</strong>
+<strong>1:          5.1         3.5          1.4         0.2  setosa      17.85</strong>
+<strong>2:          4.9         3.0          1.4         0.2  setosa      14.70</strong>
+<strong>3:          4.7         3.2          1.3         0.2  setosa      15.04</strong>
+<strong>4:          4.6         3.1          1.5         0.2  setosa      14.26</strong>
+<strong>5:          5.0         3.6          1.4         0.2  setosa      18.00</strong>
+<strong>6:          5.4         3.9          1.7         0.4  setosa      21.06</strong>
+</pre></div><p>如果我们想要计算平均值<code class="literal">Sepal.Area</code>，我们可以在<a id="id105" class="indexterm"/>方括号中的第二个参数内执行操作:</p><div><pre class="programlisting">dtIris[, mean(Sepal.Area)]
+<strong>[1] 17.82287</strong>
+</pre></div><p>如果我们想知道每个物种的平均花瓣面积呢？语法是一样的；我们在第三个参数中包含了<code class="literal">by = 'Species'</code>:</p><div><pre class="programlisting">dtIris[, mean(Sepal.Area), by = 'Species']
+<strong>      Species      V1</strong>
+<strong>1:     setosa 17.2578</strong>
+<strong>2: versicolor 16.5262</strong>
+<strong>3:  virginica 19.6846</strong>
+</pre></div><p>我们同时计算更多的统计数据。例如，我们可以确定每个物种的最大和最小萼片面积。在这种情况下，语法是相似的，只是在第二个参数中增加了<code class="literal">list</code>:</p><div><pre class="programlisting">dtIris[
+     , list(areaMin = min(Sepal.Area), areaMax = max(Sepal.Area)),
+     by = 'Species'
+     ]
+<strong>      Species areaMin areaMax</strong>
+<strong>1:     setosa   10.35   25.08</strong>
+<strong>2: versicolor   10.00   22.40</strong>
+<strong>3:  virginic</strong>
+<strong>a   12.25   30.02</strong>
+</pre></div><p>另一个有用的包是<code class="literal">plyr</code>，它包含一些类似于<code class="literal">apply</code>的功能，适用于不同的上下文。让我们首先安装并加载软件包:</p><div><pre class="programlisting">install.packages('plyr')
+library('plyr')</pre></div><p>一个有用的函数是<code class="literal">dlply</code>，它将一个数据帧分割成块，对每个块应用一个函数，并定义一个包含函数输出的<a id="id107" class="indexterm"/>列表。输入类型如下所示:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">.data</code>:这是<a id="id108" class="indexterm"/>数据帧。</li><li class="listitem" style="list-style-type: disc"><code class="literal">.variables</code>:这是定义分割的<a id="id109" class="indexterm"/>变量。每个块对应于变量的一个可能值。</li><li class="listitem" style="list-style-type: disc"><code class="literal">.fun</code>:这是应用于每个块的<a id="id110" class="indexterm"/>函数。</li></ul></div><p>例如，从<code class="literal">iris</code>数据框开始，我们可以计算每个物种的平均萼片长度。首先，我们<a id="id111" class="indexterm"/>可以通过计算平均萼片长度来定义<code class="literal">funcDl</code>:</p><div><pre class="programlisting">funcDl &lt;- function(dtChunk){
+  result &lt;- mean(dtIris$Sepal.Length)
+  return(result)
+}</pre></div><p>现在，我们可以<a id="id112" class="indexterm"/>使用<code class="literal">dlply</code>将<code class="literal">funcDl</code>应用于每个物种:</p><div><pre class="programlisting">dlply(
+  .data = iris,
+  .variables = 'Species',
+  .fun = funcDl
+)
+<strong>$setosa</strong>
+<strong>[1] 5.843333</strong>
+
+<strong>$versicolor</strong>
+<strong>[1] 5.843333</strong>
+
+<strong>$virginica</strong>
+<strong>[1] 5.843333</strong>
+</pre></div><p>让我们研究一下列表中包含的数据:</p><div><pre class="programlisting">names(listIris)</pre></div><p>列表中的每个元素都有相应物种的名称。让我们来看看其中的一个元素:</p><div><pre class="programlisting">listIris$setosa</pre></div><p><code class="literal">dlply</code>函数<a id="id113" class="indexterm"/>从一个数据帧开始生成一个列表，在名字中，<code class="literal">d</code>代表数据帧，<code class="literal">l</code>代表列表。还有其他<code class="literal">ply</code>功能，选项有:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">a</code>:数组</li><li class="listitem" style="list-style-type: disc"><code class="literal">d</code>:数据帧</li><li class="listitem" style="list-style-type: disc"><code class="literal">l</code>:列表</li></ul></div><p>例如，<code class="literal">adply</code>定义了一个从数组开始的数据帧，<code class="literal">laply</code>定义了一个从列表开始的数组。</p><p>本节介绍了两个<a id="id114" class="indexterm"/>有用的包。在<a id="id115" class="indexterm"/> CRAN库中有超过5000个软件包，我们将在<a id="id116" class="indexterm"/>后面的章节中看到其中的一些。</p></div>
+
+
+
+
+
+<title>Summary</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch02lvl1sec16"/>摘要</h1></div></div></div><p>在本章中，您了解了开发机器学习解决方案所需的软件。您看到了为什么R与RStudio结合使用是帮助您克服机器学习挑战的好工具。</p><p>您了解了R的基础知识以及一些最重要的数据类型和函数。你也见过<code class="literal">data.table</code>、<code class="literal">plyr</code>之类的包。</p><p>下一章将向您展示一个简单的例子，说明使用探索性数据分析和机器学习可能面临的挑战。你会看到R工具被用来构建图表，使用机器学习算法。</p></div>
+</body></html>

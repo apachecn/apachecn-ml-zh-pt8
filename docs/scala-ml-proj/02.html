@@ -1,0 +1,694 @@
+<html><head/><body>
+
+
+    
+        <title>Analyzing and Predicting Telecommunication Churn</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">电信客户流失的分析和预测</h1>
+                
+            
+            
+                
+<p>在这一章中，我们将开发一个<strong>机器学习</strong> ( <strong> ML </strong>)项目来分析和预测客户是否有可能取消订购他的电信合同。此外，我们将对数据进行一些初步分析，并进一步了解哪些类型的客户特征通常会导致这种流失。</p>
+<p>将使用广泛使用的分类算法，如决策树、随机森林、逻辑回归和<strong>支持向量机</strong> ( <strong>支持向量机</strong>)进行分析和预测。最终，读者将能够选择最佳模型用于生产就绪环境。</p>
+<p>简而言之，在这个端到端项目中，我们将学习以下主题:</p>
+<ul>
+<li>为什么，以及如何，我们做流失预测？</li>
+<li>基于逻辑回归的流失预测</li>
+<li>基于SVM的流失预测</li>
+<li>基于决策树的流失预测</li>
+<li>基于随机森林的流失预测</li>
+<li>选择最佳部署模式</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Why do we perform churn analysis, and how do we do it?</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">我们为什么要进行客户流失分析，我们如何做？</h1>
+                
+            
+            
+                
+<p><strong>客户流失</strong>是客户或顾客的流失(又称<strong>客户流失</strong>，客户流失，或客户流失)。这个概念最初用于电信行业，当时许多用户转向其他服务提供商。然而，在其他业务领域，如银行、互联网服务提供商、保险公司等，这已成为一个非常重要的问题。客户流失的两个主要原因是客户不满意以及竞争对手提供的更便宜和/或更好的产品。</p>
+<p>如图1 中的<em>所示，在一个商业行业中，有四种可能与客户签订的合同:合同、非合同、自愿和非自愿。客户流失的全部成本包括收入损失和用新客户替代这些客户的(电话)营销成本。然而，这种类型的损失会给企业带来巨大的损失。回想十年前，诺基亚是手机市场的霸主。突然间，苹果宣布推出iPhone 3G，这是智能手机时代的一场革命。然后，大约10%到12%的客户停止使用诺基亚，转而使用iPhone。虽然后来，诺基亚也试图发布智能手机，但最终，他们无法与苹果竞争:</em></p>
+<div><img height="319" width="865" src="img/cc26a83d-61b4-4cf0-b673-1e91438ec329.png"/></div>
+<p>图1:与客户的四种可能的合同</p>
+<p>客户流失预测对企业来说至关重要，因为它使企业能够发现有可能取消订阅、产品或服务的客户。它还可以最大限度地减少客户流失。它通过预测哪些客户可能会取消某项服务的订购来做到这一点。然后，相应的企业可以为那些可能取消订阅的客户提供特殊的优惠或计划。这样，企业可以降低流失率。这应该是每一个在线业务的关键业务目标。</p>
+<p>当谈到员工流失预测时，典型的任务是确定哪些因素预测员工离职。这些类型的预测过程是大量数据驱动的，并且通常需要利用先进的ML技术。然而，在本章中，我们将主要关注客户流失预测和分析。为此，应分析许多因素以了解客户的行为，包括但不限于:</p>
+<ul>
+<li>客户的人口统计数据，如年龄、婚姻状况等</li>
+<li>社交媒体的顾客情感分析</li>
+<li>点击流日志中的浏览行为</li>
+<li>显示暗示客户流失的行为模式的历史数据</li>
+<li>客户的使用模式和地理使用趋势</li>
+<li>呼叫圈数据和支持呼叫中心统计</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Developing a churn analytics pipeline</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">开发流失分析渠道</h1>
+                
+            
+            
+                
+<p>在ML中，我们分两个阶段观察算法的性能:学习和推理。学习阶段的最终目标是准备和描述可用数据，也称为<strong>特征向量</strong>，用于训练模型。</p>
+<p>学习阶段是最重要的阶段之一，但也确实很耗时。它包括从转换后的训练数据中准备一个向量列表，也称为<strong>特征向量</strong>(代表每个特征的值的数字向量)，以便我们可以将它们提供给学习算法。另一方面，训练数据有时也包含不纯的信息，需要一些预处理，如清理。</p>
+<p>一旦我们有了特征向量，这个阶段的下一步就是准备(或编写/重用)学习算法。下一个重要步骤是训练算法来准备预测模型。通常，(当然也基于数据大小)，运行一个算法可能需要几个小时(甚至几天)的时间，以便将要素汇聚成一个有用的模型，如下图所示:</p>
+<div><img src="img/f458d39c-885d-4161-b766-251ea56c1efb.png"/></div>
+<p>图2:学习和训练预测模型——它展示了如何从训练数据中生成特征向量，以训练产生预测模型的学习算法</p>
+<p>第二个最重要的阶段是推理，用于智能地使用模型，例如从以前从未见过的数据进行预测，提出建议，推断未来的规则，等等。通常，与学习阶段相比，它花费的时间更少，有时甚至是实时的。因此，推理就是根据新的(即未观察到的)数据测试模型，并评估模型本身的性能，如下图所示:</p>
+<div><img src="img/7e917a27-ffcf-43d6-8794-a16d48bd0fed.png"/></div>
+<p>图3:从现有模型到预测分析的推理(从未知数据生成特征向量以进行预测)</p>
+<p>然而，在整个过程中，为了使预测模型成功，数据在所有ML任务中充当一等公民。记住所有这些，下图显示了电信公司可以使用的分析管道:</p>
+<div><img height="262" width="512" src="img/9abacbdc-9ed4-4ab4-938f-54ee24efcc24.png"/></div>
+<p>图4:流失分析管道</p>
+<p>通过这种分析，电信公司可以了解如何预测和增强客户体验，从而防止客户流失并定制营销活动。在实践中，这些业务评估通常被用来留住最有可能离开的客户，而不是那些有可能留下来的客户。</p>
+<p>因此，我们需要开发一个预测模型，以确保我们的模型对<kbd>Churn = True</kbd>样本敏感——也就是说，一个二元分类问题。我们将在接下来的章节中看到更多的细节。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Description of the dataset</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">数据集的描述</h1>
+                
+            
+            
+                
+<p><strong> Orange Telecom的流失数据集</strong>，其中包含经过清理的客户活动数据(特征)，以及一个说明客户是否取消订阅的流失标签，将用于开发我们的预测模型。churn-80和churn-20数据集可分别从以下链接下载:</p>
+<ul>
+<li><a href="https://bml-data.s3.amazonaws.com/churn-bigml-80.csv">https://bml-data.s3.amazonaws.com/churn-bigml-80.csv</a></li>
+<li><a href="https://bml-data.s3.amazonaws.com/churn-bigml-20.csv">https://bml-data.s3.amazonaws.com/churn-bigml-20.csv</a></li>
+</ul>
+<p>然而，由于开发ML模型通常需要更多的数据，因此我们使用较大的数据集(即churn-80)进行训练和交叉验证，使用较小的数据集(即churn-20)进行最终测试和模型性能评估。</p>
+<p>请注意，后一组仅用于评估模型(用于演示目的)。对于生产就绪环境，电信公司可以使用自己的数据集，并进行必要的预处理和功能工程。数据集具有以下架构:</p>
+<ul>
+<li><strong>状态</strong> : <kbd>String</kbd></li>
+<li><strong>账户长度</strong> : <kbd>Integer</kbd></li>
+<li><strong>区号</strong> : <kbd>Integer</kbd></li>
+<li><strong>国际计划</strong> : <kbd>String</kbd></li>
+<li><strong>语音邮件计划</strong> : <kbd>String</kbd></li>
+<li><strong>邮件数量</strong> : <kbd>Integer</kbd></li>
+<li><strong>总日分钟数</strong> : <kbd>Double</kbd></li>
+<li><strong>全天通话总数</strong> : <kbd>Integer</kbd></li>
+<li><strong>总日收费</strong> : <kbd>Double</kbd></li>
+<li><strong>总eve分钟数</strong> : <kbd>Double</kbd></li>
+<li><strong>eve调用总数</strong> : <kbd>Integer</kbd></li>
+<li><strong>总eve费用</strong> : <kbd>Double</kbd></li>
+<li><strong>总夜间分钟数</strong> : <kbd>Double</kbd></li>
+<li><strong>总夜间通话次数</strong> : <kbd>Integer</kbd></li>
+<li><strong>夜间总费用</strong> : <kbd>Double</kbd></li>
+<li><strong>总国际分钟数</strong> : <kbd>Double</kbd></li>
+<li><strong>总国际呼叫数</strong> : <kbd>Integer</kbd></li>
+<li><strong>总国际费用</strong> : <kbd>Double</kbd></li>
+<li><strong>客服电话</strong> : <kbd>Integer</kbd></li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Exploratory analysis and feature engineering</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">探索性分析和特征工程</h1>
+                
+            
+            
+                
+<p>在这一小节中，在开始预处理和特征工程之前，我们将看到数据集的一些EDA。只有这样，建立分析渠道才有意义。首先，让我们导入必要的包和库，如下所示:</p>
+<pre><strong>import</strong> org.apache.spark._<br/><strong>import</strong> org.apache.spark.sql.functions._<br/><strong>import</strong> org.apache.spark.sql.types._<br/><strong>import</strong> org.apache.spark.sql._<br/><strong>import</strong> org.apache.spark.sql.Dataset</pre>
+<p>然后，让我们为要处理的数据集指定数据源和模式。当将数据加载到DataFrame中时，我们可以指定模式。与Spark 2.x之前的模式推理相比，该规范提供了优化的性能。</p>
+<p>首先，让我们用指定的所有字段创建一个Scala case类。变量名是不言自明的:</p>
+<pre><strong>case </strong><strong>class</strong> CustomerAccount(state_code: String, <br/>    account_length: Integer, <br/>    area_code: String, <br/>    international_plan: String, <br/>    voice_mail_plan: String, <br/>    num_voice_mail: Double, <br/>    total_day_mins: Double, <br/>    total_day_calls: Double, <br/>    total_day_charge: Double,<br/>    total_evening_mins: Double, <br/>    total_evening_calls: Double, <br/>    total_evening_charge: Double,<br/>    total_night_mins: Double, <br/>    total_night_calls: Double, <br/>    total_night_charge: Double,<br/>    total_international_mins: Double, <br/>    total_international_calls: Double, <br/>    total_international_charge: Double,<br/>    total_international_num_calls: Double, <br/>    churn: String)</pre>
+<p>现在，让我们创建一个定制模式，其结构类似于我们已经创建的数据源，如下所示:</p>
+<pre><strong>val</strong> schema = StructType(Array(<br/>    StructField("state_code", StringType, <strong>true</strong>),<br/>    StructField("account_length", IntegerType, <strong>true</strong>),<br/>    StructField("area_code", StringType, <strong>true</strong>),<br/>    StructField("international_plan", StringType, <strong>true</strong>),<br/>    StructField("voice_mail_plan", StringType, <strong>true</strong>),<br/>    StructField("num_voice_mail", DoubleType, <strong>true</strong>),<br/>    StructField("total_day_mins", DoubleType, <strong>true</strong>),<br/>    StructField("total_day_calls", DoubleType, <strong>true</strong>),<br/>    StructField("total_day_charge", DoubleType, <strong>true</strong>),<br/>    StructField("total_evening_mins", DoubleType, <strong>true</strong>),<br/>    StructField("total_evening_calls", DoubleType, <strong>true</strong>),<br/>    StructField("total_evening_charge", DoubleType, <strong>true</strong>),<br/>    StructField("total_night_mins", DoubleType, <strong>true</strong>),<br/>    StructField("total_night_calls", DoubleType, <strong>true</strong>),<br/>    StructField("total_night_charge", DoubleType, <strong>true</strong>),<br/>    StructField("total_international_mins", DoubleType, <strong>true</strong>),<br/>    StructField("total_international_calls", DoubleType, <strong>true</strong>),<br/>    StructField("total_international_charge", DoubleType, <strong>true</strong>),<br/>    StructField("total_international_num_calls", DoubleType, <strong>true</strong>),<br/>    StructField("churn", StringType, <strong>true</strong>)<br/>))</pre>
+<p>让我们创建一个Spark会话并导入<kbd>implicit._</kbd>,使我们能够指定一个数据帧操作，如下所示:</p>
+<pre><strong>val</strong> spark: SparkSession = SparkSessionCreate.createSession("preprocessing")<br/><strong>import</strong> spark.implicits._</pre>
+<p>现在让我们创建训练集。我们用Spark推荐的格式<kbd>com.databricks.spark.csv</kbd>读取CSV文件。我们不需要任何显式的模式推断，这使得推断模式为假，但是相反，我们需要我们自己的模式，我们刚刚创建了之前。然后，我们从所需的位置加载数据文件，最后，指定我们的数据源，以便我们的数据帧看起来与我们指定的完全相同:</p>
+<pre><strong>val</strong> trainSet: Dataset[CustomerAccount] = spark.read.<br/>        option("inferSchema", "false")<br/>        .format("com.databricks.spark.csv")<br/>        .schema(schema)<br/>        .load("data/churn-bigml-80.csv")<br/>        .as[CustomerAccount]</pre>
+<p>现在，让我们看看这个模式是什么样子的:</p>
+<pre>trainSet.printSchema()<br/>&gt;&gt;&gt;</pre>
+<div><img height="228" width="313" src="img/489ed265-308b-4a22-82c2-127c473bd023.png"/></div>
+<p>太棒了。看起来和数据结构一模一样。现在让我们使用<kbd>show()</kbd>方法来看一些样本数据，如下所示:</p>
+<pre>trainSet.show()<br/>&gt;&gt;&gt;</pre>
+<p>在下图中，为了便于查看，列名变得更短:</p>
+<div><img height="224" width="639" src="img/601a7523-4f1b-45d2-9481-d0f868bca26d.png"/></div>
+<p>我们还可以从Spark中看到使用<kbd>describe()</kbd>方法的训练集的相关统计数据:</p>
+<p><kbd>describe()</kbd>方法是Spark数据帧的内置统计处理方法。它对所有数字列应用汇总统计计算。最后，它将计算出的值作为单个数据帧返回。</p>
+<pre><strong>val</strong> statsDF = trainSet.describe()<br/>statsDF.show()<br/>&gt;&gt;&gt;</pre>
+<div><img height="118" width="597" src="img/fe307ce5-7904-41fd-b30b-63a24fee94e5.png"/></div>
+<p>如果这个数据集可以放入RAM，我们可以使用Spark的<kbd>cache()</kbd>方法缓存它以便快速和重复访问:</p>
+<pre>trainSet.cache()</pre>
+<p>让我们看看一些有用的属性，比如与流失的变量相关性。例如，让我们看看客户流失与国际电话总数的关系:</p>
+<pre>trainSet.groupBy("churn").sum("total_international_num_calls").show()<br/>&gt;&gt;&gt;<br/>+-----+----------------------------------+<br/>churn|sum(total_international_num_calls)|<br/>+-----+----------------------------------+<br/>|False| 3310.0|<br/>| True| 856.0|<br/>+-----+----------------------------------+</pre>
+<p>让我们看看客户流失与总国际通话费用的关系:</p>
+<pre>trainSet.groupBy("churn").sum("total_international_charge").show()<br/> &gt;&gt;&gt;<br/>+-----+-------------------------------+<br/>|churn|sum(total_international_charge)|<br/>+-----+-------------------------------+<br/>|False| 6236.499999999996|<br/>| True| 1133.63|<br/>+-----+-------------------------------+</pre>
+<p>现在我们还需要准备好测试集来评估模型，让我们准备相同的测试集，类似于训练集，如下所示:</p>
+<pre><strong>val</strong> testSet: Dataset[CustomerAccount] = <br/>    spark.read.<br/>    option("inferSchema", "false")<br/>    .format("com.databricks.spark.csv")<br/>    .schema(schema)<br/>    .load("data/churn-bigml-20.csv")<br/>    .as[CustomerAccount]</pre>
+<p>现在让我们缓存它们以便更快地访问，以便进一步操作:</p>
+<pre>testSet.cache()</pre>
+<p>现在，让我们看看训练集的一些相关属性，以了解它是否适合我们的目的。首先，让我们为这个会话的持久性创建一个临时视图。我们可以创建一个目录作为接口，用于创建、删除、更改或查询底层数据库、表、函数等等:</p>
+<pre>trainSet.createOrReplaceTempView("UserAccount")<br/>spark.catalog.cacheTable("UserAccount")</pre>
+<p>通过客户流失标签对数据进行分组并计算每组中的实例数量表明，虚假客户流失样本大约是真实客户流失样本的六倍。让我们用下面一行代码来验证这个声明:</p>
+<pre>trainSet.groupBy("churn").count.show()<br/>&gt;&gt;&gt;<br/>+-----+-----+<br/>|churn|count|<br/>+-----+-----+<br/>|False| 2278|<br/>| True| 388 |<br/>+-----+-----+</pre>
+<p>我们还可以看到前面的陈述，使用Apache Zeppelin进行了验证(参见第8章、<em>在银行营销中使用深度信念网络</em>中关于如何配置和入门的更多详细信息)，如下所示:</p>
+<pre>spark.sqlContext.sql("SELECT churn,SUM(international_num_calls) as Total_intl_call FROM UserAccount GROUP BY churn").show()<br/>&gt;&gt;&gt;</pre>
+<div><img height="178" width="534" src="img/b933288d-c96b-4772-888f-b1930c1c0593.png"/></div>
+<p>正如我们已经说过的，在大多数情况下，目标是留住最有可能离开的客户，而不是那些有可能留下或正在留下的客户。这也意味着我们应该准备我们的训练集，以确保我们的ML模型对真实的流失样本敏感——也就是说，让流失标签为真。</p>
+<p>我们还可以观察到前面的训练集非常不平衡。因此，使用分层抽样将两种样本类型放在同一基础上是可行的。当提供了要返回的每种样本类型的部分时，可以使用<kbd>sampleBy()</kbd>方法。</p>
+<p>这里，我们保留了<kbd>True</kbd> churn类的所有实例，但是将<kbd>False</kbd> churn类向下采样到<em> 388/2278 </em>的一部分，大约是<kbd>0.1675</kbd>:</p>
+<pre><strong>val</strong> fractions = Map("False" -&gt; 0.1675, "True" -&gt; 1.0)</pre>
+<p>这样，我们也只映射<kbd>True</kbd>流失样本。现在，让我们为只包含下采样数据的训练集创建一个新的数据帧:</p>
+<pre><strong>val</strong> churnDF = trainSet.stat.sampleBy("churn", fractions, 12345L)</pre>
+<p>第三个参数是用于再现性目的的种子。现在让我们看看:</p>
+<pre>churnDF.groupBy("churn").count.show()<br/>&gt;&gt;&gt;<br/>+-----+-----+<br/>|churn|count|<br/>+-----+-----+<br/>|False| 390|<br/>| True| 388|<br/>+-----+-----+</pre>
+<p>现在让我们看看变量之间的关系。让我们看看白天，晚上，晚上和国际语音通话如何对<kbd>churn</kbd>类做出贡献。只需执行下面一行:</p>
+<pre>spark.sqlContext.sql("SELECT churn, SUM(total_day_charge) as TDC, SUM(total_evening_charge) as TEC,    <br/>                      SUM(total_night_charge) as TNC, SUM(total_international_charge) as TIC,  <br/>                      SUM(total_day_charge) + SUM(total_evening_charge) + SUM(total_night_charge) + <br/>                      SUM(total_international_charge) as Total_charge FROM UserAccount GROUP BY churn <br/>                      ORDER BY Total_charge DESC")<br/>.show()<br/>&gt;&gt;&gt;</pre>
+<div><img height="78" width="559" src="img/5a0af826-28e0-463e-b042-50b3498f37b0.png"/></div>
+<p>在Apache Zeppelin上，可以看到前面的结果如下:</p>
+<div><img height="159" width="435" src="img/a764a0a5-e3c5-4867-b495-2d5952c8407d.png"/></div>
+<p>现在，让我们来看看白天、夜晚、晚上和国际语音通话对前面的<kbd>churn</kbd>类的总费用有多少分钟的贡献。只需执行下面一行:</p>
+<pre>spark.sqlContext.sql("SELECT churn, SUM(total_day_mins) <br/>                      + SUM(total_evening_mins) + SUM(total_night_mins) <br/>                      + SUM(total_international_mins) as Total_minutes <br/>                    FROM UserAccount GROUP BY churn").show()<br/>&gt;&gt;&gt;</pre>
+<div><img height="87" width="182" src="img/548bee1c-eb4e-40dc-b02c-e58b1729a683.png"/></div>
+<p>在Apache Zeppelin上，可以看到前面的结果如下:</p>
+<div><img height="183" width="518" src="img/aa00e9d2-c314-4459-8e51-135748fb243d.png"/></div>
+<p>从前面的两个图和表中，很明显，总日分钟数和总日费用是该训练集中高度相关的特征，这对我们的ML模型训练没有好处。因此，最好将它们一起移除。此外，下图显示了所有可能的相关性(尽管是用PySpark绘制的):</p>
+<div><img height="601" width="607" src="img/7aea33d2-92d3-4c01-8b74-aba1b5cb883e.jpg"/></div>
+<p>图5:关联矩阵，包括所有的特性</p>
+<p>让我们删除每对相关字段中的一列，以及<strong>州</strong>和<strong>区域代码</strong>列，因为它们也不会被使用:</p>
+<pre><strong>val</strong> trainDF = churnDF<br/>    .drop("state_code")<br/>    .drop("area_code")<br/>    .drop("voice_mail_plan")<br/>    .drop("total_day_charge")<br/>    .drop("total_evening_charge")</pre>
+<p>非常好。最后，我们有训练数据框架，可用于更好的预测建模。让我们来看看生成的数据帧的一些列:</p>
+<pre class="mce-root">trainDF.select("account_length", "international_plan", "num_voice_mail",         <br/>               "total_day_calls","total_international_num_calls", "churn")<br/>.show(10)<br/>&gt;&gt;&gt;</pre>
+<div><img height="564" width="1856" class="alignnone size-full wp-image-242 image-border" src="img/a90814fb-81d6-440c-bc2a-226ee24a1bd0.png"/></div>
+<p>然而，我们还没有完成；当前数据框架不能作为估计值提供给模型。正如我们所描述的，Spark ML API需要将我们的数据转换成Spark DataFrame格式，由标签(双精度)和特征(矢量)组成。</p>
+<p>现在，我们需要创建一个管道来传递数据，并链接几个转换器和估算器。然后，管道作为特征提取器工作。更具体的说，我们准备了两个<kbd>StringIndexer</kbd>变压器和一个<kbd>VectorAssembler</kbd>。</p>
+<div><kbd>StringIndexer</kbd> encodes a categorical column of labels to a column of label indices (that is, numerical). If the input column is numeric, we have to cast it into a string and index the string values. Other Spark pipeline components, such as Estimator or Transformer, make use of this string-indexed label. In order to do this, the input column of the component must be set to this string-indexed column name. In many cases, you can set the input column with <kbd>setInputCol</kbd>. Interested readers should refer to this <a href="https://spark.apache.org/docs/latest/ml-features.html">https://spark.apache.org/docs/latest/ml-features.html</a> for more details.</div>
+<p>第一个<kbd>StringIndexer</kbd>将字符串分类特征<kbd>international_plan</kbd>和标签转换成数字索引。第二个<kbd>StringIndexer</kbd>将分类标签(即<kbd>churn</kbd>)转换成数字。这样，索引分类特征使决策树和随机森林分类器能够适当地处理分类特征，从而提高性能。</p>
+<p>现在，将以下代码行、索引标签和元数据添加到标签列。适合整个数据集以包括索引中的所有标签:</p>
+<pre><strong>val</strong> ipindexer = <strong>new</strong> StringIndexer()<br/>    .setInputCol("international_plan")<br/>    .setOutputCol("iplanIndex")<br/><br/><strong>val</strong> labelindexer = <strong>new</strong> StringIndexer()<br/>    .setInputCol("churn")<br/>    .setOutputCol("label")</pre>
+<p>现在我们需要提取对分类有贡献的最重要的特征。由于我们已经删除了一些列，因此得到的列集由以下字段组成:</p>
+<pre>* Label → churn: True or False<br/>* Features → {("account_length", "iplanIndex", "num_voice_mail", "total_day_mins", "total_day_calls", "total_evening_mins", "total_evening_calls", "total_night_mins", "total_night_calls", "total_international_mins", "total_international_calls", "total_international_num_calls"}</pre>
+<p>由于我们已经使用<kbd>StringIndexer</kbd>将分类标签转换成数字，下一个任务是提取特征:</p>
+<pre><strong>val</strong> featureCols = Array("account_length", "iplanIndex", <br/>                        "num_voice_mail", "total_day_mins", <br/>                        "total_day_calls", "total_evening_mins", <br/>                        "total_evening_calls", "total_night_mins", <br/>                        "total_night_calls", "total_international_mins", <br/>                        "total_international_calls", "total_international_num_calls")</pre>
+<p>现在，让我们将特征转换成特征向量，特征向量是代表每个特征的值的数字向量。在我们的例子中，我们将使用<kbd>VectorAssembler</kbd>。它将所有的<kbd>featureCols</kbd>合并/转换成一个名为<strong>特性</strong>的列:</p>
+<pre><strong>val</strong> assembler = <strong>new</strong> VectorAssembler()<br/>    .setInputCols(featureCols)<br/>    .setOutputCol("features")</pre>
+<p>既然我们已经准备好了由标签和特征向量组成的真实训练集，下一个任务就是创建一个估计器——流水线的第三个元素。我们从一个非常简单但是强大的逻辑回归分类器开始。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>LR for churn prediction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">LR用于流失预测</h1>
+                
+            
+            
+                
+<p>LR是预测二元响应的最广泛使用的分类器之一。这是一种线性ML方法，如<a href="4b0be2d2-f313-471f-83fe-830931fc8af9.xhtml" target="_blank">第一章</a>、<em>分析保险严重索赔</em>所述。<kbd>loss</kbd>函数是由物流损失给出的公式:</p>
+<div><img height="25" width="279" class="fm-editor-equation" src="img/58d1cdb4-4e46-48ce-8051-bf44e2fbf31c.png"/></div>
+<p>对于LR模型，<kbd>loss</kbd>函数是逻辑损耗。对于二进制分类问题，该算法输出二进制LR模型，使得对于由<em> x </em>表示的给定新数据点，该模型通过应用逻辑函数进行预测:</p>
+<div><img height="42" width="124" class="fm-editor-equation" src="img/a34028da-b03e-4cb1-a247-c08dd7e7d7ce.png"/></div>
+<p>在上式中，<em> z = W <sup> T </sup> X </em>如果<em>f(W<sup>T</sup>X)&gt;0.5</em>，则结果为正；否则为负。</p>
+<p>注意，LR模型的原始输出<em> f(z) </em>具有概率解释。</p>
+<p>请注意，与线性回归相比，逻辑回归提供了更高的分类精度。此外，这是一种灵活的方式来调整模型以进行自定义调整，总体而言，模型响应是概率的度量。</p>
+<p>最重要的是，尽管线性回归只能预测连续值，但线性回归仍然可以进行足够的推广，使其能够预测离散值:</p>
+<pre><strong>import</strong> org.apache.spark._<br/><strong>import</strong> org.apache.spark.sql.SparkSession<br/><strong>import</strong> org.apache.spark.sql.functions._<br/><strong>import</strong> org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression, LogisticRegressionModel}<br/><strong>import</strong> org.apache.spark.ml.Pipeline<br/><strong>import</strong> org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}<br/><strong>import</strong> org.apache.spark.mllib.evaluation.BinaryClassificationMetrics <br/><strong>import</strong> org.apache.spark.ml.evaluation.BinaryClassificationEvaluator</pre>
+<p>现在我们已经知道了线性回归的工作原理，让我们开始使用线性回归的基于Spark的实现。让我们从导入所需的包和库开始。</p>
+<p>现在，让我们创建一个Spark会话并隐式导入:</p>
+<pre><strong>val</strong> spark: SparkSession = SparkSessionCreate.createSession("ChurnPredictionLogisticRegression")<br/><strong>import</strong> spark.implicits._</pre>
+<p>我们现在需要定义一些超参数来训练基于线性回归的管道:</p>
+<pre><strong>val</strong> numFolds = 10<br/><strong>val</strong> MaxIter: Seq[Int] = Seq(100)<br/><strong>val</strong> RegParam: Seq[Double] = Seq(1.0) // L2 regularization param, set 1.0 with L1 regularization<br/><strong>val</strong> Tol: Seq[Double] = Seq(1e-8)// for convergence tolerance for iterative algorithms<br/><strong>val</strong> ElasticNetParam: Seq[Double] = Seq(0.0001) //Combination of L1 &amp; L2</pre>
+<p><kbd>RegParam</kbd>是一个标量，有助于调整约束的强度:一个小值意味着一个软余量，因此自然地，一个大值意味着一个硬余量，无穷大是最硬的余量。</p>
+<p>默认情况下，LR使用设定为1.0的正则化参数执行L2正则化。相同的模型执行LR的L1正则化变体，其中正则化参数(即，<kbd>RegParam</kbd>)被设置为0.10。弹性网是L1和L2正则化的结合。</p>
+<p>另一方面，<kbd>Tol</kbd>参数用于迭代算法的收敛容差，如逻辑回归或线性SVM。现在，一旦我们定义并初始化了超参数，下一个任务就是实例化一个线性回归估计量，如下所示:</p>
+<pre><strong>val</strong> lr = <strong>new</strong> LogisticRegression()<br/>    .setLabelCol("label")<br/>    .setFeaturesCol("features")</pre>
+<p>现在，我们已经准备好了三个变压器和一个估算器，下一个任务是连接一个流水线，也就是说，它们每个都充当一个阶段:</p>
+<pre><strong>val</strong> pipeline = <strong>new</strong> Pipeline()<br/>    .setStages(Array(PipelineConstruction.ipindexer,<br/>    PipelineConstruction.labelindexer,<br/>    PipelineConstruction.assembler, lr))</pre>
+<p>为了在超参数空间上执行这样的网格搜索，我们需要首先定义它。在这里，Scala的函数式编程属性非常方便，因为我们只需将函数指针和相应的待评估参数添加到参数网格，您可以在其中设置待测试的参数和交叉验证评估器，以构建模型选择工作流。这将通过线性回归的最大迭代、正则化参数、容差和弹性网络来搜索最佳模型:</p>
+<pre><strong>val</strong> paramGrid = <strong>new</strong> ParamGridBuilder()<br/>    .addGrid(lr.maxIter, MaxIter)<br/>    .addGrid(lr.regParam, RegParam)<br/>    .addGrid(lr.tol, Tol)<br/>    .addGrid(lr.elasticNetParam, ElasticNetParam)<br/>    .build()</pre>
+<p>注意，超参数形成一个n维空间，其中<em> n </em>是超参数的数量。这个空间中的每个点都是一个特定的超参数配置，这是一个超参数向量。当然，我们不能探索这个空间中的每个点，所以我们基本上做的是在那个空间中的子集(希望是均匀分布的)上进行网格搜索。</p>
+<p>然后我们需要定义一个<kbd>BinaryClassificationEvaluator</kbd>赋值器，因为这是一个二元分类问题。使用此评估器，将通过比较测试标签列和测试预测列，根据精度度量来评估模型。默认指标是精确召回曲线下的面积和<strong>接收器工作特性</strong> ( <strong> ROC </strong>)曲线下的面积:</p>
+<pre><strong>val</strong> evaluator = <strong>new</strong> BinaryClassificationEvaluator()<br/>    .setLabelCol("label")<br/>    .setRawPredictionCol("prediction")</pre>
+<p>我们使用一个<kbd>CrossValidator</kbd>来选择最佳模型。<kbd>CrossValidator</kbd>使用评估管道、参数网格和分类评估器。<kbd>CrossValidator</kbd>使用<kbd>ParamGridBuilder</kbd>迭代线性回归的最大迭代、回归参数、容差和弹性净参数，然后评估模型，每个参数值重复10次以获得可靠的结果，即10重交叉验证:</p>
+<pre><strong>val</strong> crossval = <strong>new</strong> CrossValidator()<br/>    .setEstimator(pipeline)<br/>    .setEvaluator(evaluator)<br/>    .setEstimatorParamMaps(paramGrid)<br/>    .setNumFolds(numFolds)</pre>
+<p>前面的代码旨在执行交叉验证。验证器本身使用<kbd>BinaryClassificationEvaluator</kbd>估计器来评估每一个折叠上的渐进网格空间中的训练，并确保没有过度拟合。</p>
+<p>尽管幕后有如此多的事情在进行，我们的<kbd>CrossValidator</kbd>对象的接口仍然保持苗条和众所周知，因为<kbd>CrossValidator</kbd>也从Estimator扩展并支持fit方法。这意味着，在调用fit之后，包括所有特征预处理和LR分类器在内的完整预定义管道将被多次执行，每次都使用不同的超参数向量:</p>
+<pre><strong>val</strong> cvModel = crossval.fit(Preprocessing.trainDF)</pre>
+<p>现在是时候评估我们使用测试数据集创建的LR模型的预测能力了，到目前为止，该数据集尚未用于任何训练或交叉验证，即模型的未知数据。作为第一步，我们需要将测试集转换为模型管道，这将根据我们在前面的特性工程步骤中描述的相同机制来映射特性:</p>
+<pre><strong>val</strong> predictions = cvModel.transform(Preprocessing.testSet)<br/><strong>al</strong> result = predictions.select("label", "prediction", "probability")<br/><strong>val</strong> resutDF = result.withColumnRenamed("prediction", "Predicted_label")<br/>resutDF.show(10)<br/>&gt;&gt;&gt;</pre>
+<div><img height="183" width="262" class="alignnone size-full wp-image-243 image-border" src="img/b2101733-4336-453c-9d7e-2bf2fb7c7f1a.png"/></div>
+<p>预测概率在根据客户不完美的可能性对客户进行排序时也非常有用。这样，有限数量的资源可以在电信业务中用于预扣，但可以集中于最有价值的客户。</p>
+<p>但是看到之前的预测数据帧，真的很难猜测分类精度。第二步，评估员使用<kbd>BinaryClassificationEvaluator</kbd>进行自我评估，如下所示:</p>
+<pre><strong>val</strong> accuracy = evaluator.evaluate(predictions)<br/>println("Classification accuracy: " + accuracy)<br/>&gt;&gt;&gt;<br/>Classification accuracy: 0.7670592565329408</pre>
+<p>因此，我们从二元分类模型中获得了大约77%的分类精度。现在使用二进制分类器的准确性没有足够的意义。</p>
+<p>因此，研究人员经常推荐其他性能指标，如精确召回曲线下面积和ROC曲线下面积。但是，为此我们需要构建一个包含测试集原始分数的RDD:</p>
+<pre><strong>val</strong> predictionAndLabels = predictions<br/>    .select("prediction", "label")<br/>    .rdd.map(x =&gt; (x(0).asInstanceOf[Double], x(1)<br/>    .asInstanceOf[Double]))</pre>
+<p>现在，前面的RDD可用于计算前面提到的两个性能指标:</p>
+<pre><strong>val</strong> metrics = <strong>new</strong> BinaryClassificationMetrics(predictionAndLabels)<br/>println("Area under the precision-recall curve: " + metrics.areaUnderPR)<br/>println("Area under the receiver operating characteristic (ROC) curve : " + metrics.areaUnderROC)<br/>&gt;&gt;&gt;<br/>Area under the precision-recall curve: 0.5761887477313975<br/>Area under the receiver operating characteristic (ROC) curve: 0.7670592565329408</pre>
+<p>在这种情况下，评估返回77%的准确性，但只有58%的精度。在下面，我们计算一些更多的度量；例如，假的和真的正的和负的预测对于评估模型的性能也是有用的:</p>
+<ul>
+<li><strong>真阳性</strong>:模型正确预测取消订阅的频率</li>
+<li><strong>假阳性</strong>:模型错误预测取消订阅的频率</li>
+<li><strong>真否定</strong>:模型正确预测完全不取消的频率</li>
+<li><strong>假阴性</strong>:模型错误预测不取消的频率</li>
+</ul>
+<pre><strong>val</strong> lp = predictions.select("label", "prediction")<br/><strong>val</strong> counttotal = predictions.count()<br/><strong>val</strong> correct = lp.filter($"label" === $"prediction").count()<br/><br/><strong>val</strong> wrong = lp.filter(not($"label" === $"prediction")).count()<br/><strong>val</strong> ratioWrong = wrong.toDouble / counttotal.toDouble<br/><strong>val</strong> ratioCorrect = correct.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> truep = lp.filter($"prediction" === 0.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> truen = lp.filter($"prediction" === 1.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> falsep = lp.filter($"prediction" === 1.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/><strong>val</strong> falsen = lp.filter($"prediction" === 0.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/>println("Total Count : " + counttotal)<br/>println("Correct : " + correct)<br/>println("Wrong: " + wrong)<br/>println("Ratio wrong: " + ratioWrong)<br/>println("Ratio correct: " + ratioCorrect)<br/>println("Ratio true positive : " + truep)<br/>println("Ratio false positive : " + falsep)<br/>println("Ratio true negative : " + truen)<br/>println("Ratio false negative : " + falsen)<br/>&gt;&gt;&gt;</pre>
+<div><img height="212" width="459" class="alignnone size-full wp-image-244 image-border" src="img/16371f9d-cf39-4676-98fc-4407d4fba749.png"/></div>
+<p>然而，我们还没有得到很好的准确性，所以让我们继续尝试其他分类器，如SMV。这一次，我们将使用Apache Spark ML包中的线性SVM实现。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>SVM for churn prediction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">用于流失预测的SVM</h1>
+                
+            
+            
+                
+<p>SVM也广泛用于大规模分类(即二元和多项)任务。此外，它也是一种线性ML方法，如第一章、<em>分析保险严重索赔</em>所述。线性SVM算法输出SVM模型，其中SVM使用的损失函数可以使用铰链损失定义如下:</p>
+<div><em>L(<strong>w</strong>;<strong>x</strong>,y):=max{0,1−y<strong>w</strong><sup>T</sup><strong>x</strong>}</em></div>
+<p>默认情况下，Spark中的线性SVM使用L2正则化进行训练。但是，它也支持L1正则化，通过L1正则化，问题本身变成了线性规划。</p>
+<p>现在，假设我们有一组新的数据点<em>x</em>；模型根据<em><strong>w</strong><sup>T</sup><strong>x</strong></em>的值进行预测。默认情况下，如果<em><strong>w</strong></em><em><sup>T</sup></em><em><strong>x</strong>≥0</em>，则结果为正，否则为负。</p>
+<p>现在我们已经知道了SVMs的工作原理，让我们开始使用SVM的基于Spark的实现。让我们从导入所需的包和库开始:</p>
+<pre><strong>import</strong> org.apache.spark._<br/><strong>import</strong> org.apache.spark.sql.SparkSession<br/><strong>import</strong> org.apache.spark.sql.functions._<br/><strong>import</strong> org.apache.spark.ml.classification.{LinearSVC, LinearSVCModel}<br/><strong>import</strong> org.apache.spark.sql.SparkSession<br/><strong>import</strong> org.apache.spark.sql.functions.max<br/><strong>import</strong> org.apache.spark.ml.Pipeline<br/><strong>import</strong> org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}<br/><strong>import</strong> org.apache.spark.mllib.evaluation.BinaryClassificationMetrics<br/><strong>import</strong> org.apache.spark.ml.evaluation.BinaryClassificationEvaluator</pre>
+<p>现在让我们创建一个Spark会话并导入隐式:</p>
+<pre><strong>val</strong> spark: SparkSession = SparkSessionCreate.createSession("ChurnPredictionLogisticRegression")<br/><strong>import</strong> spark.implicits._</pre>
+<p>我们现在需要定义一些超参数来训练基于LR的管道:</p>
+<pre><strong>val</strong> numFolds = 10<br/><strong>val</strong> MaxIter: Seq[Int] = Seq(100)<br/><strong>val</strong> RegParam: Seq[Double] = Seq(1.0) // L2 regularization param, set 0.10 with L1 reguarization<br/><strong>val</strong> Tol: Seq[Double] = Seq(1e-8)<br/><strong>val</strong> ElasticNetParam: Seq[Double] = Seq(1.0) // Combination of L1 and L2</pre>
+<p>现在，一旦我们定义并初始化了超参数，下一个任务就是实例化LR估计器，如下所示:</p>
+<pre><strong>val</strong> svm = <strong>new</strong> LinearSVC()</pre>
+<p>现在，我们已经准备好了三个变压器和一个估算器，下一个任务是连接一个流水线，也就是说，它们每个都充当一个阶段:</p>
+<pre><strong>val</strong> pipeline = <strong>new</strong> Pipeline()<br/>     .setStages(Array(PipelineConstruction.ipindexer,<br/>                      PipelineConstruction.labelindexer,<br/>                      PipelineConstruction.assembler,svm)<br/>                      )</pre>
+<p>让我们定义<kbd>paramGrid</kbd>在超参数空间上执行这样的网格搜索。这将通过SVM的最大迭代、正则化参数、容差和弹性网络搜索最佳模型:</p>
+<pre><strong>val</strong> paramGrid = <strong>new</strong> ParamGridBuilder()<br/>    .addGrid(svm.maxIter, MaxIter)<br/>    .addGrid(svm.regParam, RegParam)<br/>    .addGrid(svm.tol, Tol)<br/>    .addGrid(svm.elasticNetParam, ElasticNetParam)<br/>    .build()</pre>
+<p>让我们定义一个<kbd>BinaryClassificationEvaluator</kbd>评估器来评估模型:</p>
+<pre><strong>val</strong> evaluator = <strong>new</strong> BinaryClassificationEvaluator()<br/>    .setLabelCol("label")<br/>    .setRawPredictionCol("prediction")</pre>
+<p>我们使用<kbd>CrossValidator</kbd>对最佳模型选择进行10重交叉验证:</p>
+<pre><strong>val</strong> crossval = <strong>new</strong> CrossValidator()<br/>    .setEstimator(pipeline)<br/>    .setEvaluator(evaluator)<br/>    .setEstimatorParamMaps(paramGrid)<br/>    .setNumFolds(numFolds)</pre>
+<p>现在让我们调用<kbd>fit</kbd>方法，以便包括所有特征预处理和LR分类器的完整预定义管道被多次执行——每次使用不同的超参数向量:</p>
+<pre><strong>val</strong> cvModel = crossval.fit(Preprocessing.trainDF)</pre>
+<p>现在是时候在测试数据集上评估SVM模型的预测能力了。作为第一步，我们需要用模型管道来转换测试集，这将根据我们在前面的特性工程步骤中描述的相同机制来映射特性:</p>
+<pre><strong>val</strong> predictions = cvModel.transform(Preprocessing.testSet)<br/>prediction.show(10)<br/>&gt;&gt;&gt;</pre>
+<div><img height="187" width="357" src="img/ad85dba1-6541-44bf-bf6c-560e0d867804.png"/></div>
+<p>但是看到之前的预测数据帧，真的很难猜测分类精度。第二步，评估员使用<kbd>BinaryClassificationEvaluator</kbd>进行自我评估，如下所示:</p>
+<pre><strong>val</strong> accuracy = evaluator.evaluate(predictions)<br/>println("Classification accuracy: " + accuracy)<br/>&gt;&gt;&gt;<br/>Classification accuracy: 0.7530180345969819</pre>
+<p>因此，我们从二元分类模型中获得了大约75%的分类精度。现在，使用二进制分类器的准确性没有足够的意义。</p>
+<p>因此，研究人员经常推荐其他性能指标，如精确召回曲线下面积和ROC曲线下面积。但是，为此我们需要构建一个包含测试集原始分数的RDD:</p>
+<pre><strong>val</strong> predictionAndLabels = predictions<br/>    .select("prediction", "label")<br/>    .rdd.map(x =&gt; (x(0).asInstanceOf[Double], x(1)<br/>    .asInstanceOf[Double]))</pre>
+<p>现在，前面的RDD可用于计算前面提到的两个性能指标:</p>
+<pre><strong>val</strong> metrics = <strong>new</strong> BinaryClassificationMetrics(predictionAndLabels)<br/>println("Area under the precision-recall curve: " + metrics.areaUnderPR)<br/>println("Area under the receiver operating characteristic (ROC) curve : " + metrics.areaUnderROC)<br/>&gt;&gt;&gt;<br/>Area under the precision-recall curve: 0.5595712265324828<br/>Area under the receiver operating characteristic (ROC) curve: 0.7530180345969819</pre>
+<p>在这种情况下，评估返回75%的准确性，但只有55%的精度。在下文中，我们再次计算一些更多的度量；例如，假的和真的正的和负的预测对于评估模型的性能也是有用的:</p>
+<pre><strong>val</strong> lp = predictions.select("label", "prediction")<br/><strong>val</strong> counttotal = predictions.count()<br/><br/><strong>val</strong> correct = lp.filter($"label" === $"prediction").count()<br/><br/><strong>val</strong> wrong = lp.filter(not($"label" === $"prediction")).count()<br/><strong>val</strong> ratioWrong = wrong.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> ratioCorrect = correct.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> truep = lp.filter($"prediction" === 0.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> truen = lp.filter($"prediction" === 1.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> falsep = lp.filter($"prediction" === 1.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/><strong>val</strong> falsen = lp.filter($"prediction" === 0.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/>println("Total Count : " + counttotal)<br/>println("Correct : " + correct)<br/>println("Wrong: " + wrong)<br/>println("Ratio wrong: " + ratioWrong)<br/>println("Ratio correct: " + ratioCorrect)<br/>println("Ratio true positive : " + truep)<br/>println("Ratio false positive : " + falsep)<br/>println("Ratio true negative : " + truen)<br/>println("Ratio false negative : " + falsen)<br/>&gt;&gt;&gt;</pre>
+<div><img height="183" width="316" src="img/6d30c141-8fcc-4bda-8273-b5fc3c4f9a3d.png"/></div>
+<p>然而，我们还没有收到使用SVM良好的准确性。此外，没有选项来选择最合适的特征，这将帮助我们用最合适的特征来训练我们的模型。这一次，我们将再次使用一个更健壮的分类器，比如Apache Spark ML包中的<strong>决策树</strong> ( <strong> DTs </strong>)实现。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>DTs for churn prediction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">用于客户流失预测的DTs</h1>
+                
+            
+            
+                
+<p>DTs通常被认为是一种用于解决分类和回归任务的监督学习技术。</p>
+<p>更专业地说，根据统计概率，DT中的每个分支代表一个可能的决策、事件或反应。与朴素贝叶斯相比，DTs是一种更健壮的分类技术。原因是，首先，DT将特征分成训练集和测试集。然后，它产生一个很好的概括来推断预测的标签或类。最有趣的是，DT算法可以处理二进制和多类分类问题。</p>
+<p>例如，在下面的示例图中，DTs从准入数据中学习使用一组<strong> if来近似正弦曲线...else </strong>决策规则。数据集包含每个申请入学的学生的记录，比如说，申请美国大学的学生。每个记录包含研究生记录考试分数、CGPA分数和列的排名。现在我们将不得不根据这三个特征(变量)来预测谁是有能力的。在训练DT模型和修剪树的不需要的分支之后，可以使用DTs来解决这种问题。通常，更深的树表示更复杂的决策规则和更适合的模型:</p>
+<div><img height="466" width="479" src="img/fa48fbd9-4b1f-4e97-abd1-fe85ca6be6d4.png"/></div>
+<p>图6:大学录取数据的决策树</p>
+<p>因此，树越深，决策规则越复杂，模型越适合。现在让我们来看看DTs的一些优点和缺点:</p>
+<table class="MsoTableGrid">
+<tbody>
+<tr>
+<td/>
+<td>
+<p><strong>优点</strong></p>
+</td>
+<td>
+<p><strong>缺点</strong></p>
+</td>
+<td>
+<p><strong>更擅长</strong></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><strong>决策树</strong></p>
+</td>
+<td>
+<p>-易于实施、培训和解释</p>
+<p>-树木可以被可视化</p>
+<p>-几乎不需要数据准备</p>
+<p>-更少的建模和预测时间</p>
+<p>-可以处理数值和分类数据</p>
+<p>-使用统计测试验证模型的可能性</p>
+<p>-对噪声和缺失值具有鲁棒性</p>
+<p>-高精度</p>
+</td>
+<td>
+<p>-对于大而复杂的树，解释很困难</p>
+<p>-相同的子树中可能会出现重复</p>
+<p>-对角线决策边界可能存在的问题</p>
+<p>-决策树学习者可以创建过于复杂的树，不能很好地概括数据</p>
+<p>-有时，由于数据中的微小变化，DTs可能会不稳定</p>
+<p>-学习DT本身是一个NP完全问题</p>
+<p>-如果某些类占主导地位，DT学习者会创建有偏见的树</p>
+</td>
+<td>
+<p>-以高度精确的分类为目标</p>
+<p>-医疗诊断和预后</p>
+<p>-信用风险分析</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p> </p>
+<p>现在，我们已经知道了DTs的工作原理，让我们开始使用基于Spark的DTs实现。让我们从导入所需的包和库开始:</p>
+<pre><strong>import</strong> org.apache.spark._<br/><strong>import</strong> org.apache.spark.sql.SparkSession<br/><strong>import</strong> org.apache.spark.sql.functions._<br/><strong>import</strong> org.apache.spark.sql.types._<br/><strong>import</strong> org.apache.spark.sql._<br/><strong>import</strong> org.apache.spark.ml.Pipeline<br/><strong>import</strong> org.apache.spark.ml.classification.{DecisionTreeClassifier, DecisionTreeClassificationModel}<br/><strong>import</strong> org.apache.spark.mllib.evaluation.BinaryClassificationMetrics<br/><strong>import</strong> org.apache.spark.ml.evaluation.BinaryClassificationEvaluator<br/><strong>import</strong> org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}</pre>
+<p>现在让我们创建一个Spark会话并导入隐式:</p>
+<pre><strong>val</strong> spark: SparkSession = SparkSessionCreate.createSession("ChurnPredictionDecisionTrees")<br/><strong>import</strong> spark.implicits._</pre>
+<p>现在，一旦我们定义并初始化了超参数，下一个任务就是实例化一个<kbd>DecisionTreeClassifier</kbd>估计器，如下所示:</p>
+<pre><strong>val</strong> dTree = <strong>new</strong> DecisionTreeClassifier()<br/>                .setLabelCol("label")<br/>                .setFeaturesCol("features")<br/>                .setSeed(1234567L)</pre>
+<p>现在，我们已经准备好了三个变压器和一个估算器，下一个任务是连接一个流水线，也就是说，它们每个都充当一个阶段:</p>
+<pre><strong>val</strong> pipeline = <strong>new</strong> Pipeline()<br/>                .setStages(Array(PipelineConstruction.ipindexer,<br/>                PipelineConstruction.labelindexer,<br/>                PipelineConstruction.assembler,dTree))</pre>
+<p>让我们定义paramgrid来在超参数空间上执行这样的网格搜索。该搜索通过DT的杂质、最大箱数和最大深度来寻找最佳模型。树的最大深度:深度0表示1个叶节点；深度1表示1个内部节点+ 2个叶节点。</p>
+<p>另一方面，最大箱数用于分离连续要素和选择如何在每个结点上分割要素。箱越多，粒度越高。简而言之，我们通过决策树的<kbd>maxDepth</kbd>和<kbd>maxBins</kbd>参数来搜索最佳模型:</p>
+<pre><strong>var</strong> paramGrid = <strong>new</strong> ParamGridBuilder()<br/>    .addGrid(dTree.impurity, "gini" :: "entropy" :: Nil)<br/>    .addGrid(dTree.maxBins, 2 :: 5 :: 10 :: 15 :: 20 :: 25 :: 30 :: Nil)<br/>    .addGrid(dTree.maxDepth, 5 :: 10 :: 15 :: 20 :: 25 :: 30 :: 30 :: Nil)<br/>    .build()</pre>
+<p>在前面的代码段中，我们通过序列格式创建了一个渐进式paramgrid。这意味着我们正在用不同的超参数组合创建网格空间。这将帮助我们提供包含最佳超参数的最佳模型。</p>
+<p>让我们定义一个<kbd>BinaryClassificationEvaluator</kbd>评估器来评估模型:</p>
+<pre><strong>val</strong> evaluator = <strong>new</strong> BinaryClassificationEvaluator()<br/>    .setLabelCol("label")<br/>    .setRawPredictionCol("prediction")</pre>
+<p>我们使用<kbd>CrossValidator</kbd>对最佳模型选择进行10重交叉验证:</p>
+<pre><strong>val</strong> crossval = <strong>new</strong> CrossValidator()<br/>    .setEstimator(pipeline)<br/>    .setEvaluator(evaluator)<br/>    .setEstimatorParamMaps(paramGrid)<br/>    .setNumFolds(numFolds)</pre>
+<p>现在让我们调用<kbd>fit</kbd>方法，这样完整的预定义管道，包括所有的特征预处理和DT分类器，被执行多次——每次使用不同的超参数向量:</p>
+<pre><strong>val</strong> cvModel = crossval.fit(Preprocessing.trainDF)</pre>
+<p>现在是时候评估DT模型在测试数据集上的预测能力了。作为第一步，我们需要用模型管道来转换测试集，这将根据我们在前面的特性工程步骤中描述的相同机制来映射特性:</p>
+<pre><strong>val</strong> predictions = cvModel.transform(Preprocessing.testSet)<br/>prediction.show(10)<br/>&gt;&gt;&gt;</pre>
+<div><img height="192" width="293" src="img/7ecce996-69f6-4412-b021-7588816d89d6.png"/></div>
+<p>然而，看到前面的预测数据帧，真的很难猜测分类的准确性。第二步，在评估中使用<kbd>BinaryClassificationEvaluator</kbd>进行评估本身，如下:</p>
+<pre><strong>val</strong> accuracy = evaluator.evaluate(predictions)<br/>println("Classification accuracy: " + accuracy)<br/>&gt;&gt;&gt;<br/>Accuracy: 0.870334928229665</pre>
+<p>因此，我们从二元分类模型中获得了大约87%的分类精度。现在，类似于SVM和LR，我们将基于包含测试集原始分数的以下RDD来观察精确回忆曲线下的面积和ROC曲线下的面积:</p>
+<pre><strong>val</strong> predictionAndLabels = predictions<br/>    .select("prediction", "label")<br/>    .rdd.map(x =&gt; (x(0).asInstanceOf[Double], x(1)<br/>    .asInstanceOf[Double]))</pre>
+<p>现在，前面的RDD可用于计算前面提到的两个性能指标:</p>
+<pre><strong>val</strong> metrics = <strong>new</strong> BinaryClassificationMetrics(predictionAndLabels)<br/>println("Area under the precision-recall curve: " + metrics.areaUnderPR)<br/>println("Area under the receiver operating characteristic (ROC) curve : " + metrics.areaUnderROC)<br/>&gt;&gt;&gt;<br/>Area under the precision-recall curve: 0.7293101942399631<br/>Area under the receiver operating characteristic (ROC) curve: 0.870334928229665</pre>
+<p>在这种情况下，评估返回87%的准确度，但只有73%的精确度，这比SVM和LR的结果好得多。在下文中，我们再次计算一些更多的度量；例如，假的和真的正的和负的预测对于评估模型的性能也是有用的:</p>
+<pre><strong>val</strong> lp = predictions.select("label", "prediction")<br/><strong>val</strong> counttotal = predictions.count()<br/><br/><strong>val</strong> correct = lp.filter($"label" === $"prediction").count()<br/><br/><strong>val</strong> wrong = lp.filter(not($"label" === $"prediction")).count()<br/><br/><strong>val</strong> ratioWrong = wrong.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> ratioCorrect = correct.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> truep = lp.filter($"prediction" === 0.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> truen = lp.filter($"prediction" === 1.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> falsep = lp.filter($"prediction" === 1.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/><strong>val</strong> falsen = lp.filter($"prediction" === 0.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/>println("Total Count : " + counttotal)<br/>println("Correct : " + correct)<br/>println("Wrong: " + wrong)<br/>println("Ratio wrong: " + ratioWrong)<br/>println("Ratio correct: " + ratioCorrect)<br/>println("Ratio true positive : " + truep)<br/>println("Ratio false positive : " + falsep)<br/>println("Ratio true negative : " + truen)<br/>println("Ratio false negative : " + falsen)<br/>&gt;&gt;&gt;</pre>
+<div><img height="276" width="400" src="img/e919b818-4fc3-4bd9-8bde-c1e4974f3518.png"/></div>
+<p>奇幻；我们达到了87%的准确率，但是什么因素呢？嗯，可以调试得到分类时构造的决策树。但首先，让我们看看在交叉验证后，我们在哪个级别获得了最佳模型:</p>
+<pre><strong>val</strong> bestModel = cvModel.bestModel<br/>println("The Best Model and Parameters:n--------------------")<br/>println(bestModel.asInstanceOf[org.apache.spark.ml.PipelineModel].stages(3))<br/>&gt;&gt;&gt;</pre>
+<p>最佳模型和参数:</p>
+<pre>DecisionTreeClassificationModel (uid=dtc_1fb45416b18b) of depth 5 with 53 nodes.</pre>
+<p>这意味着我们在深度5处获得了具有53个节点的最佳树模型。现在，让我们通过显示树来提取在树构建期间采取的那些步骤(即决策)。该树帮助我们找到数据集中最有价值的特征:</p>
+<pre>bestModel.asInstanceOf[org.apache.spark.ml.PipelineModel]<br/>    .stages(3)<br/>    .extractParamMap<br/><br/><strong>val</strong> treeModel = bestModel.asInstanceOf[org.apache.spark.ml.PipelineModel]<br/>    .stages(3)<br/>    .asInstanceOf[DecisionTreeClassificationModel]<br/>println("Learned classification tree model:n" + treeModel.toDebugString)<br/>&gt;&gt;&gt;</pre>
+<p>学习分类树模型:</p>
+<pre>If (feature 3 &lt;= 245.2)<br/>    If (feature 11 &lt;= 3.0)<br/>        If (feature 1 in {1.0})<br/>            If (feature 10 &lt;= 2.0)<br/>                Predict: 1.0<br/>            Else (feature 10 &gt; 2.0)<br/>            If (feature 9 &lt;= 12.9)<br/>                Predict: 0.0<br/>            Else (feature 9 &gt; 12.9)<br/>                Predict: 1.0<br/>        ...
+    Else (feature 7 &gt; 198.0)<br/>        If (feature 2 &lt;= 28.0)<br/>            Predict: 1.0<br/>        Else (feature 2 &gt; 28.0)<br/>            If (feature 0 &lt;= 60.0)<br/>                Predict: 0.0<br/>            Else (feature 0 &gt; 60.0)<br/>                Predict: 1.0</pre>
+<p>在前面的输出中，<kbd>toDebugString()</kbd>函数打印出树的决策节点，最后的预测出现在最后的叶子上。还可以清楚地看到，特征11和3用于决策；这是客户可能流失的两个最重要的原因。但是那两个特征是什么呢？让我们看看他们:</p>
+<pre>println("Feature 11:" + Preprocessing.trainDF.filter(PipelineConstruction.featureCols(11)))<br/>println("Feature 3:" + Preprocessing.trainDF.filter(PipelineConstruction.featureCols(3)))<br/>&gt;&gt;&gt;<br/>Feature 11: [total_international_num_calls: double]<br/>Feature 3: [total_day_mins: double]</pre>
+<p>因此，客户服务呼叫和全天分钟数是由决策树选择的，因为它提供了一种自动机制来确定最重要的特征。</p>
+<p>等等！我们还没有完成。最后但同样重要的是，我们将使用一种集成技术，RF，它被认为是比DTs更健壮的分类器。同样，让我们使用Apache Spark ML包中的随机森林实现。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Random Forest for churn prediction</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">用于流失预测的随机森林</h1>
+                
+            
+            
+                
+<p>正如在<a href="4b0be2d2-f313-471f-83fe-830931fc8af9.xhtml" target="_blank">第一章</a>、<em>分析保险严重程度索赔</em>中所描述的，随机森林是一种集成技术，它采用一个观察子集和一个变量子集来构建决策树——也就是一个DTs集成。从技术上来说，它建立了几个决策树，并将它们整合在一起，以获得更准确和稳定的预测。</p>
+<div><img height="358" width="578" src="img/5cc25b68-25d8-404b-8419-01ce7bd71ce4.png"/></div>
+<p>图7:随机森林及其组装技术解释</p>
+<p>这是一个直接的结果，因为通过独立陪审团的最多投票，我们得到的最终预测比最好的陪审团更好(见上图)。现在我们已经知道了RF的工作原理，让我们开始使用基于Spark的RF实现。让我们从导入所需的包和库开始:</p>
+<pre><strong>import</strong> org.apache.spark._<br/><strong>import</strong> org.apache.spark.sql.SparkSession<br/><strong>import</strong> org.apache.spark.sql.functions._<br/><strong>import</strong> org.apache.spark.sql.types._<br/><strong>import</strong> org.apache.spark.sql._<br/><strong>import</strong> org.apache.spark.ml.Pipeline<br/><strong>import</strong> org.apache.spark.ml.classification.{RandomForestClassifier, RandomForestClassificationModel}<br/><strong>import</strong> org.apache.spark.mllib.evaluation.BinaryClassificationMetrics<br/><strong>import</strong> org.apache.spark.ml.evaluation.BinaryClassificationEvaluator<br/><strong>import</strong> org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}</pre>
+<p class="mce-root">现在让我们创建Spark会话并隐式导入:</p>
+<pre><strong>val</strong> spark: SparkSession = SparkSessionCreate.createSession("ChurnPredictionRandomForest")<br/><strong>import</strong> spark.implicits._</pre>
+<p>现在，一旦我们定义并初始化了超参数，下一个任务就是实例化一个<kbd>DecisionTreeClassifier</kbd>估计器，如下所示:</p>
+<pre><strong>val</strong> rf = <strong>new</strong> RandomForestClassifier()<br/>    .setLabelCol("label")<br/>    .setFeaturesCol("features")<br/>    .setSeed(1234567L)// for reproducibility</pre>
+<p>现在，我们已经准备好了三个变压器和一个估算器，下一个任务是连接一个流水线，也就是说，它们每个都充当一个阶段:</p>
+<pre><strong>val</strong> pipeline = <strong>new</strong> Pipeline()<br/>    .setStages(Array(PipelineConstruction.ipindexer,<br/>    PipelineConstruction.labelindexer,<br/>    PipelineConstruction.assembler,rf))</pre>
+<p>让我们定义paramgrid来在超参数空间上执行这样的网格搜索:</p>
+<pre><strong>val</strong> paramGrid = <strong>new</strong> ParamGridBuilder()<br/>    .addGrid(rf.maxDepth, 3 :: 5 :: 15 :: 20 :: 50 :: Nil)<br/>    .addGrid(rf.featureSubsetStrategy, "auto" :: "all" :: Nil)<br/>    .addGrid(rf.impurity, "gini" :: "entropy" :: Nil)<br/>    .addGrid(rf.maxBins, 2 :: 5 :: 10 :: Nil)<br/>    .addGrid(rf.numTrees, 10 :: 50 :: 100 :: Nil)<br/>    .build()</pre>
+<p>让我们定义一个<kbd>BinaryClassificationEvaluator</kbd>评估器来评估模型:</p>
+<pre><strong>val</strong> evaluator = <strong>new</strong> BinaryClassificationEvaluator()<br/>    .setLabelCol("label")<br/>    .setRawPredictionCol("prediction")</pre>
+<p>我们使用<kbd>CrossValidator</kbd>对最佳模型选择进行10重交叉验证:</p>
+<pre><strong>val</strong> crossval = <strong>new</strong> CrossValidator()<br/>    .setEstimator(pipeline)<br/>    .setEvaluator(evaluator)<br/>    .setEstimatorParamMaps(paramGrid)<br/>    .setNumFolds(numFolds)</pre>
+<p>现在，让我们调用<kbd>fit</kbd>方法，以便多次执行完整的预定义管道，包括所有特征预处理和DT分类器——每次使用不同的超参数向量:</p>
+<pre><strong>val</strong> cvModel = crossval.fit(Preprocessing.trainDF)</pre>
+<p>现在是时候评估DT模型在测试数据集上的预测能力了。作为第一步，我们需要将测试集转换为模型管道，这将根据我们在前面的特性工程步骤中描述的相同机制来映射特性:</p>
+<pre><strong>val</strong> predictions = cvModel.transform(Preprocessing.testSet)<br/>prediction.show(10)<br/>&gt;&gt;&gt;</pre>
+<div><img height="193" width="277" class="alignnone size-full wp-image-248 image-border" src="img/3c3565fc-44f6-4bf0-a838-72fae88c09e3.png"/></div>
+<p>然而，看到前面的预测数据帧，真的很难猜测分类的准确性。第二步，在评估中使用<kbd>BinaryClassificationEvaluator</kbd>对自身进行评估，如下:</p>
+<pre><strong>val</strong> accuracy = evaluator.evaluate(predictions)<br/>println("Classification accuracy: " + accuracy)<br/>&gt;&gt;&gt;<br/>Accuracy: 0.870334928229665</pre>
+<p>因此，我们从二元分类模型中获得了大约87%的分类精度。现在，类似于SVM和LR，我们将基于包含测试集原始分数的以下RDD来观察精确回忆曲线下的面积和ROC曲线下的面积:</p>
+<pre><strong>val</strong> predictionAndLabels = predictions<br/>    .select("prediction", "label")<br/>    .rdd.map(x =&gt; (x(0).asInstanceOf[Double], x(1)<br/>    .asInstanceOf[Double]))</pre>
+<p>现在，前面的RDD可用于计算前面提到的两个性能指标:</p>
+<pre><strong>val</strong> metrics = <strong>new</strong> BinaryClassificationMetrics(predictionAndLabels)<br/><br/>println("Area under the precision-recall curve: " + metrics.areaUnderPR)<br/>println("Area under the receiver operating characteristic (ROC) curve : " + metrics.areaUnderROC)<br/>&gt;&gt;&gt;<br/>Area under the precision-recall curve: 0.7293101942399631<br/>Area under the receiver operating characteristic (ROC) curve: 0.870334928229665</pre>
+<p>在这种情况下，评估返回87%的准确度，但只有73%的精确度，这比SVM和LR的结果好得多。在下文中，我们再次计算一些更多的度量；例如，假的和真的正的和负的预测对于评估模型的性能也是有用的:</p>
+<pre><strong>val</strong> lp = predictions.select("label", "prediction")<br/><strong>val</strong> counttotal = predictions.count()<br/><br/><strong>val</strong> correct = lp.filter($"label" === $"prediction").count()<br/><br/><strong>val</strong> wrong = lp.filter(not($"label" === $"prediction")).count()<br/><br/><strong>val</strong> ratioWrong = wrong.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> ratioCorrect = correct.toDouble / counttotal.toDouble<br/><br/><strong>val</strong> truep = lp.filter($"prediction" === 0.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> truen = lp.filter($"prediction" === 1.0).filter($"label" ===<br/>$"prediction").count() / counttotal.toDouble<br/><br/><strong>val</strong> falsep = lp.filter($"prediction" === 1.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/><strong>val</strong> falsen = lp.filter($"prediction" === 0.0).filter(not($"label" ===<br/>$"prediction")).count() / counttotal.toDouble<br/><br/>println("Total Count : " + counttotal)<br/>println("Correct : " + correct)<br/>println("Wrong: " + wrong)<br/>println("Ratio wrong: " + ratioWrong)<br/>println("Ratio correct: " + ratioCorrect)<br/>println("Ratio true positive : " + truep)<br/>println("Ratio false positive : " + falsep)<br/>println("Ratio true negative : " + truen)<br/>println("Ratio false negative : " + falsen)<br/>&gt;&gt;&gt;</pre>
+<p>我们将得到以下结果:</p>
+<div><img height="284" width="458" src="img/9c1a146a-2390-4b0e-b71e-af399d8e61b3.png"/></div>
+<p>奇幻；我们达到了91%的准确率，但是是因为什么因素呢？嗯，类似于DT，可以调试随机森林，得到分类时构建的决策树。对于要打印的树和选择的最重要的特性，尝试DT中的最后几行代码，就完成了。</p>
+<p>你现在能猜出训练了多少不同的模型吗？嗯，我们有10倍的交叉验证和2到7之间的五维超参数空间基数。现在我们来简单算一下:10 * 7 * 5 * 2 * 3 * 6 = 12600个模型！</p>
+<p>请注意，我们仍然将超参数空间限定为7个<kbd>numTrees</kbd>、<kbd>maxBins</kbd>和<kbd>maxDepth</kbd>。此外，请记住，更大的树最有可能表现更好。因此，您可以随意摆弄这些代码和添加特性，也可以使用更大的超参数空间，比如说更大的树。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Selecting the best model for deployment</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">选择最佳部署模式</h1>
+                
+            
+            
+                
+<p>从前面的结果可以看出，与随机森林和DT相比，LR和SVM模型具有相同但更高的假阳性率。因此，我们可以说，DT和随机森林在真正的正计数方面总体上具有更好的准确性。让我们用每个模型的饼图预测分布来看看前面陈述的有效性:</p>
+<div><img height="402" width="640" class="alignnone size-full wp-image-246 image-border" src="img/e0108be2-f86e-40ab-9f3f-00e341dda8df.png"/></div>
+<p>现在，值得一提的是，使用随机森林，我们实际上获得了很高的准确性，但这是一个非常资源，以及耗时的工作；与LR和SVM相比，这种训练尤其需要相当长的时间。</p>
+<p>因此，如果您没有更高的内存或计算能力，建议在运行这段代码之前增加Java堆空间，以避免OOM错误。</p>
+<p>最后，如果您想要部署最佳模型(在我们的例子中就是随机森林)，建议在<kbd>fit()</kbd>方法调用之后立即保存交叉验证的模型:</p>
+<pre>// Save the workflow<br/>cvModel.write.overwrite().save("model/RF_model_churn")</pre>
+<p>您的训练模型将被保存到该位置。该目录将包括:</p>
+<ul>
+<li>最佳模特</li>
+<li>估计量</li>
+<li>求值程序</li>
+<li>培训本身的元数据</li>
+</ul>
+<p>现在，下一个任务将是恢复相同的模型，如下所示:</p>
+<pre>// Load the workflow back<br/><strong>val</strong> cvModel = CrossValidatorModel.load("model/ RF_model_churn/")</pre>
+<p>最后，我们需要将测试集转换为模型管道，该管道根据我们在前面的特性工程步骤中描述的相同机制来映射特性:</p>
+<pre><strong>val</strong> predictions = cvModel.transform(Preprocessing.testSet)</pre>
+<p>最后，我们评估恢复的模型:</p>
+<pre><strong>val</strong> evaluator = <strong>new</strong> BinaryClassificationEvaluator()<br/>    .setLabelCol("label")<br/>    .setRawPredictionCol("prediction")<br/><br/><strong>val</strong> accuracy = evaluator.evaluate(predictions)<br/>    println("Accuracy: " + accuracy)<br/>    evaluator.explainParams()<br/><br/><strong>val</strong> predictionAndLabels = predictions<br/>    .select("prediction", "label")<br/>    .rdd.map(x =&gt; (x(0).asInstanceOf[Double], x(1)<br/>    .asInstanceOf[Double]))<br/><br/><strong>val</strong> metrics = <strong>new</strong> BinaryClassificationMetrics(predictionAndLabels)<br/><strong>val</strong> areaUnderPR = metrics.areaUnderPR<br/>println("Area under the precision-recall curve: " + areaUnderPR)
+<strong>val</strong> areaUnderROC = metrics.areaUnderROC<br/>println("Area under the receiver operating characteristic (ROC) curve: " + areaUnderROC)<br/>&gt;&gt;&gt;</pre>
+<p>您将收到以下输出:</p>
+<div><img height="264" width="529" src="img/5cb2c2c5-1984-4919-a0c1-8d433a22c386.png"/></div>
+<p>好了，完成了！我们成功地重复使用了这个模型，并做了同样的预测。但是，可能由于数据的随机性，我们观察到的预测略有不同。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Summary</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">摘要</h1>
+                
+            
+            
+                
+<p>在这一章中，我们已经看到了如何开发一个ML项目来预测客户是否可能取消他们的订阅，然后使用它来开发一个现实生活中的预测模型。我们开发了使用LR、SVM、DTs和随机森林的预测模型。我们还分析了哪些类型的客户数据通常用于对数据进行初步分析。最后，我们已经看到了如何选择用于生产就绪环境的模型。</p>
+<p>在下一章中，我们将看到如何开发一个真实的项目，收集历史和实时的<strong>比特币</strong>数据，并预测未来一周、一个月等的价格。除此之外，我们将了解如何为在线加密货币交易生成一个简单的信号。</p>
+
+
+            
+
+            
+        
+    
+
+
+</body></html>

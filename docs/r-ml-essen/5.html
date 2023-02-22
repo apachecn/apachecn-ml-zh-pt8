@@ -1,0 +1,202 @@
+<html><head/><body>
+
+
+
+<title>Chapter 5. Step 2 – Applying Machine Learning Techniques</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title">第五章。步骤2–应用机器学习技术</h1></div></div></div><p>本章重点介绍机器学习算法的应用，这是开发解决方案的核心。有不同类型的从数据中学习的技术。根据我们的目标，我们可以使用数据来识别对象之间的相似性或估计新对象的属性。</p><p>为了展示机器学习技术，我们从上一章处理的标志数据开始。然而，阅读本章并不要求你了解前面的内容，尽管建议你了解数据的来源。</p><p>在本章中，您将学习:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">识别同类项目组</li><li class="listitem" style="list-style-type: disc">浏览并可视化项目组</li><li class="listitem" style="list-style-type: disc">评估一种新的国家语言</li><li class="listitem" style="list-style-type: disc">设置机器学习技术的配置</li></ul></div><div><div><div><div><h1 class="title"><a id="ch05lvl1sec28"/>鉴别同类的一组物品</h1></div></div></div><p>我们的数据<a id="id241" class="indexterm"/>描述了每个国家的国旗。有没有办法识别国旗属性相似的国家群体？我们可以使用一些聚类技术，这些技术是使用数据定义同质聚类的机器学习算法。</p><p>在上一章中，从标志属性开始，我们构建了一个特性表，并将其存储到<code class="literal">dtFeatures.txt</code>文件中。为了将文件加载到R中，第一步是使用<code class="literal">setwd</code>定义包含文件的目录。然后，我们可以使用<code class="literal">read.table</code>将文件加载到<code class="literal">dfFeatures</code>数据框中，并将其转换为<code class="literal">dtFeatures</code>数据表，如图所示:</p><div><pre class="programlisting"># load the flag features
+setwd('&lt;INSER YOUR DIRECTORY/PATH&gt;")
+dfFeatures &lt;- read.table(file = 'dtFeatures.txt')
+library("data.table")
+dtFeatures &lt;- data.table(dfFeatures)</pre></div><p>让我们看看使用<code class="literal">str</code>的数据，类似于前面的章节:</p><div><pre class="programlisting"># explore the features
+str(dtFeatures)
+<strong>Classes 'data.table' and 'data.frame':	194 obs. of  38 variables:</strong>
+<strong> $ language     : Factor w/ 10 levels "Arabic","Chinese",..: 8 7 1 3 7 8 3 3 10 10 ...</strong>
+<strong> $ red          : Factor w/ 2 levels "no","yes": 2 2 2 2 2 2 1 2 1 1 ...</strong>
+<strong> $ green        : Factor w/ 2 levels "no","yes": 2 1 2 1 1 1 1 1 1 1 ...</strong>
+<strong> $ blue         : Factor w/ 2 levels "no","yes": 1 1 1 2 2 1 2 2 2 2 ...</strong>
+</pre></div><p>语言列是一个因子，有10种语言，称为因子的<code class="literal">levels</code>。所有其他<a id="id242" class="indexterm"/>列包含描述标志的特征，它们是具有两个级别的因子:<code class="literal">yes</code>和<code class="literal">no</code>。其特点如下:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc">如果标志包含颜色，则<code class="literal">colors</code>特征(例如<code class="literal">red</code>)有一个<code class="literal">yes</code>级别</li><li class="listitem" style="list-style-type: disc">如果标志包含模式，则<code class="literal">patterns</code>特征(例如<code class="literal">circle</code>)有一个<code class="literal">yes</code>级别</li><li class="listitem" style="list-style-type: disc">如果标志有3个横条，后跟数字的<code class="literal">nBars</code> / <code class="literal">nStrp</code> / <code class="literal">nCol</code>特征(例如<code class="literal">nBars3</code>)有一个<code class="literal">yes</code>级别</li><li class="listitem" style="list-style-type: disc">如果左上部分是蓝色的，后跟颜色的<code class="literal">topleft</code> / <code class="literal">botright</code> / <code class="literal">mainhue</code>特征(例如<code class="literal">topleftblue</code>)具有一个<code class="literal">yes</code>级别</li></ul></div><div><div><div><div><h2 class="title"><a id="ch05lvl2sec34"/>使用k-均值识别组</h2></div></div></div><p>我们的目标是<a id="id243" class="indexterm"/>识别相似的标志组。为了这个<a id="id244" class="indexterm"/>的目的，我们可以开始使用一个基本的聚类算法，即<strong> k-means </strong>。</p><p><a id="id245" class="indexterm"/> k-means目标是识别<em> k </em>(例如，八个)同类标志簇。想象一下把所有的旗帜分成八组。其中一个包括10面旗帜，其中7面包含红色。假设我们有一个<code class="literal">red</code>属性，如果标志包含红色则为<code class="literal">1</code>，否则为<code class="literal">0</code>。我们可以说这个集群的<code class="literal">average flag</code>包含<code class="literal">red</code>的概率为70%，所以它的<code class="literal">red</code>属性为0.7。对每个其他属性做同样的事情，我们可以定义<code class="literal">average flag</code>，它的属性是组内的平均值。每个聚类都有一个平均标志，我们可以使用相同的方法来确定。</p><p>k-means算法基于一个称为聚类中心的平均对象。在开始时，该算法将标记分成8个随机组，并确定它们的8个中心。然后，k-means将每个标志重新分配给中心最相似的组。这样，聚类更加均匀，并且算法可以重新计算它们的中心。经过几次迭代后，我们有8个包含同类标志的组。</p><p>k均值算法是一种非常流行的技术，R为我们提供了<code class="literal">kmeans</code>函数。为了使用它，我们可以看看它的帮助:</p><div><pre class="programlisting"># K-MEANS
+# see the function documentation
+help(kmeans)</pre></div><p>我们需要两个输入:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">x</code>:数字数据矩阵</li><li class="listitem" style="list-style-type: disc"><code class="literal">centers</code>:聚类数(或聚类中心开始)</li></ul></div><p>从<code class="literal">dtFeatures</code>开始，我们需要建立一个数字特征矩阵<code class="literal">dtFeaturesKm</code>。首先，我们可以将特征名称放入<code class="literal">arrayFeatures</code>并生成包含所有特征的<code class="literal">dtFeaturesKm</code>数据表<a id="id247" class="indexterm"/>。执行<a id="id248" class="indexterm"/>以下步骤:</p><div><ol class="orderedlist arabic"><li class="listitem">定义<code class="literal">arrayFeatures</code>，它是一个包含特征名称的向量。<code class="literal">dtFeatures</code>方法包含第一列中的属性和其他列中的特性，所以我们提取除第一列之外的所有列名:<div> <pre class="programlisting">arrayFeatures &lt;- names(dtFeatures)[-1]</pre> </div></li><li class="listitem">定义<code class="literal">dtFeaturesKm</code>包含的特性:<div> <pre class="programlisting">dtFeaturesKm &lt;- dtFeatures[, arrayFeatures, with=F]</pre> </div></li><li class="listitem">将通用列(例如，<code class="literal">red</code>)转换为数字格式。我们可以使用<code class="literal">as.numeric</code>将列格式从factor转换为numeric: <div> <pre class="programlisting">dtFeaturesKm[, as.numeric(red)]</pre> </div></li><li class="listitem">The new vector contains <code class="literal">1</code> if the value is <code class="literal">no</code> and <code class="literal">2</code> if the value is <code class="literal">yes</code>. In order to use the same standards as our k-means descriptions, we prefer to have <code class="literal">0</code> if the attribute is <code class="literal">no</code> and <code class="literal">1</code> if the attribute is <code class="literal">yes</code>. In this way, when we are computing the average attribute within a group, it will be a number between 0 and 1 that can be seen as a portion of flags whose attribute is <code class="literal">yes</code>. Then, in order to have 0 and 1, we can use <code class="literal">as.numeric(red) – 1</code>:<div><pre class="programlisting">dtFeaturesKm[, as.numeric(red) - 1]</pre></div><p>或者，我们也可以使用ifelse函数做同样的事情。</p></li><li class="listitem">我们需要将每个列的格式转换为0-1。<code class="literal">arrayFeatures</code>数据表包含所有特性的名称，我们可以使用<code class="literal">for</code>循环来处理每个特性。如果我们想要转换名称包含在<code class="literal">nameCol</code>中的列，我们需要使用<code class="literal">eval</code> - <code class="literal">get</code>符号。使用<code class="literal">eval(nameCol) :=</code>我们重新定义列，使用<code class="literal">get(nameCol)</code>我们使用列的当前值，如下所示:<div> <pre class="programlisting">for(nameCol in arrayFeatures)   dtFeaturesKm[     , eval(nameCol) := as.numeric(get(nameCol)) - 1     ]</pre> </div></li><li class="listitem">现在转换0-1格式的所有特征。我们来形象化一下:<div> <pre class="programlisting">View(dtFeaturesKm)</pre> </div></li><li class="listitem"><code class="literal">kmeans</code>功能要求数据为矩阵形式。为了将<code class="literal">dtFeaturesKm</code>转换成矩阵，我们可以使用<code class="literal">as.matrix</code> : <div> <pre class="programlisting">matrixFeatures &lt;- as.matrix(dtFeaturesKm)</pre> </div></li></ol></div><p><code class="literal">matrixFeatures</code>数据表包含构建k均值算法的数据，其他<code class="literal">kmeans</code>输入<a id="id249" class="indexterm"/>是参数。k-means算法不会自动检测聚类数，所以我们需要通过<code class="literal">centers</code>输入来指定。给定一组对象，我们可以从中识别任意数量的集群。最能反映数据的数字是哪个？有一些技术允许我们定义它，但是它们超出了本章的范围。我们可以只<a id="id250" class="indexterm"/>定义一个合理的<a id="id251" class="indexterm"/>中心数，例如8:</p><div><pre class="programlisting"># cluster the data using the k-means
+nCenters &lt;- 8
+modelKm &lt;- kmeans(
+  x = matrixFeatures,
+  centers = nCenters
+  )</pre></div><p><code class="literal">modelKm</code>功能<a id="id252" class="indexterm"/>是包含不同<a id="id253" class="indexterm"/>模型组件的列表。<code class="literal">kmeans</code>的帮助为我们提供了输出的详细描述，我们可以使用<code class="literal">names</code>来获得元素名称。让我们看看组件:</p><div><pre class="programlisting">names(modelKm)
+<strong>[1] "cluster"      "centers"      "totss"        "withinss"    </strong>
+<strong>[5] "tot.withinss" "betweenss"    "size"         "iter"        </strong>
+<strong>[9] "ifault"      </strong>
+</pre></div><p>我们可以看到包含在<code class="literal">centers</code>中的聚类中心，如图所示:</p><div><pre class="programlisting">View(modelKm$centers)</pre></div><p>每行定义一个中心，每列显示一个属性。所有的属性都在0和1之间，它们表示群集中属性等于<code class="literal">1</code>的标志的百分比。例如，如果<code class="literal">red</code>是<code class="literal">0.5</code>，这意味着一半的标志包含红色。</p><p>我们将使用的<a id="id254" class="indexterm"/>元素是<code class="literal">cluster</code>，它包含一个指定每个标志的集群的标签。对于<a id="id255" class="indexterm"/>实例，如果一个簇的第一个元素是<code class="literal">3</code>，这个<a id="id256" class="indexterm"/>意味着<code class="literal">matrixFeatures</code>(以及<code class="literal">dtFeatures</code>)中的第一个标志属于第三个簇。</p><div><div><div><div><h3 class="title">探索星团</h3></div></div></div><p>我们可以查看每个集群，以探索其标志。为了让<a id="id258" class="indexterm"/>做到这一点，我们可以通过定义<code class="literal">clusterKm</code>列将集群添加到初始表中，如下所示:</p><div><pre class="programlisting"># add the cluster to the data table
+dtFeatures[, clusterKm := modelKm$cluster]</pre></div><p>为了探索一个集群，我们可以确定有多少国家讲每种语言。从<code class="literal">dtFeatures</code>开始，我们可以使用数据表聚合来汇总每个集群的数据。首先，让我们定义包含分类的列:</p><div><pre class="programlisting"># aggregate the data by cluster
+nameCluster &lt;- 'clusterKm'</pre></div><p>我们想确定每个集群中有多少行。允许我们确定行数的数据表命令是<code class="literal">.N</code>，如下图所示:</p><div><pre class="programlisting">dtFeatures[, list(.N), by=nameCluster]</pre></div><p>如果我们想为集群大小指定不同的列名，可以在列表中指定，如下所示:</p><div><pre class="programlisting">dtFeatures[, list(nCountries=.N), by=nameCluster]</pre></div><p>为了确定每种语言有多少个国家，我们可以使用<code class="literal">table</code>:</p><div><pre class="programlisting">dtFeatures[, table(language)]</pre></div><p>为了在聚合中使用<code class="literal">table</code>，输出应该是一个列表。为此，我们可以使用<code class="literal">as.list</code>转换表格，如下所示:</p><div><pre class="programlisting">dtFeatures[, as.list(table(language))]</pre></div><p>现在，我们可以使用<code class="literal">by</code>将该操作应用于每个组，如图所示:</p><div><pre class="programlisting">dtFeatures[, as.list(table(language)), by=nameCluster]</pre></div><p>如果我们想要可视化说每种语言的国家的百分比呢？我们可以将表中的每个值除以集群中国家的数量，如下所示:</p><div><pre class="programlisting">dtFeatures[, as.list(table(language) / .N), by=nameCluster]</pre></div><p>我们希望生成包含每个组中的国家数量和每种语言的百分比的<code class="literal">dtClusters</code>。为此，我们可以使用刚才看到的命令生成两个列表。为了合并这两个列表，我们可以使用<code class="literal">c(list1, list2)</code>，如图所示:</p><div><pre class="programlisting">dtClusters &lt;- dtFeatures[
+  , c(list(nCountries=.N), as.list(table(language) / .N)),
+  by=nameCluster
+  ]</pre></div><p>每一排<code class="literal">dtClusters</code>代表一个集群。<code class="literal">nCountries</code>列显示集群中国家的数量，所有其他列显示每种语言的百分比。为了直观地显示这些数据，我们可以为每个聚类构建一个直方图。每个条形被分成若干段，代表说每种语言的国家的数量。如果我们给出一个矩阵作为输入，那么<code class="literal">barplot</code>函数允许我们构建想要的图表。每个矩阵列对应一个条，每行定义<a id="id259" class="indexterm"/>条被划分的块。</p><p>我们需要定义一个包含语言百分比的矩阵。这可以通过执行<a id="id260" class="indexterm"/>以下步骤来完成:</p><div><ol class="orderedlist arabic"><li class="listitem">定义<code class="literal">arrayLanguages</code>包含<code class="literal">dtClusters</code>语言的栏目名称:<div> <pre class="programlisting">arrayLanguages &lt;- dtFeatures[, unique(language)]</pre> </div></li><li class="listitem">构建<code class="literal">dtBarplot</code>包含的语言列:<div> <pre class="programlisting">dtBarplot &lt;- dtClusters[, arrayLanguages, with=F]</pre> </div></li><li class="listitem">使用<code class="literal">as.matrix</code>将<code class="literal">dtBarplot</code>转换成矩阵。为了构建图表，我们需要使用R函数<code class="literal">t</code> : <div> <pre class="programlisting">matrixBarplot &lt;- t(as.matrix(dtBarplot))</pre> </div>转置矩阵(反转行和列)</li><li class="listitem">用聚类大小定义一个向量，即国家的数量。我们将在列下显示数字:<div> <pre class="programlisting">nBarplot &lt;- dtClusters[, nCountries]</pre> </div></li><li class="listitem">将图例名称定义为国家名称:<div> <pre class="programlisting">namesLegend &lt;- names(dtBarplot)</pre> </div></li><li class="listitem">缩短图例名称的长度，以避免图例与图表重叠。使用<code class="literal">substring</code>，我们将名称限制为12个字符，如下所示:<div> <pre class="programlisting">help(substring) namesLegend &lt;- substring(namesLegend, 1, 12)</pre> </div></li><li class="listitem">使用<code class="literal">rainbow</code>定义颜色。我们需要为<code class="literal">namesLegend</code>的每个元素定义一种颜色，所以颜色的个数是<code class="literal">length(namesLegend)</code>，如图:<div> <pre class="programlisting">arrayColors &lt;- rainbow(length(namesLegend))</pre> </div></li><li class="listitem">使用<code class="literal">paste</code> : <div> <pre class="programlisting">plotTitle &lt;- paste('languages in each cluster of', nameCluster)</pre> </div>定义图表标题</li></ol></div><p>现在我们<a id="id261" class="indexterm"/>拥有了所有的<code class="literal">barplot</code>输入，所以我们<a id="id262" class="indexterm"/>可以构建图表了。为了确保图例不会与条形重叠，我们包含了指定绘图边界的<code class="literal">xlim</code>参数，如下所示:</p><div><pre class="programlisting"># build the histogram
+barplot(
+  height = matrixBarplot,
+  names.arg = nBarplot,
+  col = arrayColors,
+  legend.text = namesLegend,
+  xlim = c(0, ncol(matrixBarplot) * 2),
+  main = plotTitle,
+  xlab = 'cluster'
+)</pre></div><p>获得的图表如下:</p><div><img src="img/7740OS_05_01.jpg" alt="Exploring the clusters"/></div><p>k-means算法从随机分割数据定义的初始聚类开始执行一系列步骤。最终的输出取决于初始的随机分割，每次运行算法时，初始的随机分割都是不同的。因此，如果我们多次运行k-means，我们可能会获得不同的结果。然而，这个图表有助于我们识别语言群中的一些模式。例如，在第八组中，几乎所有的国家都讲英语，所以我们可以推断，有一些讲英语的国家也有类似的国旗。在第五组中，超过一半的国家说法语，所以我们可以推断出同样的情况。一些不太相关的结果是，阿拉伯语在第一个聚类中占有很高的份额，而西班牙语在第七个聚类中相当相关。</p><p>我们正在使用其他<a id="id264" class="indexterm"/>聚类算法，我们将以类似的方式可视化结果。为了有干净紧凑的代码，我们可以定义<code class="literal">plotCluster</code>函数。输入是<code class="literal">dtFeatures</code>特征数据表和<code class="literal">nameCluster</code>集群列名。代码与前面的代码几乎相同，如下所示:</p><div><pre class="programlisting"># define a function to build the histogram
+plotCluster &lt;- function(
+  dtFeatures, # data table with the features
+  nameCluster # name of the column defining the cluster
+){
+  # aggregate the data by cluster
+  dtClusters &lt;- dtFeatures[
+    , c(list(nCountries=.N), as.list(table(language) / .N)),
+    by=nameCluster]
+  
+  # prepare the histogram inputs
+  arrayLanguages &lt;- dtFeatures[, unique(language)]
+  dtBarplot &lt;- dtClusters[, arrayLanguages, with=F]
+  matrixBarplot &lt;- t(as.matrix(dtBarplot))
+  nBarplot &lt;- dtClusters[, nCountries]
+  namesLegend &lt;- names(dtBarplot)
+  namesLegend &lt;- substring(namesLegend, 1, 12)
+  arrayColors &lt;- rainbow(length(namesLegend))
+  
+  # build the histogram
+  barplot(
+    height = matrixBarplot,
+    names.arg = nBarplot,
+    col = arrayColors,
+    legend.text = namesLegend,
+    xlim=c(0, ncol(matrixBarplot) * 2),
+    main = paste('languages in each cluster of', nameCluster),
+    xlab = 'cluster'
+  )
+  
+}</pre></div><p>这个函数应该构建与前一个相同的直方图。让我们使用下面的代码来检查它:</p><div><pre class="programlisting"># visualize the histogram using the functions
+plotCluster(dtFeatures, nameCluster)</pre></div><p>另一种可视化集群的方法是为每个集群使用不同的颜色构建一个世界地图。在<a id="id265" class="indexterm"/>之外，我们可以为这些语言可视化一个世界地图。</p><p>为了构建地图，我们需要安装并加载<code class="literal">rworldmap</code>包，如下所示:</p><div><pre class="programlisting"># define a function for visualizing the world map
+install.packages('rworldmap')
+library(rworldmap)</pre></div><p>这个包从国家名开始构建一个世界地图，在我们的例子中就是从第<code class="literal">dfFeatures</code>行<a id="id266" class="indexterm"/>名开始。我们可以将<code class="literal">country</code>列添加到<code class="literal">dtFeatures</code>中，如图所示:</p><div><pre class="programlisting">dtFeatures[, country := rownames(dfFeatures)]</pre></div><p>我们的数据很旧，所以德国仍然分为两部分。为了在地图上形象化，我们可以把<code class="literal">Germany-FRG</code>转换成<code class="literal">Germany</code>。同样，我们可以将<code class="literal">USSR</code>转换成<code class="literal">Russia</code>，如图所示:</p><div><pre class="programlisting">dtFeatures[country == 'Germany-FRG', country := 'Germany']
+dtFeatures[country == 'USSR', country := 'Russia']</pre></div><p>现在，我们可以定义一个函数来构建一个显示集群的世界地图。输入是要可视化的特征的<code class="literal">dtFeatures</code>数据表和<code class="literal">colPlot</code>列名(例如，<code class="literal">clusterKm</code>)。另一个参数是<code class="literal">colourPalette</code>，它决定了在地图中使用的颜色<a id="id267" class="indexterm"/>。更多信息参见<code class="literal">help(mapCountryData)</code>，如图所示:</p><div><pre class="programlisting">plotMap &lt;- function(
+  dtFeatures, # data table with the countries
+  colPlot # feature to visualize
+  colourPalette = 'negpos8' # colors
+){
+  # function for visualizing a feature on the world map</pre></div><p>我们定义包含要可视化的集群的<code class="literal">colPlot</code>列。对于字符串，我们只使用前12个字符，如下所示:</p><div><pre class="programlisting">  # define the column to plot
+  dtFeatures[, colPlot := NULL]
+  dtFeatures[, colPlot := substring(get(colPlot), 1, 12)]</pre></div><p>我们构建包含构建图表所需数据的<code class="literal">mapFeatures</code>。更多信息见<code class="literal">help(joinCountryData2Map)</code>。<code class="literal">joinCode = 'NAME'</code>输入指定国家由它们的名称而不是缩写来定义。<code class="literal">nameJoinColumn</code>指定我们在哪个列中有国家名称，如下所示:</p><div><pre class="programlisting">  # prepare the data to plot
+  mapFeatures &lt;- joinCountryData2Map(
+    dtFeatures[, c('country', 'colPlot'), with=F],
+    joinCode = 'NAME',
+    nameJoinColumn = 'country'
+  )</pre></div><p>我们可以使用<code class="literal">mapCountryData</code>构建图表。我们指定使用彩虹的颜色，缺少数据的国家将是灰色的，如下面的代码所示:</p><div><pre class="programlisting">  # build the chart
+  mapCountryData(
+    mapFeatures,
+    nameColumnToPlot='colPlot',
+    catMethod = 'categorical',
+    colourPalette = colourPalette,
+    missingCountryCol = 'gray',
+    mapTitle = colPlot
+  )
+  
+}</pre></div><p>现在，我们可以使用<a id="id268" class="indexterm"/> <code class="literal">plotMap</code>在<a id="id269" class="indexterm"/>世界地图上可视化k均值聚类，如图所示:</p><div><pre class="programlisting">plotMap(dtFeatures, colPlot = 'clusterKm')</pre></div><div><img src="img/7740OS_05_02.jpg" alt="Exploring the clusters"/></div><p>我们可以看到许多亚洲国家属于第五类。此外，我们可以观察到，意大利，法国和爱尔兰属于同一个集群，因为他们的国旗是相似的。除此之外，很难找出任何其他模式。</p></div></div><div><div><div><div><h2 class="title"><a id="ch05lvl2sec35"/>识别集群的层次结构</h2></div></div></div><p>其他识别同类群体的技术是层次聚类算法。这些技术构建集群，迭代地合并对象。开始时，每个国家都有一个集群。我们定义了两个聚类有多相似的度量，在每一步，我们识别其标志最相似的两个聚类，并将它们合并成一个唯一的聚类。最后，我们得到了一个包含所有国家的集群。</p><p>执行分层聚类的R函数是<code class="literal">hclust</code>。我们来看看它的<code class="literal">help</code>功能:</p><div><pre class="programlisting"># HIERARCHIC CLUSTERING
+# function for hierarchic clustering
+help(hclust)</pre></div><p>第一个输入是<code class="literal">d</code>，文档解释说它是一个相异结构，即包含所有对象之间距离的矩阵。正如文档所建议的，我们可以使用<code class="literal">dist</code>函数来构建输入，如下所示:</p><div><pre class="programlisting"># build the distance matrix
+help(dist)</pre></div><p><code class="literal">dist</code>的输入是描述标志的数字矩阵。我们已经为k-means算法构建了<code class="literal">matrixDistances</code>，所以我们可以重用它。另一个相关输入是<code class="literal">method</code>，它指定<code class="literal">dist</code>如何测量两个旗帜之间的距离。我们应该使用哪种方法？所有的特征都是二元的，因为它们有两种可能的结果，即<code class="literal">0</code>和<code class="literal">1</code>。那么，距离可以是具有不同值的属性的数量。这样决定距离的<code class="literal">method</code>对象是<code class="literal">manhattan</code>，如图:</p><div><pre class="programlisting">matrixDistances &lt;- dist(matrixFeatures, method = 'manhattan')</pre></div><p><code class="literal">matrixDistances</code>函数包含任意两个标志之间的差异。另一个输入是<code class="literal">method</code>，它指定了聚集方法。在我们的例子中，我们将方法设置为<code class="literal">complete</code>。<a id="id274" class="indexterm"/>还有其他选项用于<code class="literal">method</code>和<a id="id275" class="indexterm"/>它们定义了链接，即计算集群间距离的方式，如图所示:</p><div><pre class="programlisting"># build the hierarchic clustering model
+modelHc &lt;- hclust(d = matrixDistances, method = 'complete')</pre></div><p><code class="literal">modelHc</code>方法包含聚类模型，我们可以使用<code class="literal">plot</code>来可视化聚类。您可以参考<code class="literal">hclust</code>的帮助来了解<code class="literal">plot</code>的参数，如图所示:</p><div><pre class="programlisting"># visualize the hierarchic clustering model
+plot(modelHc, labels = FALSE, hang = -1)</pre></div><div><img src="img/7740OS_05_03.jpg" alt="Identifying a cluster's hierarchy"/></div><p>这个图表显示了算法程序。在底部，我们有所有的国家，每个国旗属于不同的集群。每条线代表一个聚类，当算法合并聚类时，这些线会聚。在图表的左侧，您可以看到一个代表标志之间距离的刻度，在每个级别上，该算法会合并彼此相距特定距离的分类。在顶部，所有标志属于同一个<a id="id277" class="indexterm"/>群。这张图叫做<strong>树状图</strong>。考虑下面的代码:</p><div><pre class="programlisting"># define the clusters
+heightCut &lt;- 17.5
+abline(h=heightCut, col='red')</pre></div><p>我们要识别的集群是红线以上的集群。标识从<code class="literal">modelHc</code>开始的簇的函数是<code class="literal">cutree</code>，我们可以在<code class="literal">h</code>参数中指定水平线高度，如下图所示:</p><div><pre class="programlisting">cutree(modelHc, h = heightCut)</pre></div><p>现在，我们可以将集群添加到<code class="literal">dtFeatures</code>，如图所示:</p><div><pre class="programlisting">dcFeatures[, clusterHc := cutree(modelHc, h = heightCut)]</pre></div><p>如前所述，我们可以看到每个集群中使用哪些语言。我们可以重用<code class="literal">plotCluster</code>和<code class="literal">plotMap</code>:</p><div><pre class="programlisting"># visualize the clusters
+plotCluster(dtFeatures, nameCluster = 'clusterHc')</pre></div><div><img src="img/7740OS_05_04.jpg" alt="Identifying a cluster's hierarchy"/></div><p>在第八组中，英语是主要语言。除此之外，阿拉伯语只与第一组相关，法语和德语与第二组和第三组相关，西班牙语与第三组相关。</p><p>我们也可以<a id="id280" class="indexterm"/>用集群来可视化世界地图，如下所示:</p><div><pre class="programlisting">plotMap(dtFeatures, colPlot = 'clusterHc')</pre></div><p>获得的图表如下:</p><div><img src="img/7740OS_05_05.jpg" alt="Identifying a cluster's hierarchy"/></div><p>与k-means相似，唯一一个有显著聚类的大陆是亚洲。</p><p>本节描述了两种<a id="id281" class="indexterm"/>流行的聚类技术，用于识别同质标志簇。它们都允许我们了解<a id="id282" class="indexterm"/>不同旗帜之间的相似之处，我们可以使用这些信息作为支持来解决一些问题。</p></div></div></div>
+
+
+
+
+
+<title>Applying the k-nearest neighbor algorithm</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch05lvl1sec29"/>应用k-最近邻算法</h1></div></div></div><p>本节<a id="id283" class="indexterm"/>将向您展示如何从一个新国家的国旗开始评估该国家的语言，使用一种简单的监督学习技术，即<strong> k近邻</strong> ( <strong> KNN </strong>)。在这种情况下，我们估计语言，这是一个<code class="literal">categoric</code>属性，所以我们使用分类技术。如果属性是数字，我们将使用回归<a id="id284" class="indexterm"/>技术。我选择KNN的原因是它易于解释，并且有一些选项可以修改它的参数以提高结果的准确性。</p><p>让我们看看KNN是如何工作的。我们知道150个国家的国旗和语言，我们想从国旗开始确定一个新国家的语言。首先，我们找出10个国旗与新国旗最相似的国家。其中，我们有六个西班牙语国家、两个英语国家、一个法语国家和一个阿拉伯语国家。</p><p>在这10个国家中，最通用的语言是西班牙语，因此我们可以预计新国旗属于一个说西班牙语的国家。</p><p>KNN就是基于这种方法。为了评估一种新的国家语言，我们确定了国旗最相似的K个国家。然后，我们估计新国家说的是其中最通用的语言。</p><p>我们有一个表格，通过37个二进制属性描述了194个标志，它们的值可以是<code class="literal">Yes</code>或<code class="literal">No</code>。例如，如果主要的旗帜颜色是绿色，则<code class="literal">mainhuegreen</code>属性是<code class="literal">yes</code>，否则是<code class="literal">no</code>。所有属性都描述了旗帜的颜色和图案。</p><p>与上一节类似，在修改<code class="literal">dtFeatures</code>之前，我们定义了包含特性名称的<code class="literal">arrayFeatures</code>。当我们向<code class="literal">dtFeatures</code>添加一些列时，我们<a id="id285" class="indexterm"/>从<code class="literal">dfFeatures</code>中提取特征名称。然后，我们添加来自<code class="literal">dfFeatures</code>的国家名称<a id="id286" class="indexterm"/>的<code class="literal">country</code>列，如下所示:</p><div><pre class="programlisting"># define the feature names
+arrayFeatures &lt;- names(dfFeatures)[-1]
+# add the country to dtFeatures
+dtFeatures[, country := rownames(dfFeatures)]
+dtFeatures[country == 'Germany-FRG', country := 'Germany']
+dtFeatures[country == 'USSR', country := 'Russia']</pre></div><p>从<code class="literal">dtFeatures</code>开始，我们可以应用KNN。给定一个新的标志，我们如何确定哪10个是最相似的标志？给定任意两个标志，我们可以测量它们有多相似。最简单的方法是计算两个标志中有多少要素具有相同的值。他们共同的属性越多，他们就越相似。</p><p>在前一章中，我们已经探索并转换了特性，所以我们不需要处理它们。然而，我们还没有探索语言栏。对于每种语言，我们可以使用<code class="literal">table</code>来确定有多少个国家使用该语言，如下所示:</p><div><pre class="programlisting">dtFeatures[, table(language)]</pre></div><p>不同语言的国家数量差异很大。最受欢迎的语言是<code class="literal">English</code>，有43个国家，还有一些语言只有4个国家。为了对所有语言有一个总体的了解，我们可以通过构建一个图表来可视化这个表。在上一节中，我们定义了<code class="literal">plotMap</code>，它显示了世界地图上的群体。我们可以用它来显示说每种语言的国家，如下所示:</p><div><pre class="programlisting">plotMap(dtFeatures, colPlot = 'language', colourPalette = 'rainbow')</pre></div><p>获得的图表如下:</p><div><img src="img/7740OS_05_06.jpg" alt="Applying the k-nearest neighbor algorithm"/></div><p>很高兴看到地图显示说每种语言的国家，但仍然有点难以理解这些群体有多大。一个更好的选择是生成一个饼状图，其切片与每组国家的数量成比例。R功能是<code class="literal">pie</code>，如图所示:</p><div><pre class="programlisting"># visualize the languages
+help(pie)</pre></div><p><code class="literal">pie</code>函数<a id="id288" class="indexterm"/>需要一个输入，即一个包含使用每种语言的国家数量的矢量。如果输入向量字段有名称，它将显示在图表中。我们可以使用<code class="literal">table</code>构建所需的向量，如下所示:</p><div><pre class="programlisting">arrayTable &lt;- dtFeatures[, table(language)]</pre></div><p>幸运的是，<code class="literal">pie</code>不需要任何其他论证:</p><div><pre class="programlisting">pie(arrayTable)</pre></div><p>获得的图表如下:</p><div><img src="img/7740OS_05_07.jpg" alt="Applying the k-nearest neighbor algorithm"/></div><p>有些语言只在少数几个国家使用。例如，只有4个斯拉夫国家。给定一个新的国家，我们希望从它的国旗开始确定它的语言。让我们假设我们不知道在四个斯拉夫国家中的一个国家说的是哪种语言。如果我们考虑到它的10个最近的邻居，那么不超过3个斯拉夫国家。如果它的10个邻国中有4个说英语的国家会怎样？尽管所有其余的斯拉夫国家都在它的附近，但是有更多的英语国家，仅仅是因为英语群体更大。所以算法会估计国家是英国。同样，我们与任何其他小团体都有同样的问题。像几乎所有的机器学习算法一样，KNN无法对属于任何其他更小群体的国家进行分类。</p><p>在处理<a id="id290" class="indexterm"/>任何分类问题时，如果有些群体很小，我们就没有足够的相关信息。在这种情况下，即使是好的技术也无法对属于一个小<a id="id291" class="indexterm"/>组的新对象进行分类。此外，假设一个新的国家属于中等规模的集团，它可能有许多属于大集团的邻国。因此，讲这些语言之一的新国家可能被分配到大的组。</p><p>通过了解模型的局限性，我们可以定义一个可行的机器学习问题。为了避免出现小团体，我们可以合并一些团体。聚类技术允许我们识别哪些语言组定义更明确，并且相应地，我们可以将语言分成这些组:<code class="literal">English</code>、<code class="literal">Spanish</code>、<code class="literal">French and German</code>、<code class="literal">Slavic and other Indo-European</code>、<code class="literal">Arabic</code>和<code class="literal">Other</code>。</p><p>我们可以定义语言组来构建<code class="literal">listGroups</code>,它的元素包含组所讲的语言。例如，我们可以定义包含<code class="literal">Slavic</code>和<code class="literal">Other Indo-European</code>语言的<code class="literal">indoEu</code>组，如下所示:</p><div><pre class="programlisting"># reduce the number of groups
+listGroups &lt;- list(
+  english = 'English',
+  spanish = 'Spanish',
+  frger = c('French', 'German'),
+  indoEu = c('Slavic', 'Other Indo-European'),
+  arabic = 'Arabic',
+  other = c(
+    'Japanese/Turkish/Finnish/Magyar', 'Chinese', 'Others'
+    )
+  )</pre></div><p>现在，我们可以重新定义包含语言组的<code class="literal">language</code>列。对于<code class="literal">listGroups</code>的每个元素，我们将所有语言转换成元素名。例如，我们将<code class="literal">Slavic</code>和<code class="literal">Other Indo-European</code>转换成<code class="literal">indoEu</code>。</p><p>我们<a id="id292" class="indexterm"/>可以在<code class="literal">for</code>循环中执行这个操作。所有的组名都包含在列表名中，所以我们可以迭代<code class="literal">names(listGroups)</code>的元素，如下所示:</p><div><pre class="programlisting">for(nameGroup in names(listGroups)){</pre></div><p>这里，<code class="literal">nameGroup</code>定义一个组名，<code class="literal">listGroups[[nameGroup]]</code>包含它的语言。我们可以使用<code class="literal">language %in% listGroups[[nameGroup]]</code>来<a id="id293" class="indexterm"/>提取说任何一种群体语言的<code class="literal">dtFeatures</code>的行。然后，我们可以使用<code class="literal">:=</code>数据表符号将language列重新分配给<code class="literal">nameGroup</code>组名，如下所示:</p><div><pre class="programlisting">  dtFeatures[
+    language %in% listGroups[[nameGroup]],
+    language := nameGroup
+    ]
+}</pre></div><p>我们重新定义了分组语言的<code class="literal">language</code>列。让我们来看看:</p><div><pre class="programlisting">dtFeatures[, language]</pre></div><p>这里，<code class="literal">language</code>是一个因素，只有六个可能的级别是我们的语言组。不过可以看到R在控制台里印了<code class="literal">16 Levels: Arabic Chinese English French ... Other</code>。原因是<code class="literal">language</code>列的格式是<code class="literal">factor</code>，它记录了10个初始值。为了只显示六个语言组，我们可以使用<code class="literal">factor</code>重新定义<code class="literal">language</code>列，如下所示:</p><div><pre class="programlisting">dtFeatures[, language := factor(language)]
+dtFeatures[, language]</pre></div><p>现在我们只有六层。正如我们之前所做的，我们可以使用<code class="literal">plotMap</code>可视化组大小数据，如下所示:</p><div><pre class="programlisting"># visualize the language groups
+plotMap(dtFeatures, colPlot = 'language')</pre></div><p>得到的地图<a id="id294" class="indexterm"/>如下:</p><div><img src="img/7740OS_05_08.jpg" alt="Applying the k-nearest neighbor algorithm"/></div><p>我们可以看到，每个类别的国家在地理上彼此接近。</p><p>为了直观显示新的组大小，我们可以使用<code class="literal">pie</code>，如图所示:</p><div><pre class="programlisting">pie(dtFeatures[, table(language)])</pre></div><p>获得的图表如下:</p><div><img src="img/7740OS_05_09.jpg" alt="Applying the k-nearest neighbor algorithm"/></div><p>所有六个组包含足够多的国家。<strong>英语</strong>和<strong>其他</strong>组比其他组大一点，但规模相当。</p><p>现在我们可以建立KNN模型了。r为我们提供了包含KNN算法的<code class="literal">kknn</code>包。让我们安装并加载软件包，如下所示:</p><div><pre class="programlisting"># install and load the package
+install.packages("kknn")
+library(kknn)</pre></div><p><a id="id295" class="indexterm"/>构建KNN的函数叫做<code class="literal">kknn</code>，比如<a id="id296" class="indexterm"/>包。让我们来看看它的帮助功能:</p><div><pre class="programlisting">help(kknn)</pre></div><p>第一个输入是formula，它定义了特性和输出。然后，我们必须定义一个<a id="id297" class="indexterm"/>训练集，包含用于构建模型的数据，以及一个测试集，包含我们应用模型的数据。我们使用关于训练集的所有信息，并假装不知道测试集国家的语言。还有定义一些模型参数的其他可选输入。</p><p>所有的特征名称都包含在<code class="literal">arrayFeatures</code>中。为了定义输出如何依赖于特性，我们需要在<code class="literal">output ~ feature1 + feature2 + …</code>中构建一个字符串。格式。执行以下步骤:</p><div><ol class="orderedlist arabic"><li class="listitem">定义字符串的第一部分:<code class="literal">output ~ </code> : <div> <pre class="programlisting">formulaKnn &lt;- 'language ~'</pre> </div></li><li class="listitem">对于每个特性，使用<code class="literal">paste</code> : <div> <pre class="programlisting">for(nameFeature in arrayFeatures){   formulaKnn &lt;- paste(formulaKnn, '+', nameFeature) }</pre> </div>添加<code class="literal">+ feature</code></li><li class="listitem">将字符串转换成<code class="literal">formula</code>格式:<div> <pre class="programlisting">formulaKnn &lt;- formula(formulaKnn)</pre> </div></li></ol></div><p>我们构建了包含要放入<code class="literal">kknn</code>的关系的<code class="literal">formulaKnn</code>。</p><p>现在，我们需要从<code class="literal">dtFeatures</code>开始定义训练集和测试集。公平分配是将80%的数据放入训练集，为此，我们可以将每个国家以80%的概率添加到训练集，否则添加到测试集。我们可以定义长度等于<code class="literal">dtFeatures</code>中行数的<code class="literal">indexTrain</code>向量。R功能是<code class="literal">sample</code>，如图所示:</p><div><pre class="programlisting">help(sample)</pre></div><p>这些论点是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">x</code>:要被<a id="id298" class="indexterm"/>放入向量的值，这里是<code class="literal">TRUE</code>和<code class="literal">FALSE</code>。</li><li class="listitem" style="list-style-type: disc"><code class="literal">size</code>:向量的<a id="id299" class="indexterm"/>长度，在我们的例子中是<code class="literal">dtFeatures</code>中的行数。</li><li class="listitem" style="list-style-type: disc"><code class="literal">replace</code>:为了<a id="id300" class="indexterm"/>多次采样值，这里是<code class="literal">TRUE</code>。</li><li class="listitem" style="list-style-type: disc"><code class="literal">prob</code>:选择<code class="literal">x</code>元素的<a id="id301" class="indexterm"/>概率。在我们的例子中，我们选择概率为80%的<code class="literal">TRUE</code>和概率为20%的<code class="literal">FALSE</code>。</li></ul></div><p>使用我们的<a id="id302" class="indexterm"/>参数，我们可以构建<code class="literal">indexTrain</code>，如下所示:</p><div><pre class="programlisting"># split the dataset into training and test set
+indexTrain &lt;- sample(
+  x=c(TRUE, FALSE),
+  size=nrow(dtFeatures),
+  replace=TRUE,
+  prob=c(0.8, 0.2)
+)</pre></div><p>现在，我们需要将<code class="literal">indexTrain</code>是<code class="literal">TRUE</code>的行添加到训练集中，并将剩余的行添加到测试集中。我们使用简单的数据表操作提取所有的行，其中<code class="literal">indexTrain</code>是<code class="literal">TRUE</code>，如下所示:</p><div><pre class="programlisting">dtTrain &lt;- dtFeatures[indexTrain]</pre></div><p>为了提取测试行，我们必须使用操作符<code class="literal">NOT</code>切换<code class="literal">TRUE</code>和<code class="literal">FALSE</code>，其中R是<code class="literal">!</code>，如图所示:</p><div><pre class="programlisting">dtTest &lt;- dtFeatures[!indexTrain]</pre></div><p>现在我们有了使用<code class="literal">kknn</code>的所有基本论据。我们设置的其他参数是:</p><div><ul class="itemizedlist"><li class="listitem" style="list-style-type: disc"><code class="literal">k</code>:邻居数量为<code class="literal">10</code>。</li><li class="listitem" style="list-style-type: disc">KNN可以选择为这些功能分配不同的相关性，但是我们目前没有使用这个功能。将<code class="literal">kernel</code>参数设置为<code class="literal">rectangular</code>，我们使用基本的KNN。</li><li class="listitem" style="list-style-type: disc"><code class="literal">distance</code>:我们想计算两个旗帜之间的距离，作为它们没有共同属性的数量(类似于上一章)。为了做到这一点，我们将距离参数设置为等于<code class="literal">1</code>。更多信息可以了解<strong>闵可夫斯基距离</strong>。</li></ul></div><p>让我们建立<a id="id304" class="indexterm"/> KNN模型:</p><div><pre class="programlisting"># build the model
+modelKnn &lt;- kknn(
+  formula = formulaKnn,
+  train = dtTrain,
+  test = dtTest,
+  k = 10,
+  kernel = 'rectangular',
+  distance = 1
+)</pre></div><p>模型已经从<code class="literal">dtTrain</code>中学习并估计了<code class="literal">dtTest</code>中国家的语言。正如我们在<code class="literal">kknn</code>帮助中看到的那样，<code class="literal">modelKnn</code>是一个包含模型描述的列表。显示预测语言的组件是<code class="literal">fitted.valued</code>，如图所示:</p><div><pre class="programlisting"># extract the fitted values
+modelKnn$fitted.values</pre></div><p>我们可以将预测语言添加到<code class="literal">dtTest</code>中，以便与真实语言进行比较:</p><div><pre class="programlisting"># add the estimated language to dtTest
+dtTest[, languagePred := modelKnn$fitted.values]</pre></div><p>对于<code class="literal">dtTest</code>中的国家，我们知道真实的和预测的语言。我们可以使用<code class="literal">sum(language == languagePred)</code>来计算它们相同的次数。我们可以用正确预测数除以总数，即<code class="literal">.N</code>(行数)，来衡量模型精度，如下图:</p><div><pre class="programlisting"># evaluate the model
+percCorrect &lt;- dtTest[, sum(language == languagePred) / .N]
+percCorrect</pre></div><p>这里，<code class="literal">percCorrect</code> <a id="id306" class="indexterm"/>根据<a id="id307" class="indexterm"/>对训练/测试数据集的分割而变化很大。由于我们有不同的语言群体，<code class="literal">percCorrect</code>并不是特别高。</p></div>
+
+
+
+
+
+<title>Optimizing the k-nearest neighbor algorithm</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch05lvl1sec30"/>优化k-最近邻算法</h1></div></div></div><p>我们用37个与语言有不同相关性的特征建立了我们的<a id="id308" class="indexterm"/> KNN模型。给定一个新标志，它的邻居是共享许多属性的标志，不管它们的相关性如何。如果一个标志有不同的与语言无关的公共属性，我们会错误地将它包含在邻域中。另一方面，如果一个标志共享一些高度相关的属性，它将不会被包括在内。</p><p>KNN在不相关属性的情况下表现更差。这一事实被称为维数灾难，在机器学习算法中非常普遍。解决维数灾难的方法是根据相关性对特征进行排序，并选择最相关的特征。另一个我们在本章中不会看到的选项是使用降维技术。</p><p>在前一章中，在<em>使用过滤器或降维对特征进行排序</em>部分，我们使用信息增益比来衡量特征的相关性。现在，我们可以计算<code class="literal">dtGains</code>表，类似于上一章，从<code class="literal">dtTrain</code>开始。我们不能使用整个<code class="literal">dtFeatures</code>，因为我们假装不知道测试集国家的语言。想看看<code class="literal">information.gain</code>是如何工作的，可以看看<a class="link" href="ch04.html" title="Chapter 4. Step 1 – Data Exploration and Feature Engineering">第四章</a>、<em>第一步——数据探索与特征工程</em>。考虑下面的例子:</p><div><pre class="programlisting"># compute the information gain ratio
+library('FSelector')
+formulaFeat &lt;- paste(arrayFeatures, collapse = ' + ')
+formulaGain &lt;- formula(paste('language', formulaFeat, sep = ' ~ '))
+dfGains &lt;- information.gain(language~., dtTrain)
+dfGains$feature &lt;- row.names(dfGains)
+dtGains &lt;- data.table(dfGains)
+dtGains &lt;- dtGains[order(attr_importance, decreasing = T)]
+View(dtGains)</pre></div><p><code class="literal">feature</code>列包含特性名称，而<code class="literal">attr_importance</code>列显示特性增益，表示其相关性。为了选择最相关的特征，我们可以首先用排序后的特征重建<code class="literal">arrayFeatures</code>。然后，我们将能够选择顶部，如下所示:</p><div><pre class="programlisting"># re-define the feature vector
+arrayFeatures &lt;- dtGains[, feature]</pre></div><p>从<code class="literal">arrayFeatures</code>开始，给定一个<code class="literal">nFeatures</code>数字，我们希望使用顶级<code class="literal">nFeatures</code>特性构建公式。为了能够对任何<code class="literal">nFeatures</code>做到这一点，我们可以定义一个函数来构建公式，如下所示:</p><div><pre class="programlisting"># define a function for building the formula
+buildFormula &lt;- function(
+  arrayFeatures, # feature vector
+  nFeatures # number of features to include
+){</pre></div><p>步骤如下<a id="id310" class="indexterm"/>:</p><div><ol class="orderedlist arabic"><li class="listitem">提取顶部的<code class="literal">nFeatures</code>特征，放入<code class="literal">arrayFeaturesTop</code> : <div> <pre class="programlisting">arrayFeaturesTop &lt;- arrayFeatures[1:nFeatures]</pre> </div></li><li class="listitem">构建公式字符串的第一部分:<div> <pre class="programlisting">formulaKnn &lt;- paste('language', '~')</pre> </div></li><li class="listitem">将特性添加到公式:<div> <pre class="programlisting">for(nameFeature in arrayFeaturesTop){   formulaKnn &lt;- paste(formulaKnn, '+', nameFeature) }</pre> </div></li><li class="listitem">将<code class="literal">formulaKnn</code>转换成<code class="literal">formula</code>格式:<div> <pre class="programlisting">formulaKnn &lt;- formula(formulaKnn)</pre> </div></li><li class="listitem">返回输出:<div> <pre class="programlisting">  return(formulaKnn) }</pre> </div> <div> <pre class="programlisting">formulaKnnTop &lt;- buildFormula(arrayFeatures, nFeatures = 10) formulaKnnTop</pre> </div></li></ol></div><p>使用我们的<a id="id311" class="indexterm"/>函数，我们可以使用前10个特性构建<code class="literal">formulaKnnTop</code>，如下所示:</p><p>现在，我们可以使用与之前相同的输入来构建模型，除了现在包含<code class="literal">formulaKnnTop</code>的<code class="literal">formula input</code>，如下所示:</p><div><pre class="programlisting"># build the model
+modelKnn &lt;- kknn(
+  formula = formulaKnnTop,
+  train = dtTrain,
+  test = dtTest,
+  k = 10,
+  kernel = 'rectangular',
+  distance = 1
+)</pre></div><p>如前所述，我们可以将预测的语言添加到名为<code class="literal">languagePred10</code>的新列中的<code class="literal">dtTest</code>:</p><div><pre class="programlisting"># add the output to dtTest
+dtTest[, languagePredTop := modelKnn$fitted.values]</pre></div><p>我们可以计算出我们正确识别的语言的百分比:</p><div><pre class="programlisting"># evaluate the model
+percCorrectTop &lt;- dtTest[, sum(language == languagePredTop) / .N]
+percCorrectTop</pre></div><p>我们通过选择顶级特性实现了任何改进吗？为了确定哪个模型最准确，我们可以比较<code class="literal">percCorrect10</code>和<code class="literal">percCorrect</code>，确定哪个最高。我们随机定义了<code class="literal">dtTrain</code>和<code class="literal">dtTest</code>之间的分裂，所以每次运行算法时结果都会改变。</p><p>还有另一个选择来避免维数灾难。这些标志由37个具有不同相关性的特征描述，我们选择了10个最相关的特征。以这种方式，相似性取决于前10个中的共同特征的数量。如果我们有两个标志，前10个特性中只有两个，其余的20个是相同的，会怎么样？它们的相似性是否低于前10个特征中有3个相同的两个标志？我们可以使用其他27个特性，而不是忽略它们，给它们一个较低的相关性。</p><p>还有一个KNN变体<a id="id313" class="indexterm"/>，称为<a id="id314" class="indexterm"/> <strong>加权KNN </strong>，它识别每个特征的相关性，并相应地构建KNN。有不同的KNN版本，<code class="literal">kknn</code>函数允许我们使用其中一些，指定<code class="literal">kernel</code>参数。在我们的例子中，我们可以设置<code class="literal">kernel = 'optimal'</code>，如图所示:</p><div><pre class="programlisting"># build the weighted knn model
+modelKnn &lt;- kknn(
+  formula = formulaKnn,
+  train = dtTrain,
+  test = dtTest,
+  k = 10,
+  kernel = 'optimal',
+  distance = 1
+)</pre></div><p>如前所述，我们可以测量精确度:</p><div><pre class="programlisting"># add the estimated language to dtTest
+dtTest[, languagePredWeighted := modelKnn$fitted.values]
+percCorrectWeighted &lt;- dtTest[
+  , sum(language == languagePredWeighted) / .N
+  ]</pre></div><p>根据训练/测试分割，<code class="literal">percCorrectWeighted</code>可以高于或低于<code class="literal">percCorrect</code>。</p><p>我们看到了建立监督机器学习模型的不同选择。为了确定哪个执行<a id="id315" class="indexterm"/>最好，我们需要<a id="id316" class="indexterm"/>评估每个选项并优化参数。</p></div>
+
+
+
+
+
+<title>Summary</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"/><div><div><div><div><h1 class="title"><a id="ch05lvl1sec31"/>总结</h1></div></div></div><p>在本章中，您学习了如何识别同构集群以及可视化集群过程和结果。你定义了一个可行的监督机器学习问题，并用KNN解决了它。您评估了模型、准确性并修改了其参数。您还对功能进行了排名，并选择了最相关的功能。</p><p>在下一章，你会看到一个更好的方法来评估监督学习模型的准确性。您将看到优化模型参数和选择最相关特性的结构化方法。</p></div>
+</body></html>

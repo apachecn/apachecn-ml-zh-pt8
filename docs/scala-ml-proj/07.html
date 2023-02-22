@@ -1,0 +1,1149 @@
+<html><head/><body>
+
+
+    
+        <title>Options Trading Using Q-learning and Scala Play Framework</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">使用Q-learning和Scala Play框架进行期权交易</h1>
+                
+            
+            
+                
+<p class="chapter-content">作为人类，我们从经验中学习。我们变得如此迷人并非偶然。多年来积极的赞美和消极的批评都帮助我们塑造了今天的我们。我们通过尝试不同的肌肉运动来学习如何骑自行车，直到它发出咔嗒声。当你采取行动时，你有时会立即得到回报。这都是关于<strong>强化学习</strong> ( <strong> RL </strong>)。</p>
+<p class="chapter-content">这一章是关于设计一个由批评和奖励驱动的机器学习系统。我们将看到如何将RL算法应用于现实数据集上的预测模型。</p>
+<p class="chapter-content">从交易的角度来看，期权是一种赋予其所有者在固定日期(到期日)或之前以固定价格(执行价格)购买(看涨期权)或出售(看跌期权)金融资产(标的)的权利的合同。</p>
+<p class="chapter-content">我们将看到如何使用<em> </em>一种叫做<strong> QLearning </strong>的RL算法来开发这种期权交易的现实应用。更准确地说，我们将解决期权交易中计算最佳策略的问题，我们希望在给定一些市场条件和交易数据的情况下交易某些类型的期权。</p>
+<p class="chapter-content">IBM股票数据集将用于设计一个由批评和奖励驱动的机器学习系统。我们将从RL及其理论背景开始，这样概念更容易掌握。最后，我们将使用Scala Play框架将整个应用程序包装成一个web应用程序。</p>
+<p class="chapter-content">简而言之，在这个端到端项目中，我们将学习以下主题:</p>
+<ul>
+<li>使用Q学习——一种RL算法</li>
+<li>期权交易——到底是怎么回事？</li>
+<li>技术概述</li>
+<li>在期权交易中实施Q学习</li>
+<li>使用Scala Play框架将应用包装成web应用</li>
+<li>模型部署</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Reinforcement versus supervised and unsupervised learning</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">强化与监督和非监督学习</h1>
+                
+            
+            
+                
+<p class="chapter-content">监督学习和非监督学习出现在光谱的两端，而RL存在于中间。它不是监督学习，因为训练数据来自于在探索和利用之间做出决定的算法。此外，它不是无监督的，因为算法从环境中接收反馈。只要你处于在一个状态下执行一个动作产生奖励的情况下，你就可以使用RL来发现一个好的动作序列，以获得最大的预期奖励。</p>
+<p class="chapter-content">RL代理的目标是最大化它最终获得的总回报。第三个主要子元素是<kbd>value</kbd>函数。虽然奖励决定了状态的即时可取性，但是值指示了状态的长期可取性，考虑了可能跟随的状态以及这些状态中的可用奖励。根据所选的策略指定<kbd>value</kbd>功能。在学习阶段，代理尝试确定具有最高值的状态的动作，因为这些动作最终将获得最佳数量的奖励。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Using RL</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">使用RL</h1>
+                
+            
+            
+                
+<p class="chapter-content"><em>图1 </em>显示一个人做出到达目的地的决定。此外，假设在你从家开车去上班的路上，你总是选择相同的路线。然而，有一天你的好奇心占了上风，你决定尝试一条不同的道路，希望缩短通勤距离。这种尝试新路线或坚持最知名路线的困境是探索与开发的一个例子:</p>
+<div><img height="241" width="413" src="img/e85f2dfa-b4f1-4f3c-bf90-bc66c9d4f1ae.png"/></div>
+<p>图1:代理总是试图通过路线到达目的地</p>
+<p class="chapter-content">RL技术正在许多领域得到应用。目前正在追求的一个普遍想法是创建一个除了任务描述之外不需要任何东西的算法。当这种性能实现后，它将被应用到几乎所有地方。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Notation, policy, and utility in RL</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">RL中的符号、策略和效用</h1>
+                
+            
+            
+                
+<p class="chapter-content">你可能会注意到，RL的行话包括将算法具体化为在某些情况下采取行动以获得奖励。事实上，算法通常被称为与环境一起行动的代理。你可以把它想象成一个智能硬件代理，它通过传感器进行感知，并使用其执行器与环境进行交互。因此，许多RL理论应用于机器人领域并不令人惊讶。现在，为了进一步扩展我们的讨论，我们需要了解一些术语:</p>
+<ul>
+<li><strong>环境</strong>:环境是任何具有状态和在不同状态之间转换的机制的系统。例如，机器人的环境就是它工作的环境或设施。</li>
+<li>代理:代理是一个与环境交互的自动化系统。</li>
+<li><strong>状态</strong>:环境或系统的状态是完全描述环境的变量或特征的集合。</li>
+<li><strong>目标</strong>:目标是提供比任何其他状态更高的折扣累积奖励的状态。高累积奖励防止最佳策略依赖于训练期间的初始状态。</li>
+<li><strong>动作</strong>:动作定义了状态之间的转换，其中代理负责执行或者至少建议一个动作。在执行一个动作时，代理从环境中收集奖励(或惩罚)。</li>
+<li><strong>策略</strong>:策略定义了对于环境的任何状态要执行和执行的动作。</li>
+<li><strong>奖励</strong>:奖励量化了代理与环境的积极或消极的相互作用。奖励本质上是学习引擎的训练集。</li>
+<li><strong>插曲<em> ( </em> </strong>也称为<strong>试炼</strong>):这定义了从一个初始状态达到目标状态所需的步数。</li>
+</ul>
+<p class="chapter-content">我们将在本节稍后讨论更多关于策略和效用的内容。<em>图2 </em>展示了<strong>状态</strong>、<strong>动作</strong>和<strong>奖励</strong>之间的相互作用。如果你从状态<strong>s<sub>1</sub>T19】开始，你可以执行动作<strong>a<sub>1</sub>T23】获得奖励<strong> r (s <sub> 1 </sub>，a <sub> 1 </sub> ) </strong>。箭头代表<strong>动作</strong>，圆圈代表<strong>状态</strong>:</strong></strong></p>
+<div><img height="283" width="419" src="img/4e880ac5-2e4b-44a2-9c91-38786d5942b0.png"/></div>
+<p>图2:一个代理对一个状态执行一个动作，产生一个奖励</p>
+<p class="chapter-content">机器人执行动作以在不同状态之间改变。但是它如何决定采取哪种行动呢？嗯，这都是关于使用不同的或具体的政策。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Policy</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">政策</h1>
+                
+            
+            
+                
+<p class="chapter-content">在RL的行话中，我们称一个策略为<strong>策略</strong>。RL的目标是发现一个好的策略。解决这个问题的一个最常见的方法是观察每个州的行动的长期后果。短期后果很容易计算:这只是回报。尽管执行一项行动会立即产生回报，但贪婪地选择回报最高的行动并不总是一个好主意。这也是生活中的一课，因为从长远来看，最直接的最佳做法可能并不总是最令人满意的。可能的最佳策略称为最优策略，它通常是RL的圣杯，如图<em>图3 </em>所示，它显示了给定任何状态下的最优操作:</p>
+<div><img height="98" width="284" src="img/bca50b75-f45d-4aa0-ab22-714d10131b3a.png"/></div>
+<p>图3:策略定义了在给定状态下要采取的动作</p>
+<p class="chapter-content">我们已经看到一种策略，其中代理人总是选择具有最大即时回报的行动，称为<strong>贪婪策略</strong>。策略的另一个简单例子是任意选择一个动作，称为<strong>随机策略</strong>。如果你想出一个策略来解决一个RL问题，仔细检查你所学的策略是否比随机策略和贪婪策略表现得更好通常是一个好主意。</p>
+<p class="chapter-content">此外，我们将看到如何开发另一种称为<strong>策略梯度</strong>的稳健策略，其中神经网络通过使用来自环境的反馈通过梯度下降调整其权重来学习拣选动作的策略。我们将会看到，尽管两种方法都被使用，政策梯度更加直接和乐观。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Utility</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">效用</h1>
+                
+            
+            
+                
+<p>长期回报被称为<strong>效用</strong>。事实证明，如果我们知道对一个状态执行一个动作的效用，那么就很容易求解RL。例如，要决定采取哪种行动，我们只需选择产生最高效用的行动。然而，揭示这些效用价值是困难的。在状态<em> s </em>执行动作<em> a </em>的效用被写成函数<em> Q(s，a) </em>，称为<strong>效用函数</strong>。这预测了预期的即时回报，以及在给定状态-行动输入的情况下遵循最优策略的回报，如图<em>图4 </em>所示:</p>
+<div><img height="114" width="339" src="img/86800cd6-c7ec-4a55-9148-2d4afb66e6b0.png"/></div>
+<p>图4:使用一个效用函数</p>
+<p class="chapter-content">大多数RL算法归结为三个主要步骤:推断、执行和学习。在第一步中，算法使用迄今为止的知识选择给定状态(<em> s </em>)的最佳动作(<em> a </em>)。接下来，它执行动作以找出奖励(<em> r </em>)以及下一个状态(<em>s’</em>)。然后，它利用新获得的知识<em> (s，r，a，s’)</em>提高对世界的理解。然而，我想你会同意，这只是一种计算效用的幼稚方法。</p>
+<p class="chapter-content">现在的问题是:有什么更可靠的方法来计算它呢？我们可以通过递归地考虑未来动作的效用来计算特定状态-动作对<em> (s，a) </em>的效用。你当前行动的效用不仅受到直接回报的影响，还受到下一个最佳行动的影响，如下式所示:</p>
+<div><img height="22" width="233" class="fm-editor-equation" src="img/5215bab5-b9d6-40f5-a5c9-12c83fa6cea8.png"/></div>
+<p class="chapter-content"><em> s' </em>表示下一个状态，<em> a' </em>表示下一个动作。在状态<em> s </em>中采取行动<em> a </em>的回报由<em> r(s，a) </em>表示。这里，<em> γ </em>是一个你可以选择的超参数，叫做折现因子。如果<em> γ </em>为<em> 0 </em>，那么代理人选择最大化即时奖励的行动。较高的<em> γ </em>值将使代理更加重视考虑长期后果。实际上，我们有更多这样的超参数需要考虑。例如，如果期望真空吸尘器机器人快速学习解决任务，但不一定是最优的，我们可能希望设置更快的学习速率。</p>
+<p class="chapter-content">或者，如果允许机器人有更多的时间去探索和利用，我们可能会降低学习速度。让我们称学习率为<em> α </em>，并如下改变我们的效用函数(注意，当<em> α = 1 </em>时，两个等式是相同的):</p>
+<div><img height="19" width="338" class="fm-editor-equation" src="img/8ec4cadc-c023-415b-9ed9-e50bcc6078c1.png"/></div>
+<p class="chapter-content">总之，如果我们知道这个<em> Q(s，a) </em>函数，就可以解决一个RL问题。这里有一个算法叫做Q-learning。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>A simple Q-learning implementation</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">一个简单的Q学习实现</h1>
+                
+            
+            
+                
+<p class="chapter-content">Q-learning是一种算法，可用于金融和市场交易应用，如期权交易。一个原因是最好的政策是通过训练产生的。也就是说，RL定义了Q-learning中随时间变化的模型，并且随着任何新的情节而不断更新。Q-learning是一种优化(累积)折扣奖励的方法，使远未来的奖励不如近期奖励优先；Q-learning是一种无模型RL形式。也可以看作是异步<strong>动态编程</strong> ( <strong> DP </strong>)的一种方法。</p>
+<p class="chapter-content">它为代理人提供了通过体验行动的后果来学习在马尔可夫域中最优行动的能力，而不需要他们建立域的地图。简而言之，Q-learning是一种RL技术，因为它不严格要求标记数据和训练。此外，Q值不必是连续的、可微的函数。</p>
+<p>另一方面，马尔可夫决策过程提供了一个数学框架，用于在结果部分是随机的，部分在决策者控制下的情况下对决策进行建模。其中，随机变量在未来时间点的概率仅取决于当前时间点的信息，而不取决于任何历史值。换句话说，概率与历史状态无关。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Components of the Q-learning algorithm</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">Q学习算法的组成部分</h1>
+                
+            
+            
+                
+<p class="chapter-content">这个实现的灵感很大程度上来源于一本书中的Q-learning实现，作者Patrick R. Nicolas，<em>Scala for Machine Learning-Second Edition</em>，Packt Publishing Ltd .，2017年9月。感谢作者和Packt Publishing Ltd .源代码可在<a href="https://github.com/PacktPublishing/Scala-for-Machine-Learning-Second-Edition/tree/master/src/main/scala/org/scalaml/reinforcement">https://github . com/Packt Publishing/Scala-for-Machine-Learning-Second-Edition/tree/master/src/main/Scala/org/Scala ml/reinforcement</a>获得。</p>
+<p class="chapter-content">感兴趣的读者可以看看原始实现的扩展版本，当然可以从本书的Packt repository或GitHub repo下载。Q-learning算法实现的关键组件是几个类— <kbd>QLearning</kbd>、<kbd>QLSpace</kbd>、<kbd>QLConfig</kbd>、<kbd>QLAction</kbd>、<kbd>QLState</kbd>、<kbd>QLIndexedState</kbd>和<kbd>QLModel</kbd>—如下所述:</p>
+<ul>
+<li><kbd>QLearning</kbd>:实现训练和预测方法。它使用类型<kbd>QLConfig</kbd>的配置定义了类型<kbd>ETransform</kbd>的数据转换。</li>
+<li><kbd>QLConfig</kbd>:这个参数化类定义了Q-learning的配置参数。更具体地说，它用于保存来自用户的显式配置。</li>
+<li><kbd>QLAction</kbd> <strong> : </strong>这是一个定义在源状态和多个目的状态之间的动作的类。</li>
+<li><kbd>QLPolicy</kbd>:这是一个枚举器，用于定义在Q-learning模型训练过程中用于更新策略的参数类型。</li>
+<li><kbd>QLSpace</kbd>:这有两个组成部分:一个<kbd>QLState</kbd>类型的状态序列和序列中一个或多个目标状态的标识符<kbd>id</kbd>。</li>
+<li><kbd>QLState</kbd>:包含一系列<kbd>QLAction</kbd>实例，帮助从一种状态转换到另一种状态。它还用作要评估和预测其状态的对象或实例的参考。</li>
+<li><kbd>QLIndexedState</kbd>:这个类返回一个索引状态，它将搜索中的一个状态索引到目标状态。</li>
+<li><kbd>QLModel</kbd>:用于通过训练过程生成模型。最终，它包含了最佳策略和模型的准确性。</li>
+</ul>
+<p class="chapter-content">注意，除了前面的组件之外，可选的约束函数限制了从当前状态搜索下一个最有价值的动作的范围。下图显示了Q-learning算法的关键组件及其交互:</p>
+<div><img height="231" width="518" src="img/52b17c4f-9ee2-41f5-8530-ebf971a10444.png"/></div>
+<p>图QLearning算法的组件及其交互</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>States and actions in QLearning</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">学习中的状态和行为</h1>
+                
+            
+            
+                
+<p class="chapter-content"><kbd>QLAction</kbd>类指定从一种状态到另一种状态的转换。它有两个参数，即from和to。它们都有自己的整数标识符，需要大于0:</p>
+<ul>
+<li><kbd>from</kbd>:动作的来源</li>
+<li><kbd>to</kbd>:动作目标</li>
+</ul>
+<p class="chapter-content">签名如下所示:</p>
+<pre class="chapter-content"><strong>case </strong><strong>class</strong> QLAction(from: Int, to: Int) {<br/>    require(from &gt;= 0, s"QLAction found from: <br/>    $from required: &gt;=0")require(to &gt;= 0, s"QLAction found to: <br/>    $to required: &gt;=0")<br/><br/><strong>override </strong><strong>def</strong> toString: String = s"n<br/>    Action: state <br/>    $from =&gt; state $to"<br/>}</pre>
+<p class="chapter-content"><kbd>QLState</kbd>类定义了Q学习中的状态。它需要三个参数:</p>
+<ul>
+<li><kbd>id</kbd>:唯一识别状态的标识符</li>
+<li><kbd>actions</kbd>:从该状态到其他状态的转换的动作列表，</li>
+<li><kbd>instance</kbd>:状态可能具有<kbd>T</kbd>类型的属性，独立于状态转换</li>
+</ul>
+<p class="chapter-content">下面是该类的签名:</p>
+<pre class="chapter-content"><strong>case </strong><strong>class</strong> QLState[T](id: Int, actions: Seq[QLAction] = List.empty, instance: T) {<br/><strong>    import</strong> QLState._check(id)<br/><strong>    final </strong><strong>def</strong> isGoal: Boolean = actions.nonEmpty<br/><strong>    override </strong><strong>def</strong> toString: String =s"state: $id ${actions.mkString(" ")<br/>        }<br/>    nInstance: ${instance.toString}"<br/>}</pre>
+<p class="chapter-content">在前面的代码中，<kbd>toString()</kbd>方法用于Q-learning中状态的文本表示。状态由它的ID和它可能触发的动作列表来定义。</p>
+<p>国家可能没有任何行动。这通常是目标或吸收状态的情况。在这种情况下，列表是空的。参数化实例是对为其计算状态的对象的引用。</p>
+<p class="chapter-content">现在我们知道了要执行的状态和操作。然而，<kbd>QLearning</kbd>代理需要知道表单的搜索空间(States <em> x </em> Actions)。下一步是创建图形或搜索空间。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>The search space</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">搜索空间</h1>
+                
+            
+            
+                
+<p class="chapter-content">搜索空间是负责任何状态序列的容器。<kbd>QLSpace</kbd>类定义了Q学习算法的搜索空间(状态<em> x </em>动作)，如下图所示:</p>
+<div><img height="291" width="458" src="img/d7238d9c-0a36-4840-b783-0d97adf1b688.png"/></div>
+<p>图6:带QLData的状态转移矩阵(Q值、回报、概率)</p>
+<p class="chapter-content">搜索空间可以由终端用户提供状态和动作的列表，或者通过采用以下参数提供状态的数量来自动创建:</p>
+<ul>
+<li><kbd>States</kbd>:在Q学习搜索空间中定义的所有可能状态的序列</li>
+<li><kbd>goalIds</kbd>:作为目标的状态的标识符列表</li>
+</ul>
+<p class="chapter-content">现在让我们看看这个类的实现。这是一个相当大的代码块。所以让我们从生成名为<kbd>statesMap</kbd>的地图的构造函数开始。它使用它的<kbd>id</kbd>和目标数组<kbd>goalStates</kbd>检索状态:</p>
+<pre class="chapter-content"><strong>private</strong>[scalaml] <strong>class</strong> QLSpace[T] <strong>protected</strong> (states: Seq[QLState[T]], goalIds: Array[Int]) {<br/><strong>    import</strong> QLSpace._check(states, goalIds)</pre>
+<p class="chapter-content">然后，它创建一个状态映射，作为状态ID和状态实例的不可变映射:</p>
+<pre class="chapter-content"><strong>private</strong>[<strong>this</strong>] <strong>val</strong> statesMap: immutable.Map[Int, QLState[T]] = states.map(st =&gt; (st.id, st)).toMap</pre>
+<p class="mce-root">现在我们有了一个策略和一个动作的状态，下一个任务是计算给定状态和策略的最大值:</p>
+<pre class="chapter-content"><strong>final </strong><strong>def</strong> maxQ(state: QLState[T], policy: QLPolicy): Double = {<br/><strong>    val</strong> best=states.filter(_ != state).maxBy(st=&gt;policy.EQ(state.id, st.id))policy.EQ(state.id, best.id)<br/>    }</pre>
+<p class="chapter-content">此外，我们需要通过访问搜索空间中的状态数来了解状态数:</p>
+<pre class="chapter-content"><strong>final </strong><strong>def</strong> getNumStates: Int = states.size</pre>
+<p class="chapter-content">然后，<kbd>init</kbd>方法选择用于训练剧集的初始状态。如果<kbd>state0</kbd>参数无效，则随机选择状态:</p>
+<pre class="chapter-content"><strong>def</strong> init(state0: Int): QLState[T] =<br/><strong>    if</strong> (state0 &lt; 0) {<br/><strong>        val</strong> r = <strong>new</strong> Random(System.currentTimeMillis <br/>                + Random.nextLong)states(r.nextInt(states.size - 1))<br/>        } <br/><strong>    else</strong> states(state0)</pre>
+<p>最后，<kbd>nextStates</kbd>方法检索与该状态相关的所有动作的执行所产生的状态列表。搜索空间<kbd>QLSpace</kbd>由<kbd>QLSpace</kbd>伴随对象中定义的工厂方法<kbd>apply</kbd>创建，如下所示:</p>
+<pre><strong>final </strong><strong>def</strong> nextStates(st: QLState[T]): Seq[QLState[T]] =<br/><strong>            if</strong> (st.actions.isEmpty)Seq.empty[QLState[T]]<br/><strong>            else </strong>st.actions.flatMap(ac =&gt; statesMap.get(ac.to))</pre>
+<p class="chapter-content">此外，您如何知道当前状态是否是目标状态？嗯，<kbd>isGoal()</kbd>方法可以达到这个目的。</p>
+<p class="chapter-content">它接受一个名为<kbd>state</kbd> <em>，</em>的参数，该参数是针对目标测试的<em/>状态，如果该状态是目标状态，则返回<kbd>Boolean: true</kbd>；否则，它返回false:</p>
+<pre class="chapter-content"><strong>final </strong><strong>def</strong> isGoal(state: QLState[T]): Boolean = goalStates.contains(state.id)</pre>
+<p class="mce-root">apply方法使用实例集、目标和约束函数<kbd>constraints</kbd>作为输入来创建状态列表。每个状态创建它的动作列表。从这个状态到任何其他状态都会产生动作:</p>
+<pre class="chapter-content"><strong>def</strong> apply[T](goal: Int,instances: Seq[T],constraints: Option[Int =&gt; List[Int]]): QLSpace[T] =             <br/>    apply(Array[Int](goal), instances, constraints)</pre>
+<p class="chapter-content">功能约束限制了可以从任何给定状态触发的动作的范围，如图x所示。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>The policy and action-value</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">政策和行动价值</h1>
+                
+            
+            
+                
+<p class="chapter-content"><kbd>QLData </kbd>类通过创建一个<kbd>QLData</kbd>记录或实例来封装Q-learning算法中的策略属性，该记录或实例具有在训练期间计算和更新的给定奖励、概率和Q值。概率变量用于为要执行的动作的干预条件建模。</p>
+<p class="chapter-content">如果该动作没有任何外部约束，则概率为1(即最高)，否则为零(即无论如何不允许该动作)。签名如下所示:</p>
+<pre class="chapter-content"><strong>final </strong><strong>private</strong>[scalaml] <strong>class</strong> QLData(<br/><strong>    val</strong> reward: Double, <br/><strong>    val</strong> probability: Double = 1.0) {<br/><br/><strong>    import</strong> QLDataVar._<br/><strong>    var</strong> value: Double = 0.0<br/>    @inline <strong>final </strong><strong>def</strong> estimate: Double = value * probability<br/><br/><strong>    final </strong><strong>def</strong> value(varType: QLDataVar): Double = varType <br/><strong>            match</strong> {<br/><strong>                case</strong> REWARD =&gt; reward<br/><strong>                case</strong> PROB =&gt; probability<br/><strong>                case</strong> VALUE =&gt; value<br/>            }<br/><strong>override </strong><strong>def</strong> toString: String = s"nValue= $value Reward= $reward Probability= $probability"}</pre>
+<p class="chapter-content">在前面的代码块中，Q值在训练期间使用Q-learning公式进行更新，但总体值是通过使用其奖励来计算的，并根据其概率进行调整，然后返回调整后的值。然后,<kbd>value()</kbd>方法使用Q-learning策略的类型选择其元素的属性。它获取属性的<kbd>varType</kbd>(即<kbd>REWARD</kbd>、<kbd>PROBABILITY</kbd>和<kbd>VALUE</kbd>)并返回该属性的值。</p>
+<p class="chapter-content">最后，<kbd>toString()</kbd>方法有助于表示价值、回报和概率。既然我们知道了数据将如何操作，下一个任务就是创建一个简单的模式，初始化与每个动作相关的回报和概率。下面的Scala案例是一个名为<kbd>QLInput</kbd>的类；它输入到Q学习搜索空间(<kbd>QLSpace</kbd>)和策略(<kbd>QLPolicy</kbd>):</p>
+<pre class="chapter-content"><strong>case </strong><strong>class</strong> QLInput(from: Int, to: Int, reward: Double = 1.0, prob: Double = 1.0)</pre>
+<p class="chapter-content">在前面的签名中，构造函数为Q-learning创建了一个动作输入。它需要四个参数:</p>
+<ul>
+<li><kbd>from</kbd>，源状态的标识符</li>
+<li><kbd>to</kbd>，目标或目的状态的标识符</li>
+<li><kbd>reward</kbd>，这是从id为<kbd>from</kbd>的状态转换到id为<kbd>to</kbd>的状态的积分或罚分</li>
+<li>prob，从状态<kbd>from</kbd>转换到状态<kbd>to</kbd>的概率</li>
+</ul>
+<p>在前面的类中，<kbd>from</kbd>和<kbd>to</kbd>参数用于特定的动作，但最后两个参数分别是完成动作时收集的奖励及其概率。这两个动作都有奖励，默认情况下概率为1。简而言之，我们只需要为具有较高回报或较低概率的行动创建一个输入。</p>
+<p class="chapter-content">状态的数量和输入的顺序定义了类型<kbd>QLPolicy</kbd>的策略，它是一个数据容器。一个动作有一个Q值(也称为<strong>动作值</strong>)、一个奖励和一个概率。该实现在三个独立的矩阵中定义了这三个值——动作值用<em> Q </em>，奖励用<em> R </em>，概率用<em>P</em>——以便与数学公式保持一致。以下是该课程的工作流程:</p>
+<ol>
+<li>使用输入概率和奖励初始化策略(见<kbd>qlData</kbd>变量)。</li>
+</ol>
+<ol start="2">
+<li>根据输入大小计算状态数(见<kbd>numStates</kbd>变量)。</li>
+<li>为从状态<kbd>from</kbd>到状态<kbd>to</kbd>的动作设置Q值(参见<kbd>setQ</kbd>方法)，并使用<kbd>get()</kbd>方法获取Q值。</li>
+</ol>
+<ol start="4">
+<li>检索从状态<kbd>from</kbd>到状态<kbd>to</kbd>的状态转换动作的Q值(参见Q方法)。</li>
+</ol>
+<p> </p>
+<ol start="5">
+<li>检索从状态<kbd>from</kbd>到状态<kbd>to</kbd>的状态转换动作的估计值(参见<kbd>EQ</kbd>方法)，并在<kbd>double</kbd>中返回值。</li>
+<li>检索从状态<kbd>from</kbd>到状态<kbd>to</kbd>的状态转换动作的奖励(参见R方法)。</li>
+<li>检索从状态<kbd>from</kbd>到状态<kbd>to</kbd>的状态转换动作的概率(参见<kbd>P</kbd>方法)。</li>
+<li>计算<kbd>Q</kbd>的最小值和最大值(参见<kbd>minMaxQ</kbd>方法)。</li>
+<li>检索转换为正值的对(索引源状态，索引目标状态)。状态的索引被转换为双精度值(见<kbd>EQ: Vector[DblPair]</kbd>方法)。</li>
+<li>使用第一种<kbd>toString()</kbd>方法获得此政策的奖励矩阵的文字描述。</li>
+<li>使用第二种<kbd>toString()</kbd>方法的以下任何一种的文本表示:Q值、奖励或概率矩阵。</li>
+<li>使用<kbd>check()</kbd>方法验证<kbd>from</kbd>和<kbd>to</kbd>值。</li>
+</ol>
+<p class="chapter-content">现在让我们看看由前面的工作流组成的类定义:</p>
+<pre class="chapter-content"><strong>final </strong><strong>private</strong>[scalaml] <strong>class</strong> QLPolicy(<strong>val</strong> input: Seq[QLInput]) {<br/><strong>    import</strong> QLDataVar._QLPolicy.check(input)<br/><strong>    private</strong>[<strong>this</strong>] <strong>val</strong> qlData = input.map(qlIn =&gt; n<strong>ew</strong> QLData(qlIn.reward, qlIn.prob))<br/><strong>    private</strong>[<strong>this</strong>] <strong>val</strong> numStates = Math.sqrt(input.size).toInt<br/><br/><strong>    def</strong> setQ(from: Int, to: Int, value: Double): Unit = <br/>        {check(from, to, "setQ")qlData(from * numStates + to).value = value}<br/><br/><strong>    final </strong><strong>def</strong> get(from: Int, to: Int, varType: QLDataVar): String<br/>    {f"${qlData(from * numStates + to).value(varType)}%2.2f"}<br/><br/><strong>    final </strong><strong>def</strong> Q(from: Int, to: Int): Double = {check(from, to, "Q") qlData(from * numStates + to).value}<br/><strong>    final </strong><strong>def</strong> EQ(from: Int, to: Int): Double = {check(from, to, "EQ") qlData(from * numStates + to).estimate}<br/><strong>    final </strong><strong>def</strong> R(from: Int, to: Int): Double = {check(from, to, "R") qlData(from * numStates + to).reward}<br/><strong>    final </strong><strong>def</strong> P(from: Int, to: Int): Double = {check(from, to, "P") qlData(from * numStates + to).probability}<br/><br/><strong>    final </strong><strong>def</strong> minMaxQ: DblPair = {<br/><strong>        val</strong> r = Range(0, numStates)<br/><strong>        val</strong> _min = r.minBy(from =&gt; r.minBy(Q(from, _)))<br/><strong>        val</strong> _max = r.maxBy(from =&gt; r.maxBy(Q(from, _)))(_min, _max)}<br/><br/><strong>    final </strong><strong>def</strong> EQ: Vector[DblPair] = {<br/><strong>        import</strong> scala.collection.mutable.ArrayBuffer<br/><strong>        val</strong> r = Range(0, numStates)r.flatMap(from =&gt;r.map(to =&gt; (from, to, Q(from, to)))).map { <br/><strong>        case</strong> (i, j, q) =&gt; <br/><strong>            if</strong> (q &gt; 0.0) (i.toDouble, j.toDouble) <br/><strong>            else</strong> (0.0, 0.0) }.toVector}<br/><br/><strong>override </strong><strong>def</strong> toString: String = s"Rewardn${toString(REWARD)}"<br/><br/><strong>def</strong> toString(varType: QLDataVar): String = {<br/><strong>    val</strong> r = Range(1, numStates)r.map(i =&gt; r.map(get(i, _, varType)).mkString(",")).mkString("n")}<br/><strong>    private </strong><strong>def</strong> check(from: Int, to: Int, meth: String): Unit = {require(from &gt;= 0 &amp;&amp; from &lt;                         numStates,s"QLPolicy.<br/>            $meth Found from:<br/>            $from required &gt;= 0 and &lt; <br/>            $numStates")require(to &gt;= 0 &amp;&amp; to &lt; numStates,s"QLPolicy.<br/>            $meth Found to: $to required &gt;= 0 and &lt; $numStates")<br/>}</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>QLearning model creation and training</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">q学习模型创建和培训</h1>
+                
+            
+            
+                
+<p class="chapter-content"><kbd>QLearning</kbd>类封装了Q学习算法，更具体地说是动作值更新方程。这是一个类型为<kbd>ETransform</kbd>的数据转换(我们将在后面看到)，带有类型为<kbd>QLConfig</kbd>的显式配置。这个类是一个实现<kbd>QLearning</kbd>算法的通用参数化类。Q-learning模型在类的实例化期间被初始化和训练，因此它可以处于运行时预测的正确状态。</p>
+<p class="chapter-content">因此，类实例只有两种状态:成功训练和失败训练(我们将在后面看到)。</p>
+<p class="chapter-content">该实现并不假设每一集(或训练周期)都会成功。在训练完成时，计算标签与初始训练集的比率。客户端代码负责通过测试比率来评估模型的质量(参见模型评估部分)。</p>
+<p>构造器采用算法的配置(即<kbd>config</kbd>)、搜索空间(即<kbd>qlSpace</kbd>)和策略(即<kbd>qlPolicy</kbd>)参数，并创建一个Q学习算法:</p>
+<pre><strong>final </strong><strong>class</strong> QLearning[T](conf: QLConfig,qlSpace: QLSpace[T],qlPolicy: QLPolicy)<br/><strong>    extends</strong> ETransform[QLState[T], QLState[T]](conf) <strong>with</strong> Monitor[Double]</pre>
+<p>如果在类的实例化过程中达到(或训练)最小覆盖，则该模型被有效地自动创建，这本质上是Q学习模型。</p>
+<p>下面的<kbd>train()</kbd>方法应用于随机生成初始状态的每一集。然后，它计算覆盖率(基于由<kbd>conf</kbd>对象提供的<kbd>minCoverage</kbd>配置值)作为达到每个目标状态的剧集数:</p>
+<pre><strong>private </strong><strong>def</strong> train: Option[QLModel] = Try {<br/><strong>    val</strong> completions = Range(0, conf.numEpisodes).map(epoch =&gt; <br/><strong>        if</strong> (heavyLiftingTrain (-1)) 1 <strong>else</strong> 0)<br/>        .sum<br/>        completions.toDouble / conf.numEpisodes<br/>        }<br/>    .filter(_ &gt; conf.minCoverage).map(<strong>new</strong> QLModel(qlPolicy, _)).toOption;</pre>
+<p>在前面的代码块中，<kbd>heavyLiftingTrain(state0: Int)</kbd>方法在每一集(或时期)执行繁重的工作。如果<kbd>state0</kbd>为&lt; 0，则通过选择初始状态state 0或具有新种子的随机发生器<em> r </em>来触发搜索。</p>
+<p>首先，它获取与当前状态相邻的所有状态，然后选择相邻状态列表中最有价值的状态。如果下一个最有回报的状态是目标状态，我们就完成了。否则，它将使用奖励矩阵(即<kbd>QLPolicy.R</kbd>)重新计算状态转换的策略值。</p>
+<p>对于重新计算，它通过更新策略的Q值来应用Q学习更新公式；然后，它调用带有新状态和递增迭代器的搜索方法。让我们看看这个方法的主体:</p>
+<pre><strong>private </strong><strong>def</strong> heavyLiftingTrain(state0: Int): Boolean = {<br/>    @scala.annotation.tailrec<br/><strong>    def</strong> search(iSt: QLIndexedState[T]): QLIndexedState[T] = {<br/><strong>        val</strong> states = qlSpace.nextStates(iSt.state)<br/><strong>        if</strong> (states.isEmpty || iSt.iter &gt;= conf.episodeLength)<br/>            QLIndexedState(iSt.state, -1)<br/><strong>        else</strong> {<br/><strong>            val</strong> state = states.maxBy(s =&gt; qlPolicy.EQ(iSt.state.id, s.id))<br/><strong>            if</strong> (qlSpace.isGoal(state))<br/>                QLIndexedState(state, iSt.iter)<br/><br/><strong>            else</strong> {<br/><strong>                val</strong> fromId = iSt.state.id<br/><strong>                val</strong> r = qlPolicy.R(fromId, state.id)<br/><strong>                val</strong> q = qlPolicy.Q(fromId, state.id)<br/><strong>                val</strong> nq = q + conf.alpha * (r + conf.gamma * qlSpace.maxQ(state, qlPolicy) - q)<br/>                count(QVALUE_COUNTER, nq)<br/>                qlPolicy.setQ(fromId, state.id, nq)<br/>                search(QLIndexedState(state, iSt.iter + 1))<br/>                }<br/>            }<br/>        }<br/><br/><strong>val</strong> finalState = search(QLIndexedState(qlSpace.init(state0), 0))<br/><strong>if</strong> (finalState.iter == -1)<br/><strong>    false<br/></strong><strong>else<br/></strong>    qlSpace.isGoal(finalState.state)<br/>    }<br/>}</pre>
+<p class="chapter-content">由于给出了策略和培训覆盖范围的列表，让我们得到经过培训的模型:</p>
+<pre><strong>private</strong>[<strong>this</strong>] <strong>val</strong> model: Option[QLModel] = train</pre>
+<p class="chapter-content">注意，前面的模型是使用输入数据(见类<kbd>QLPolicy</kbd>)训练的，该输入数据用于使用内联<kbd>getInput()</kbd>方法训练Q学习算法:</p>
+<pre><strong>def</strong> getInput: Seq[QLInput] = qlPolicy.input</pre>
+<p class="chapter-content">现在，我们需要完成期权交易应用程序中最重要的步骤之一。因此，我们需要检索Q-learning的模型作为选项:</p>
+<pre>@inline<br/><strong>final</strong><strong>def</strong> getModel: Option[QLModel] = model</pre>
+<p>如果没有定义模型，整个应用程序会失败(参见<kbd>validateConstraints()</kbd>方法进行验证):</p>
+<pre>@inline<br/><strong>final</strong><strong>def</strong> isModel: Boolean = model.isDefined<br/><strong>override </strong><strong>def</strong> toString: String = qlPolicy.toString + qlSpace.toString</pre>
+<p>然后，使用Scala尾递归执行下一个最有价值的状态的递归计算。其思想是在所有州中搜索，并递归地选择因最佳政策而获得最多奖励的州。</p>
+<pre>@scala.annotation.tailrec<br/><strong>private </strong><strong>def</strong> nextState(iSt: QLIndexedState[T]): QLIndexedState[T] = {<br/><strong>            val</strong> states = qlSpace.nextStates(iSt.state)<br/><strong>            if</strong> (states.isEmpty || iSt.iter &gt;= conf.episodeLength)<br/>                iSt<br/><strong>            else</strong> {<br/><strong>                val</strong> fromId = iSt.state.id<br/><strong>                val</strong> qState = states.maxBy(s =&gt; model.map(_.bestPolicy.EQ(fromId, s.id)).getOrElse(-1.0))<br/>                nextState(QLIndexedState[T](qState, iSt.iter + 1))<br/>        }<br/>}</pre>
+<p class="chapter-content">在前面的代码块中，<kbd>nextState()</kbd>方法检索可以从当前状态转换到的合格状态。然后，它通过递增迭代计数器来提取具有最佳回报策略的状态<kbd>qState</kbd>。最后，如果没有更多的状态，或者如果方法没有在由<kbd>config.episodeLength</kbd>参数提供的最大允许迭代次数内收敛，它将返回状态。</p>
+<div><strong>Tail recursion</strong>: In Scala, tail recursion is a very effective construct used to apply an operation to every item of a collection. It optimizes the management of the function stack frame during recursion. The annotation triggers a validation of the condition necessary for the compiler to optimize function calls.</div>
+<p class="chapter-content">最后，Q学习算法<kbd>QLConfig</kbd>的配置指定:</p>
+<ul>
+<li class="chapter-content">学习率，<kbd>alpha</kbd></li>
+<li class="chapter-content">贴现率，<kbd>gamma</kbd></li>
+<li class="chapter-content">一集的最大状态数(或长度)，<kbd>episodeLength</kbd></li>
+<li class="chapter-content">训练中使用的片段(或时期)数量，<kbd>numEpisodes</kbd></li>
+<li class="chapter-content">选择最佳策略所需的最小覆盖范围，<kbd>minCoverage</kbd></li>
+</ul>
+<p class="chapter-content">这些显示如下:</p>
+<pre class="chapter-content"><strong>case </strong><strong>class</strong> QLConfig(alpha: Double,gamma: Double,episodeLength: Int,numEpisodes: Int,minCoverage: Double) <br/><strong>extends</strong> Config {<br/><strong>import</strong> QLConfig._check(alpha, gamma, episodeLength, numEpisodes, minCoverage)}</pre>
+<p class="chapter-content">现在我们差不多完成了，除了验证还没有完成。然而，让我们首先看看Q学习算法的配置的伴随对象。这个单例定义了<kbd>QLConfig</kbd>类的构造函数并验证了它的参数:</p>
+<pre class="chapter-content"><strong>private</strong>[scalaml] <strong>object</strong> QLConfig {<br/><strong>        private </strong><strong>val</strong> NO_MIN_COVERAGE = 0.0<br/><strong>        private </strong><strong>val</strong> MAX_EPISODES = 1000<br/><br/><strong>        private </strong><strong>def</strong> check(alpha: Double,gamma: Double,<br/>                          episodeLength: Int,numEpisodes: Int,<br/>                          minCoverage: Double): Unit = {<br/>                    <strong>require</strong>(alpha &gt; 0.0 &amp;&amp; alpha &lt; 1.0,s"QLConfig found alpha: $alpha required <br/>                            &gt; 0.0 and &lt; 1.0")<br/>                    <strong>require</strong>(gamma &gt; 0.0 &amp;&amp; gamma &lt; 1.0,s"QLConfig found gamma $gamma required <br/>                           &gt; 0.0 and &lt; 1.0")<br/>                    <strong>require</strong>(numEpisodes &gt; 2 &amp;&amp; numEpisodes &lt; MAX_EPISODES,s"QLConfig found <br/>                            $numEpisodes $numEpisodes required &gt; 2 and &lt; $MAX_EPISODES")<br/>                   <strong> require</strong>(minCoverage &gt;= 0.0 &amp;&amp; minCoverage &lt;= 1.0,s"QLConfig found $minCoverage <br/>                            $minCoverage required &gt; 0 and &lt;= 1.0")<br/>        }</pre>
+<p class="chapter-content">太棒了。我们已经看到了如何在Scala中实现<kbd>QLearning</kbd>算法。然而，正如我所说的，实现是基于公开可用的资源，培训可能并不总是一致的。这种在线模型的一个重要考虑是验证。一个商业应用程序(甚至是一个漂亮的Scala web应用程序，我们将在下一节讨论)可能需要多种类型的验证机制，包括状态转换、奖励、概率和Q值矩阵。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>QLearning model validation</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">学习模型验证</h1>
+                
+            
+            
+                
+<p class="chapter-content">一个关键的验证是验证用户定义的约束函数不会在Q-learning的搜索或训练中产生死胡同。功能约束建立了可以通过动作从给定状态访问的状态列表。如果约束太紧，一些可能的搜索路径可能达不到目标状态。下面是约束函数的一个简单验证:</p>
+<pre class="chapter-content"><strong>def</strong> validateConstraints(numStates: Int, constraint: Int =&gt; List[Int]): Boolean = {require(numStates &gt; 1,         s"QLearning validateConstraints found $numStates states should be &gt;1")!Range(0,                 <br/>        numStates).exists(constraint(_).isEmpty)<br/>}</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Making predictions using the trained model</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">使用训练好的模型进行预测</h1>
+                
+            
+            
+                
+<p>现在，我们可以递归地选择最佳策略奖励最多的州(参见下面代码中的<kbd>nextState</kbd>方法)，例如，可以为期权交易执行Q-learning算法的在线训练方法。</p>
+<p>因此，一旦使用所提供的数据训练了Q-学习模型，就可以通过用状态到预测目标状态的转换来覆盖数据转换方法(<kbd>PipeOperator</kbd>，即<kbd>|</kbd>)来使用Q-学习模型预测下一个状态:</p>
+<pre><strong>override </strong><strong>def</strong> |&gt; : PartialFunction[QLState[T], Try[QLState[T]]] = {<br/><strong>    case</strong> st: QLState[T] <br/><strong>        if</strong> isModel =&gt;<br/>            Try(<br/><strong>            if</strong> (st.isGoal) st <br/><strong>        else</strong> nextState(QLIndexedState[T](st, 0)).state)<br/>    }</pre>
+<p class="chapter-content">我想这已经够拗口的了，尽管对这个模型进行评估会更好。但在真实数据集上进行评估会更好，因为在虚假数据上运行和评估模型的性能就像买了一辆新车却从未驾驶过一样。因此，我想结束实现部分，并使用这个Q-learning实现继续学习期权交易应用程序。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Developing an options trading web app using Q-learning</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">使用Q-learning开发期权交易web应用程序</h1>
+                
+            
+            
+                
+<p class="chapter-content">交易算法是使用计算机的过程，该计算机被编程为遵循一组定义的指令来进行交易，以便以人类交易者不可能的速度和频率产生利润。定义的规则集基于时间、价格、数量或任何数学模型。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Problem description</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">问题描述</h1>
+                
+            
+            
+                
+<p class="chapter-content">通过这个项目，我们将根据从到期时间、证券价格和波动性得出的当前一组观察特征，预测未来<em> N </em>天的证券期权价格。问题是:对于这样的期权定价模型，我们应该使用什么模型？答案是，其实有很多；Black-Scholes随机<strong>偏微分方程</strong> ( <strong> PDE </strong>)是最被认可的一种。</p>
+<p>在数理金融学中，布莱克-斯科尔斯方程必然是一个偏微分方程，它覆盖了布莱克-斯科尔斯模型下的欧式看涨期权或欧式看跌期权的价格演变。对于不支付股息的欧式看涨或看跌期权，等式为:<br/> <img height="31" width="209" class="fm-editor-equation" src="img/beeab1f3-57f6-47fa-9358-4a3b47f69bcc.png"/> <br/>其中<em> V </em>是期权价格与股价<em> S </em>和时间<em> t </em>的函数，<em> r </em>是无风险利率，<em>σ</em><em>σ</em>(display style sigma)是股票的波动率。该等式背后的一个关键金融见解是，任何人都可以通过以正确的方式无风险地买卖基础资产来完美对冲期权。这种对冲意味着期权只有一个正确的价格，正如布莱克-斯科尔斯公式所返回的那样。</p>
+<p class="chapter-content">考虑一个行使价为95美元的IBM月到期看涨期权。你卖出一份一月份的IBM看跌期权，行使价为85美元。让我们考虑并集中在一个给定的证券，IBM的看涨期权。下图描绘了2014年5月IBM股票及其衍生看涨期权的每日价格，执行价格为190美元:</p>
+<div><img height="172" width="424" src="img/7cce8043-97c9-41b7-a0e2-bd401127cfe0.png"/></div>
+<p>图7:2013年5月至10月IBM股票和2014年5月190美元看涨期权的定价</p>
+<p class="chapter-content CDPAlignLeft CDPAlign">现在，如果IBM在期权到期日以87美元卖出，这个头寸的盈亏是多少？或者，如果IBM的售价是100美元呢？计算或预测答案并不容易。然而，在期权交易中，期权的价格取决于几个参数，如时间衰减、价格和波动性:</p>
+<ul>
+<li>期权到期的时间(时间衰减)</li>
+<li>基础证券的价格</li>
+<li>标的资产回报的波动性</li>
+</ul>
+<p class="chapter-content">定价模型通常不考虑基础证券交易量的变化。因此，一些研究者将其纳入期权交易模型。正如我们所描述的，任何基于RL的算法都应该有一个显式状态(或多个状态)，因此让我们使用以下四个规范化特征来定义选项的状态:</p>
+<ul>
+<li><strong>时间衰减</strong> ( <kbd>timeToExp</kbd>):这是在(0，1)范围内归一化后的到期时间。</li>
+<li><strong>相对波动率</strong> ( <kbd>volatility</kbd>):在一个交易时段内，这是标的证券价格的相对变化。例如，它不同于布莱克-斯科尔斯模型中定义的更复杂的回报率波动性。</li>
+<li><strong>相对于交易量的波动率</strong> ( <kbd>vltyByVol</kbd>):这是根据交易量调整后的证券价格的相对波动率。</li>
+<li><strong>相对</strong> <strong>现价与执行价之差</strong> ( <kbd>priceToStrike</kbd>):衡量价格与执行价之差与执行价之比。</li>
+</ul>
+<p class="chapter-content">下图显示了可以用于IBM option策略的四个标准化特性:</p>
+<div><img height="216" width="490" src="img/96deb7b5-fd00-41aa-8eed-a514786ef05b.png"/></div>
+<p>图IBM股票的标准化相对股价波动性、相对交易量的波动性以及相对执行价的价格</p>
+<p class="chapter-content">现在让我们看看股票和期权价格数据集。有两个文件<kbd>IBM.csv</kbd>和<kbd>IBM_O.csv</kbd>分别包含IBM股票价格和期权价格。股票价格数据集包含日期、开盘价、最高价和最低价、收盘价、交易量和调整后的收盘价。下图给出了数据集的快照:</p>
+<div><img height="181" width="488" src="img/28f78eae-73f9-450c-a168-a30ec57f50f9.png"/></div>
+<p>图9: IBM股票数据</p>
+<p class="chapter-content">另一方面，<kbd>IBM_O.csv</kbd>在2014年10月18日有127个IBM Call 190期权价格。一些值是1.41、2.24、2.42、2.78、3.46、4.11、4.51、4.92、5.41、6.01等等。到目前为止，我们能否使用<kbd>QLearning</kbd>算法开发一个预测模型来帮助我们回答前面提到的问题:它能否告诉我们IBM如何通过利用所有可用的功能来获取最大利润？</p>
+<p class="chapter-content">嗯，我们知道如何实施<kbd>QLearning</kbd>，我们也知道什么是期权交易。另一件好事是，这个项目将使用的技术，如Scala、Akka、Scala Play框架和RESTful服务，已经在第三章<a href="51e66c26-e12b-4764-bbb7-444986c05870.xhtml" target="_blank">中讨论过</a>、<em>根据历史数据进行高频比特币价格预测</em>。所以，有可能。然后我们尝试开发一个Scala web项目，帮助我们实现利润最大化。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Implementating an options trading web application</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">实现期权交易web应用程序</h1>
+                
+            
+            
+                
+<p>这个项目的目标是创建一个期权交易web应用程序，它从IBM股票数据中创建一个学习模型。然后，应用程序将从模型中提取输出作为JSON对象，并将结果显示给用户。<em>图10 </em>，显示了整体工作流程:</p>
+<div><img height="232" width="527" src="img/edad61e5-68f9-4f3a-bd72-b09377596bf1.png"/></div>
+<p>图10:期权交易Scala web的工作流程</p>
+<p>compute API为Q-learning算法准备输入，该算法首先从文件中提取数据来构建期权模型。然后，它对数据执行操作，如标准化和离散化。它将所有这些传递给Q学习算法来训练模型。之后，compute API从算法中获取模型，提取最佳策略数据，并将其放到JSON上以返回给web浏览器。使用Q-learning的期权交易策略的实施包括以下步骤:</p>
+<ul>
+<li>描述选项的属性</li>
+<li>定义函数近似值</li>
+<li>指定状态转换的约束</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Creating an option property</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">创建选项属性</h1>
+                
+            
+            
+                
+<p class="chapter-content">考虑到市场波动，我们需要更现实一点，因为任何长期预测都是相当不可靠的。原因是它将落在离散马尔可夫模型的约束之外。因此，假设我们想要预测未来两天的价格，即<em> N= 2 </em>。这意味着两天后期权的价格就是收益或损失的价值。因此，让我们概括以下四个参数:</p>
+<ul>
+<li><kbd>timeToExp</kbd>:到期前的剩余时间，占期权总期限的百分比</li>
+<li>波动率给定交易时段内标的证券的归一化相对波动率</li>
+<li><kbd>vltyByVol</kbd>:给定交易时段的基础证券相对于该时段交易量的波动性</li>
+<li><kbd>priceToStrike</kbd>:给定交易时段内基础证券相对于执行价格的价格</li>
+</ul>
+<p class="chapter-content"><kbd>OptionProperty</kbd>类定义了证券交易期权的属性。构造函数为选项创建属性:</p>
+<pre class="chapter-content"><strong>class</strong> OptionProperty(timeToExp: Double,volatility: Double,vltyByVol: Double,priceToStrike: Double) {<br/><strong>        val</strong> toArray = Array[Double](timeToExp, volatility, vltyByVol, priceToStrike)<br/>        <strong>require</strong>(timeToExp &gt; 0.01, s"OptionProperty time to expiration found $timeToExp required 0.01")<br/>    }</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Creating an option model</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">创建期权模型</h1>
+                
+            
+            
+                
+<p>现在我们需要创建一个<kbd>OptionModel</kbd>,作为选项属性的容器和工厂。它接受以下参数，并通过访问前面描述的四个特性的数据源来创建选项属性列表<kbd>propsList</kbd>:</p>
+<ul>
+<li>安全的象征。</li>
+<li>执行价格为<kbd>option</kbd>、<kbd>strikePrice</kbd>。</li>
+<li><kbd>data</kbd>、<kbd>src</kbd>的来源。</li>
+<li>最小时间衰减或到期时间，<kbd>minTDecay</kbd>。价外期权会无价值地到期，而价内期权在临近到期时会有非常不同的价格行为。因此，到期日之前的最后<kbd>minTDecay</kbd>交易时段不会用于培训过程。</li>
+<li>步骤(或桶)的数量<kbd>nSteps</kbd>用于估算每个特性的值。例如，四个步骤的近似值创建了四个存储桶:(0，25)，(25，50)，(50，75)和(75，100)。</li>
+</ul>
+<p class="chapter-content">然后，它组合<kbd>OptionProperties</kbd>并计算到期权到期的标准化最小时间。然后，它通过将期权价格数组中的实际价值离散化为多个级别来计算期权价值的近似值；最后，它返回期权价格和精度的一系列级别的映射。下面是该类的构造函数:</p>
+<pre><strong>class</strong> OptionModel(<br/>    symbol: String,<br/>    strikePrice: Double,<br/>    src: DataSource,<br/>    minExpT: Int,<br/>    nSteps: Int<br/>    )</pre>
+<p>在这个类实现中，首先使用<kbd>check()</kbd>方法通过检查以下内容进行验证:</p>
+<ul>
+<li><kbd>strikePrice</kbd>:需要一个正价格</li>
+<li><kbd>minExpT</kbd>:该值必须介于2和16之间</li>
+<li><kbd>nSteps</kbd>:最少需要两步</li>
+</ul>
+<p>下面是这个方法的调用:</p>
+<pre><strong>check</strong>(strikePrice, minExpT, nSteps)</pre>
+<p>下面的代码显示了上述方法的签名:</p>
+<pre><strong>def</strong> check(strikePrice: Double, minExpT: Int, nSteps: Int): Unit = {<br/>   <strong> require</strong>(strikePrice &gt; 0.0, s"OptionModel.check price found $strikePrice required &gt; 0")<br/>    <strong>require</strong>(minExpT &gt; 2 &amp;&amp; minExpT &lt; 16,s"OptionModel.check Minimum expiration time found $minExpT                     required ]2, 16[")<br/>    <strong>require</strong>(nSteps &gt; 1,s"OptionModel.check, number of steps found $nSteps required &gt; 1")<br/>    }</pre>
+<p>一旦满足前面的约束，名为<kbd>propsList</kbd>的选项属性列表创建如下:</p>
+<pre><strong>val</strong> propsList = (<strong>for</strong> {<br/>    price &lt;- src.get(adjClose)<br/>    volatility &lt;- src.get(volatility)<br/>    nVolatility &lt;- normalize[Double](volatility)<br/>    vltyByVol &lt;- src.get(volatilityByVol)<br/>    nVltyByVol &lt;- normalize[Double](vltyByVol)<br/>    priceToStrike &lt;- normalize[Double](price.map(p =&gt; 1.0 - strikePrice / p))<br/>    } <br/><strong>    yield</strong> {<br/>        nVolatility.zipWithIndex./:(List[OptionProperty]()) {<br/><strong>            case</strong> (xs, (v, n)) =&gt;<br/><strong>            val</strong> normDecay = (n + minExpT).toDouble / (price.size + minExpT)<br/><strong>            new</strong> OptionProperty(normDecay, v, nVltyByVol(n), priceToStrike(n)) :: xs<br/>        }<br/>     .drop(2).reverse<br/>    }).get</pre>
+<p>在前面的代码块中，工厂使用<kbd>zipWithIndex</kbd> Scala方法来表示交易会话的索引。所有特征值都在区间(0，1)上进行归一化，包括<kbd>normDecay</kbd>选项的时间衰减(或到期时间)。</p>
+<p><kbd>OptionModel</kbd>类的<kbd>quantize()</kbd>方法将特性的每个选项属性的规范化值转换成一个存储桶索引数组。它根据时段索引数组返回每个时段的盈亏图:</p>
+<pre><strong>def</strong> quantize(o: Array[Double]): Map[Array[Int], Double] = {<br/><strong>    val</strong> mapper = <strong>new</strong> mutable.HashMap[Int, Array[Int]]<br/><strong>    val</strong> acc: NumericAccumulator[Int] = propsList.view.map(_.toArray)<br/>    map(toArrayInt(_)).map(ar =&gt; {<br/><strong>        val</strong> enc = encode(ar)<br/>        mapper.put(enc, ar)<br/>        enc<br/>            })<br/>    .zip(o)./:(<br/><strong>    new</strong> NumericAccumulator[Int]) {<br/><strong>        case</strong> (_acc, (t, y)) =&gt; _acc += (t, y); _acc<br/>            }<br/>        acc.map {<br/><strong>        case</strong> (k, (v, w)) =&gt; (k, v / w) }<br/>            .map { <br/><strong>        case</strong> (k, v) =&gt; (mapper(k), v) }.toMap<br/>    }</pre>
+<p class="chapter-content">该方法还创建一个映射器实例来索引桶数组。类型为<kbd>NumericAccumulator</kbd>的累加器<kbd>acc</kbd>扩展了<kbd>Map[Int, (Int, Double)]</kbd>并计算这个元组<em>(每个存储桶上特征出现的次数，期权价格增加或减少的总和)</em>。</p>
+<p class="chapter-content"><kbd>toArrayInt</kbd>方法将每个选项属性(<kbd>timeToExp</kbd>、<kbd>volatility</kbd>等)的值转换成适当存储桶的索引。然后对索引数组进行编码，以生成状态的id或索引。该方法用期权的交易时段的出现次数和总损益来更新累加器。它最后通过平均每个桶的利润和损失来计算每个行动的回报。<kbd>encode()</kbd>、<kbd>toArrayInt()</kbd>的签名在下面的代码中给出:</p>
+<pre><strong>private </strong><strong>def</strong> encode(arr: Array[Int]): Int = arr./:((1, 0)) { <br/><strong>    case</strong> ((s, t), n) =&gt; (s * nSteps, t + s * n) }._2<br/><strong>        private </strong><strong>def</strong> toArrayInt(feature: Array[Double]): Array[Int] = feature.map(x =&gt; (nSteps *         <br/>            x).floor.toInt)<br/><br/><strong>final </strong><strong>class</strong> NumericAccumulator[T] <br/><strong>    extends</strong> mutable.HashMap[T, (Int, Double)] {<br/><strong>    def</strong> +=(key: T, x: Double): Option[(Int, Double)] = {<br/><strong>        val</strong> newValue = <br/><strong>    if</strong> (contains(key)) (get(key).get._1 + 1, get(key).get._2 + x) <br/><strong>    else</strong> (1, x)<br/><strong>    super</strong>.put(key, newValue)<br/>    }<br/>}</pre>
+<p>最后，也是最重要的，如果满足前面的约束(您可以修改这些约束),并且一旦构造函数成功，那么<kbd>OptionModel</kbd>类的实例化就会生成一个<kbd>OptionProperty</kbd>元素的列表；否则，它会生成一个空列表。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Putting it altogether</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">放在一起</h1>
+                
+            
+            
+                
+<p class="chapter-content">因为我们已经实现了Q-learning算法，所以我们现在可以使用Q-learning开发期权交易应用程序。然而，首先，我们需要使用<kbd>DataSource</kbd>类加载数据(稍后我们将看到它的实现)。然后，我们可以从给定股票的数据中创建一个期权模型，使用<kbd>OptionModel</kbd>，它定义了一个证券的交易期权的模型。然后我们必须建立一个模型，在给定基础证券的情况下，计算期权的损益。</p>
+<p class="chapter-content">调整损益以产生正值。它实例化了Q-learning类的一个实例，即实现Q-learning算法的通用参数化类。Q-learning模型在类的实例化期间被初始化和训练，因此它可以处于运行时预测的正确状态。</p>
+<p class="chapter-content">因此，类实例只有两种状态:成功训练和失败训练Q-learning值动作。然后返回模型进行处理和可视化。</p>
+<p>因此，让我们创建一个Scala对象，并将其命名为<kbd>QLearningMain</kbd>。然后，在<kbd>QLearningMain</kbd>对象中，定义并初始化以下参数:</p>
+<ul>
+<li><kbd>Name</kbd>:用于表示强化算法的名称(在我们的例子中，是Q-learning)</li>
+<li><kbd>STOCK_PRICES</kbd>:包含股票数据的文件</li>
+<li><kbd>OPTION_PRICES</kbd>:包含可用选项数据的文件</li>
+<li><kbd>STRIKE_PRICE</kbd>:期权执行价</li>
+<li><kbd>MIN_TIME_EXPIRATION</kbd>:记录的期权最短到期时间</li>
+<li><kbd>QUANTIZATION_STEP</kbd>:证券价值离散化或近似化的步骤</li>
+<li><kbd>ALPHA</kbd>:Q学习算法的学习率</li>
+<li><kbd>DISCOUNT</kbd>(gamma):Q学习算法的折扣率</li>
+<li><kbd>MAX_EPISODE_LEN</kbd>:每集访问的州的最大数量</li>
+<li><kbd>NUM_EPISODES</kbd>:训练时使用的集数</li>
+<li><kbd>MIN_COVERAGE</kbd>:Q-learning模型训练期间允许的最小覆盖率</li>
+<li><kbd>NUM_NEIGHBOR_STATES</kbd>:可从任何其他状态访问的状态数</li>
+<li><kbd>REWARD_TYPE</kbd>:最高奖励或随机</li>
+</ul>
+<p class="chapter-content">下面的代码给出了每个参数的试探性初始化:</p>
+<pre class="chapter-content"><strong>val</strong> name: String = "Q-learning"// Files containing the historical prices for the stock and option<br/><strong>val</strong> STOCK_PRICES = "/static/IBM.csv"<br/><strong>val</strong> OPTION_PRICES = "/static/IBM_O.csv"// Run configuration parameters<br/><strong>val</strong> STRIKE_PRICE = 190.0 // Option strike price<br/><strong>val</strong> MIN_TIME_EXPIRATION = 6 // Min expiration time for option recorded<br/><strong>val</strong> QUANTIZATION_STEP = 32 // Quantization step (Double =&gt; Int)<br/><strong>val</strong> ALPHA = 0.2 // Learning rate<br/><strong>val</strong> DISCOUNT = 0.6 // Discount rate used in Q-Value update equation<br/><strong>val</strong> MAX_EPISODE_LEN = 128 // Max number of iteration for an episode<br/><strong>val</strong> NUM_EPISODES = 20 // Number of episodes used for training.<br/><strong>val</strong> NUM_NEIGHBHBOR_STATES = 3 // No. of states from any other state</pre>
+<p class="chapter-content">现在，<kbd>run()</kbd>方法接受奖励类型(在我们的例子中是<kbd>Maximum reward</kbd>)、量化步长(在我们的例子中是<kbd>QUANTIZATION_STEP</kbd>)、alpha(学习率，在我们的例子中是<kbd>ALPHA</kbd>)和gamma(在我们的例子中是<kbd>DISCOUNT</kbd>，Q学习算法的贴现率)作为输入。它显示模型中值的分布。此外，它还在散点图上显示了最佳策略的估计Q值(我们将在后面看到)。以下是上述方法的工作流程:</p>
+<ol>
+<li>首先，它从<kbd>IBM.csv</kbd>文件中提取股票价格</li>
+<li>然后，它使用股票价格和量化创建一个期权模型<kbd>createOptionModel</kbd>，<kbd>quantizeR</kbd>(更多信息见<kbd>quantize</kbd>方法，后面是主要方法调用)</li>
+<li>期权价格提取自<kbd>IBM_o.csv</kbd>文件</li>
+<li>之后，使用期权模型创建另一个模型<kbd>model</kbd>，以对期权价格<kbd>oPrices</kbd>进行评估</li>
+<li>最后，使用<kbd>display</kbd>方法在散点图上显示估计的Q值(即<em> Q值=值*概率</em>)</li>
+</ol>
+<p class="chapter-content">通过合并前面的步骤，这里是<kbd>run()</kbd>方法的签名:</p>
+<pre class="chapter-content"><strong>private </strong><strong>def</strong> run(rewardType: String,quantizeR: Int,alpha: Double,gamma: Double): Int = {<br/><strong>    val</strong> sPath = getClass.getResource(STOCK_PRICES).getPath<br/><strong>    val</strong> src = DataSource(sPath, <strong>false</strong>, <strong>false</strong>, 1).get<br/><strong>    val</strong> option = createOptionModel(src, quantizeR)<br/><br/><strong>    val</strong> oPricesSrc = DataSource(OPTION_PRICES, <strong>false</strong>, <strong>false</strong>, 1).get<br/><strong>    val</strong> oPrices = oPricesSrc.extract.get<br/><br/><strong>    val</strong> model = createModel(option, oPrices, alpha, gamma)model.map(m =&gt; {<strong>if</strong> (rewardType != "Random")<br/>    display(m.bestPolicy.EQ,m.toString,s"$rewardType with quantization order             <br/>            $quantizeR")1}).getOrElse(-1)<br/>}</pre>
+<p class="chapter-content">现在这里是创建选项模型的<kbd>createOptionModel()</kbd>方法的签名(参见<kbd>OptionModel</kbd>类):</p>
+<pre><strong>private def</strong> createOptionModel(src: DataSource, quantizeR: Int): OptionModel =<br/><strong>    new</strong> OptionModel("IBM", STRIKE_PRICE, src, MIN_TIME_EXPIRATION, quantizeR)</pre>
+<p class="chapter-content">然后，<kbd>createModel()</kbd>方法为给定基础证券的期权的损益创建一个模型。请注意，期权价格是使用前面定义的<kbd>quantize()</kbd>方法量化的。然后使用约束方法来限制任何给定状态下可用的动作数量。这个简单的实现计算这个州半径内的所有州的列表。然后，它识别预定义半径内的相邻状态。</p>
+<p class="chapter-content">最后，它使用输入数据来训练Q-learning模型，以计算利润的最小值，即损失，因此最大损失被转换为零利润。请注意，损益被调整以产生正值。现在让我们看看这个方法的签名:</p>
+<pre class="chapter-content"><strong>def</strong> createModel(ibmOption: OptionModel,oPrice: Seq[Double],alpha: Double,gamma: Double): Try[QLModel] = {<br/><strong>    val</strong> qPriceMap = ibmOption.quantize(oPrice.toArray)<br/><strong>    val</strong> numStates = qPriceMap.size<br/><strong>    val</strong> neighbors = (n: Int) =&gt; {<br/><strong>def</strong> getProximity(idx: Int, radius: Int): List[Int] = {<br/><strong>    val</strong> idx_max =<br/><strong>        if</strong> (idx + radius &gt;= numStates) numStates - 1 <br/><strong>    else</strong> idx + radius<br/><strong>    val</strong> idx_min = <br/><strong>        if</strong> (idx &lt; radius) 0 <br/><strong>        else</strong> idx - radiusRange(idx_min, idx_max + 1).filter(_ != idx)./:(List[Int]())((xs, n) =&gt; n :: xs)}getProximity(n, NUM_NEIGHBHBOR_STATES)<br/>        }<br/><strong>    val</strong> qPrice: DblVec = qPriceMap.values.toVector<br/><strong>    val</strong> profit: DblVec = normalize(zipWithShift(qPrice, 1).map {<br/><strong>        case</strong> (x, y) =&gt; y - x}).get<br/><strong>    val</strong> maxProfitIndex = profit.zipWithIndex.maxBy(_._1)._2<br/><strong>    val</strong> reward = (x: Double, y: Double) =&gt; Math.exp(30.0 * (y - x))<br/><strong>    val</strong> probabilities = (x: Double, y: Double) =&gt; <br/><strong>        if</strong> (y &lt; 0.3 * x) 0.0 <br/><strong>        else</strong> 1.0println(s"$name Goal state index: $maxProfitIndex")<br/><strong>        if</strong> (!QLearning.validateConstraints(profit.size, neighbors))<br/><strong>            throw</strong><strong>new</strong> IllegalStateException("QLearningEval Incorrect states transition constraint")<br/><strong>    val</strong> instances = qPriceMap.keySet.toSeq.drop(1)<br/><strong>    val</strong> config = QLConfig(alpha, gamma, MAX_EPISODE_LEN, NUM_EPISODES, 0.1)<br/><strong>    val</strong> qLearning = QLearning[Array[Int]](config,Array[Int](maxProfitIndex),profit,reward,probabilities,instances,Some(neighbors))    <strong>val</strong> modelO = qLearning.getModel<br/><strong>        if</strong> (modelO.isDefined) {<br/><strong>    val</strong> numTransitions = numStates * (numStates - 1)println(s"$name Coverage ${modelO.get.coverage} for $numStates states and $numTransitions transitions")<br/><strong>    val</strong> profile = qLearning.dumpprintln(s"$name Execution profilen$profile")display(qLearning)Success(modelO.get)} <br/><strong>        else </strong>Failure(<strong>new</strong> IllegalStateException(s"$name model undefined"))<br/>}</pre>
+<p class="chapter-content">请注意，如果前面的调用无法创建选项模型，代码将不会显示模型创建失败的消息。尽管如此，请记住，考虑到我们使用的小数据集(因为算法会很快收敛)，下面一行中使用的<kbd>minCoverage</kbd>很重要:</p>
+<pre class="chapter-content"><strong>val</strong> config = QLConfig(alpha, gamma, MAX_EPISODE_LEN, NUM_EPISODES, 0.0)</pre>
+<p class="chapter-content">尽管我们已经声明不能保证模型的创建和训练会成功，但是一个简单的线索是在<kbd>0.0</kbd>和<kbd>0.22</kbd>之间使用一个非常小的<kbd>minCoverage</kbd>值。现在，如果前面的调用成功，那么模型就被训练好了，可以进行预测了。如果是，则使用显示方法在散点图中显示估计的<em> Q值=值*概率</em>。下面是该方法的签名:</p>
+<pre class="chapter-content"><strong>private </strong><strong>def</strong> display(eq: Vector[DblPair],results: String,params: String): Unit = {<br/><strong>    import</strong> org.scalaml.plots.{ScatterPlot, BlackPlotTheme, Legend}<br/><strong>    val</strong> labels = Legend(name, s"Q-learning config: $params", "States", "States")ScatterPlot.display(eq, <br/>        labels, <strong>new</strong> BlackPlotTheme)<br/>}</pre>
+<p class="chapter-content">坚持下去，不要失去耐心！我们终于准备好看到一个简单的<kbd>rn</kbd>并检查结果。因此，让我们这样做:</p>
+<pre class="chapter-content">def main(args: Array[String]): Unit = {<br/> run("Maximum reward",QUANTIZATION_STEP, ALPHA, DISCOUNT)<br/> } <br/>&gt;&gt;&gt; <br/>Action: state 71 =&gt; state 74<br/>Action: state 71 =&gt; state 73<br/>Action: state 71 =&gt; state 72<br/>Action: state 71 =&gt; state 70<br/>Action: state 71 =&gt; state 69<br/>Action: state 71 =&gt; state 68...Instance: [I@1f021e6c - state: 124<br/>Action: state 124 =&gt; state 125<br/>Action: state 124 =&gt; state 123<br/>Action: state 124 =&gt; state 122<br/>Action: state 124 =&gt; state 121Q-learning Coverage 0.1 for 126 states and 15750 transitions<br/>Q-learning Execution profile<br/>Q-Value -&gt; 5.572310105096295, 0.013869013819834967, 4.5746487300071825, 0.4037703812585325, 0.17606260549479869, 0.09205272504875522, 0.023205692430068765, 0.06363082458984902, 50.405283888218435... 6.5530411130514015<br/>Model: Success(Optimal policy: Reward - 1.00,204.28,115.57,6.05,637.58,71.99,12.34,0.10,4939.71,521.30,402.73, with coverage: 0.1)</pre>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Evaluating the model</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">评估模型</h1>
+                
+            
+            
+                
+<p class="chapter-content">前面的输出显示了从一个状态到另一个状态的转换，对于<strong> 0.1 </strong>覆盖率，<kbd>QLearning</kbd>模型有126个状态的15，750次转换，以达到目标状态37并获得最佳回报。因此，训练集非常小，只有几个桶有实际值。所以我们可以理解，训练集的大小对状态数有影响。<kbd>QLearning</kbd>对于一个小的训练集来说收敛太快(就像我们在这个例子中所做的)。</p>
+<p class="chapter-content">但是，对于更大的训练集，<kbd>QLearning</kbd>需要时间收敛；它将为近似创建的每个存储桶提供至少一个值。此外，通过查看这些值，很难理解Q值和状态之间的关系。</p>
+<p class="chapter-content">那么，如果我们可以看到每个状态的Q值呢？为什么不呢！我们可以在散点图上看到它们:</p>
+<div><img height="374" width="507" src="img/ca965320-2e1b-4071-8bcd-12deb0e638da.png"/></div>
+<p>图11:每个状态的Q值</p>
+<p class="chapter-content">现在让我们显示Q值(<kbd>QLData.value</kbd>)的日志的轮廓，作为不同事件或时期的递归搜索(或训练)过程。该测试使用学习率<em> α = 0.1 </em>和贴现率<em> γ = 0.9 </em>(详见部署部分):</p>
+<div><img height="180" width="317" src="img/d881e918-f728-4520-826c-62a84b78c31a.png"/></div>
+<p>图12:Q学习训练期间不同时期的对数Q值的分布图</p>
+<p class="chapter-content">前面的图表说明了这样一个事实，即每个轮廓的Q值与训练期间的历元顺序无关。然而，在这个例子中，达到目标状态的迭代次数取决于随机选择的初始状态。要获得更多信息，请检查编辑器上的输出或访问位于<kbd>http://localhost:9000/api/compute</kbd>的API端点(见下文)。现在，如果我们显示模型中值的分布，并在散点图上显示给定配置参数的最佳策略的估计Q值，会怎么样？</p>
+<div><em><img height="419" width="554" src="img/97ed3adc-210c-4522-bf60-22f75a28d47d.png"/></em></div>
+<p>图13:量化32和QLearning的最大回报</p>
+<p class="chapter-content">最终评估包括评估学习率和折扣率对培训覆盖面的影响:</p>
+<div><img height="134" width="341" src="img/94fc5941-bbad-41f5-97ae-f9219bba71d0.png"/></div>
+<p>图14:学习率和折扣率对培训覆盖面的影响</p>
+<p class="chapter-content">覆盖率随着学习率的提高而降低。这个结果印证了使用<em>学习率</em> <em> &lt; 0.2 </em>的一般规律。一个类似的测试来评估贴现率对覆盖率的影响是不确定的。我们可能有数千个这样的配置参数，它们有不同的选择和组合。那么，如果我们可以将整个应用包装成一个Scala web app，就像我们在<a href="51e66c26-e12b-4764-bbb7-444986c05870.xhtml" target="_blank">第3章</a>、<em>根据历史数据进行高频比特币价格预测</em>中所做的那样，会怎么样呢？我想这不是个坏主意。所以让我们深入研究一下。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Wrapping up the options trading app as a Scala web app</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">将期权交易应用包装成Scala web应用</h1>
+                
+            
+            
+                
+<p class="chapter-content">其思想是获得训练好的模型，并为最大回报情况构造最佳策略JSON输出。<kbd>PlayML</kbd>是一个web应用程序，它使用期权交易Q-learning算法来提供计算API端点，该端点采用输入数据集和一些期权来计算Q值，并以JSON格式返回它们以在前端建模。</p>
+<p class="chapter-content">打包的Scala web ML应用程序具有以下目录结构:</p>
+<div><img height="237" width="344" src="img/b9c7cd08-9159-4dad-8f7b-d2a920c6fc22.png"/></div>
+<p>图15: Scala ML web app目录结构</p>
+<p class="chapter-content">在前面的结构中，app文件夹既有原始的QLearning实现(参见<kbd>ml</kbd>文件夹)也有一些额外的后端代码。<kbd>controller</kbd>子文件夹中有一个名为<kbd>API.scala</kbd>的Scala类，用作Scala控制器，从前端控制模型行为。最后，<kbd>Filters.scala</kbd>充当<kbd>DefaultHttpFilters</kbd>:</p>
+<div><img height="132" width="331" src="img/06994b75-70b4-434d-87e1-40d0b40a16c4.png"/></div>
+<p>图16:ml目录结构</p>
+<p class="chapter-content"><kbd>conf</kbd>文件夹中有Scala web app配置文件<kbd>application.conf</kbd>，包含必要的配置。所有的依赖关系都在<kbd>build.sbt</kbd>文件中定义，如下面的代码<em> : </em>所示</p>
+<pre class="chapter-content">name := "PlayML"version := "1.0"<br/>lazy val `playml` = (project in file(".")).enablePlugins(PlayScala)<br/>resolvers += "scalaz-bintray" <br/>scalaVersion := "2.11.11"<br/>libraryDependencies ++= Seq(filters, cache, ws, "org.apache.commons" % "commons-math3" %                 <br/>        "3.6","com.typesafe.play" %% "play-json" % "2.5",<br/>        "org.jfree" % "jfreechart" % "1.0.17",<br/>        "com.typesafe.akka" %% "akka-actor" % "2.3.8",<br/>        "org.apache.spark" %% "spark-core" % "2.1.0",<br/>        "org.apache.spark" %% "spark-mllib" % "2.1.0",<br/>        "org.apache.spark" %% "spark-streaming" % "2.1.0")</pre>
+<p class="chapter-content"><kbd>lib</kbd>文件夹中有一些<kbd>.jar</kbd>文件被用作在<kbd>build.sbt</kbd>文件<em>中定义的外部依赖。</em><kbd>public</kbd>文件夹包含用户界面中使用的静态页面。此外，数据文件<kbd>IBM.csv</kbd>和<kbd>IBM_O.csv</kbd>也在那里。最后，目标文件夹包含打包的应用程序(如果有)。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>The backend</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">后端</h1>
+                
+            
+            
+                
+<p class="chapter-content">在后端，我封装了前面的Q-learning实现，另外创建了一个Scala控制器，从前端控制模型行为。结构如下所示:</p>
+<pre class="chapter-content"><strong>import</strong> java.nio.file.Paths<br/><strong>import</strong> org.codehaus.janino.Java<br/><strong>import</strong> ml.stats.TSeries.{normalize, zipWithShift}<br/><strong>import</strong> ml.workflow.data.DataSource<br/><strong>import</strong> ml.trading.OptionModel<br/><strong>import</strong> ml.Predef.{DblPair, DblVec}<br/><strong>import</strong> ml.reinforcement.qlearning.{QLConfig, QLModel, QLearning}<br/><strong>import</strong> scala.util.{Failure, Success, Try}<br/><strong>import</strong> play.api._<br/><strong>import</strong> play.api.data.Form<br/><strong>import</strong> play.api.libs.json._<br/><strong>import</strong> play.api.mvc._<br/><strong>import</strong> scala.util.{Failure, Success, Try}<br/><br/><strong>class</strong> API <strong>extends</strong> Controller {<br/><strong>    protected </strong><strong>val</strong> name: String = "Q-learning"<br/><strong>    private </strong><strong>var</strong> sPath = Paths.get((s"${"public/data/IBM.csv"}")).toAbsolutePath.toString<br/><strong>    private </strong><strong>var</strong> oPath = Paths.get((s"${"public/data/IBM_O.csv"}")).toAbsolutePath.toString<br/><br/>   // Run configuration parameters<br/><strong>    private </strong><strong>var</strong> STRIKE_PRICE = 190.0 // Option strike price<br/><strong>    private </strong><strong>var</strong> MIN_TIME_EXPIRATION = 6 // Minimum expiration time for the option recorded<br/><strong>    private </strong><strong>var</strong> QUANTIZATION_STEP = 32 // Quantization step (Double =&gt; Int)<br/><strong>    private </strong><strong>var</strong> ALPHA = 0.2 // Learning rate<br/><strong>    private </strong><strong>var</strong> DISCOUNT = 0.6 // Discount rate used in the Q-Value update equation<br/><strong>    private </strong><strong>var</strong> MAX_EPISODE_LEN = 128 // Maximum number of iteration for an episode<br/><strong>    private </strong><strong>var</strong> NUM_EPISODES = 20 // Number of episodes used for training.<br/><strong>    private </strong><strong>var</strong> MIN_COVERAGE = 0.1<br/><strong>    private </strong><strong>var</strong> NUM_NEIGHBOR_STATES = 3 // Number of states accessible from any other state<br/><strong>    private </strong><strong>var</strong> REWARD_TYPE = "Maximum reward"<br/><strong>    private </strong><strong>var</strong> ret = JsObject(Seq())<br/><strong>    private </strong><strong>var</strong> retry = 0<br/><br/><strong>    private </strong><strong>def</strong> run(REWARD_TYPE: String,quantizeR: Int,alpha: Double,gamma: Double) = {<br/><strong>        val</strong> maybeModel = createModel(createOptionModel(DataSource(sPath, <strong>false</strong>, <strong>false</strong>, 1).get, quantizeR),             DataSource(oPath, <strong>false</strong>, <strong>false</strong>, 1).get.extract.get, alpha, gamma)<br/><strong>        if</strong> (maybeModel != None) {<br/><strong>            val</strong> model = maybeModel.get<br/><strong>            if</strong> (REWARD_TYPE != "Random") {<br/><strong>                var</strong> value = JsArray(Seq())<br/><strong>                var</strong> x = model.bestPolicy.EQ.distinct.map(x =&gt; {value = value.append(JsObject(Seq("x" -&gt;                     JsNumber(x._1), "y" -&gt; JsNumber(x._2))))})ret = ret.+("OPTIMAL", value)<br/>                }<br/>            }<br/>        }<br/>/** Create an option model for a given stock with default strike and minimum expiration time parameters.<br/>*/<br/><strong>    private</strong><strong>def</strong> createOptionModel(src: DataSource, quantizeR: Int): OptionModel =<br/><strong>        new</strong> OptionModel("IBM", STRIKE_PRICE, src, MIN_TIME_EXPIRATION, quantizeR)<br/>/** Create a model for the profit and loss on an option given<br/>* the underlying security. The profit and loss is adjusted to<br/>* produce positive values.<br/>*/<br/><strong>    private</strong><strong>def</strong> createModel(ibmOption: OptionModel,oPrice: Seq[Double],alpha: Double,gamma: Double): Option[QLModel] = {<br/><strong>        val</strong> qPriceMap = ibmOption.quantize(oPrice.toArray)<br/><strong>        val</strong> numStates = qPriceMap.size<br/><strong>        val</strong> neighbors = (n: Int) =&gt; {<br/><strong>            def</strong> getProximity(idx: Int, radius: Int): List[Int] = {<br/><strong>            val</strong> idx_max = <strong>if</strong> (idx + radius &gt;= numStates) numStates - 1<br/>            <strong>else</strong> idx + radius<br/><strong>            val</strong> idx_min = <strong>if</strong> (idx &lt; radius) 0 <br/>                        <strong>else</strong> idx - radiusscala.collection.immutable.Range(idx_min, idx_max + 1)<br/>                            .filter(_ != idx)./:(List[Int]())((xs, n) =&gt; n :: xs)<br/>                        }<br/>                getProximity(n, NUM_NEIGHBOR_STATES)<br/>            }<br/>       // Compute the minimum value for the profit, loss so the maximum loss is converted to a null profit<br/><strong>        val</strong> qPrice: DblVec = qPriceMap.values.toVector<br/><strong>        val</strong> profit: DblVec = normalize(zipWithShift(qPrice, 1).map {<br/>        <strong>case</strong> (x, y) =&gt; y - x }).get<br/><strong>        val</strong> maxProfitIndex = profit.zipWithIndex.maxBy(_._1)._2<br/><strong>        val</strong> reward = (x: Double, y: Double) =&gt; Math.exp(30.0 * (y - x))<br/><br/><strong>        val</strong> probabilities = (x: Double, y: Double) =&gt;<br/>             <strong>if</strong> (y &lt; 0.3 * x) 0.0 <strong>else</strong> 1.0ret = ret.+("GOAL_STATE_INDEX", JsNumber(maxProfitIndex))<br/><strong>            if</strong> (!QLearning.validateConstraints(profit.size, neighbors)) {ret = ret.+("error",                             JsString("QLearningEval Incorrect states transition constraint"))<br/><br/><strong>        throw</strong><strong>new</strong> IllegalStateException("QLearningEval Incorrect states transition constraint")}<br/><br/><strong>            val</strong> instances = qPriceMap.keySet.toSeq.drop(1)<br/><strong>            val</strong> config = QLConfig(alpha, gamma, MAX_EPISODE_LEN, NUM_EPISODES, MIN_COVERAGE)<br/><strong>            val</strong> qLearning = QLearning[Array[Int]](config,Array[Int]                <br/>                (maxProfitIndex),profit,reward,probabilities,instances,Some(neighbors))    <br/>            <strong>val</strong> modelO = qLearning.getModel<br/><br/><strong>            if</strong> (modelO.isDefined) {<br/><strong>                val</strong> numTransitions = numStates * (numStates - 1)ret = ret.+("COVERAGE",             <br/>                JsNumber(modelO.get.coverage))ret = ret.+("COVERAGE_STATES", JsNumber(numStates))<br/>                ret = ret.+("COVERAGE_TRANSITIONS", JsNumber(numTransitions))<br/><strong>                var</strong> value = JsArray()<br/><strong>                var</strong> x = qLearning._counters.last._2.distinct.map(x =&gt; {value = value.append(JsNumber(x))<br/>                })    <br/>                ret = ret.+("Q_VALUE", value)modelO<br/>                } <br/><strong>            else</strong> {<br/>                <strong>if</strong> (retry &gt; 5) {ret = ret.+("error", JsString(s"$name model undefined"))<br/><strong>                    return</strong> None<br/>                 }<br/>                retry += 1Thread.sleep(500)<br/><strong>                return</strong> createModel(ibmOption,oPrice,alpha,gamma)<br/>            }        <br/>        }<br/><strong>def</strong> compute = Action(parse.anyContent) { request =&gt;<br/><strong>    try</strong> {<br/>        <strong>if</strong> (request.body.asMultipartFormData != None) {<br/><strong>            val</strong> formData = request.body.asMultipartFormData.get<br/><strong>            if</strong> (formData.file("STOCK_PRICES").nonEmpty &amp;&amp; formData.file("STOCK_PRICES").get.filename.nonEmpty)sPath = formData.file("STOCK_PRICES").get.ref.file.toString<br/><strong>            if</strong> (formData.file("OPTION_PRICES").nonEmpty &amp;&amp; formData.file("OPTION_PRICES").get.filename.nonEmpty)oPath = formData.file("OPTION_PRICES").get.ref.file.toString<br/><strong>            val</strong> parts = formData.dataParts<br/><strong>            if</strong> (parts.get("STRIKE_PRICE") != None)STRIKE_PRICE = parts.get("STRIKE_PRICE").get.mkString("").toDouble<br/><strong>            if</strong> (parts.get("MIN_TIME_EXPIRATION") != None)MIN_TIME_EXPIRATION = parts.get("MIN_TIME_EXPIRATION").get.mkString("").toInt<br/><strong>            if</strong> (parts.get("QUANTIZATION_STEP") != None)QUANTIZATION_STEP = parts.get("QUANTIZATION_STEP").get.mkString("").toInt<br/><strong>            if</strong> (parts.get("ALPHA") != None)ALPHA = parts.get("ALPHA").get.mkString("").toDouble<br/><strong>            if</strong> (parts.get("DISCOUNT") != None)DISCOUNT = parts.get("DISCOUNT").get.mkString("").toDouble<br/><strong>            if</strong> (parts.get("MAX_EPISODE_LEN") != None)MAX_EPISODE_LEN = parts.get("MAX_EPISODE_LEN").get.mkString("").toInt<br/><strong>            if</strong> (parts.get("NUM_EPISODES") != None)NUM_EPISODES = parts.get("NUM_EPISODES").get.mkString("").toInt<br/><strong>            if</strong> (parts.get("MIN_COVERAGE") != None)MIN_COVERAGE = parts.get("MIN_COVERAGE").get.mkString("").toDouble<br/><strong>            if</strong> (parts.get("NUM_NEIGHBOR_STATES") != None)NUM_NEIGHBOR_STATES = parts.get("NUM_NEIGHBOR_STATES").get.mkString("").toInt<br/><strong>            if</strong> (parts.get("REWARD_TYPE") != None)REWARD_TYPE = parts.get("REWARD_TYPE").get.mkString("")<br/>            }<br/>        ret = JsObject(Seq("STRIKE_PRICE" -&gt;<br/>        JsNumber(STRIKE_PRICE),"MIN_TIME_EXPIRATION" -&gt; JsNumber(MIN_TIME_EXPIRATION),<br/>        "QUANTIZATION_STEP" -&gt; <br/>JsNumber(QUANTIZATION_STEP),<br/>        "ALPHA" -&gt; JsNumber(ALPHA),<br/>        "DISCOUNT" -&gt; JsNumber(DISCOUNT),<br/>        "MAX_EPISODE_LEN" -&gt; <br/>JsNumber(MAX_EPISODE_LEN),<br/>        "NUM_EPISODES" -&gt; JsNumber(NUM_EPISODES),<br/>        "MIN_COVERAGE" -&gt; JsNumber(MIN_COVERAGE),<br/>        "NUM_NEIGHBOR_STATES" -&gt; <br/>JsNumber(NUM_NEIGHBOR_STATES),<br/>        "REWARD_TYPE" -&gt; JsString(REWARD_TYPE)))<br/>        run(REWARD_TYPE, QUANTIZATION_STEP, ALPHA, DISCOUNT)<br/>    }<br/><strong>    catch</strong> {<br/>        <strong>case</strong> e: Exception =&gt; {<br/>            ret = ret.+("exception", JsString(e.toString))<br/>                }<br/>            }</pre>
+<pre class="chapter-content">       Ok(ret)<br/>    }<br/>}</pre>
+<p class="chapter-content">仔细看看前面的代码；它与<kbd>QLearningMain.scala</kbd>文件的结构大致相同。这里只有两件重要的事情，如下:</p>
+<ul>
+<li>Compute是作为一个动作完成的，它从UI获取输入并计算值</li>
+<li>然后使用<kbd>JsObject()</kbd>方法将结果作为JSON对象返回，并显示在UI上(见下文)</li>
+</ul>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>The frontend</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">前端</h1>
+                
+            
+            
+                
+<p class="chapter-content">该应用程序由两个主要部分组成:使用play框架构建的API端点和使用<kbd>Angular.js</kbd>构建的前端单页面应用程序。前端应用程序将数据发送给API进行计算，然后使用<kbd>chart.js</kbd>显示结果。为此，我们需要采取以下步骤:</p>
+<ul>
+<li>初始化表单</li>
+<li>与API通信</li>
+<li>用覆盖率数据和图表填充视图</li>
+</ul>
+<p class="chapter-content">该算法的JSON输出应该如下所示:</p>
+<ul>
+<li>将返回所有配置参数</li>
+<li><kbd>GOAL_STATE_INDEX</kbd>、最大利润指标</li>
+<li><kbd>COVERAGE</kbd>，达到预定义目标状态的训练试验或时期的比率</li>
+<li><kbd>COVERAGE_STATES</kbd>，量化选项值的大小</li>
+<li><kbd>COVERAGE_TRANSITIONS</kbd>，状态数的平方</li>
+<li><kbd>Q_VALUE</kbd>，所有状态的q值</li>
+<li><kbd>OPTIMAL</kbd>，如果奖励类型不是随机的，返回最多奖励的州</li>
+</ul>
+<p class="chapter-content"><strong>前端代码</strong>通过<kbd>chart.js</kbd>模块启动<kbd>Angular.js</kbd> app，如下所示(参见<kbd>PlayML/public/assets/js/main.js</kbd>文件):</p>
+<pre class="chapter-content">angular.module("App", ['chart.js']).controller("Ctrl", ['$scope', '$http', function ($scope, $http) {<br/>// First we initialize the form:<br/>$scope.form = {REWARD_TYPE: "Maximum reward",NUM_NEIGHBOR_STATES: 3,STRIKE_PRICE: 190.0,MIN_TIME_EXPIRATION: 6,QUANTIZATION_STEP: 32,ALPHA: 0.2,DISCOUNT: 0.6,MAX_EPISODE_LEN: 128,NUM_EPISODES: 20,MIN_COVERAGE: 0.1<br/>};</pre>
+<p class="chapter-content">然后，运行按钮操作准备好要发送给API的表单数据，并将数据发送给后端。接下来，它将返回的数据传递给前端使用的结果变量。然后，它清除图表并重新创建它们；如果找到一个最佳，它初始化最佳图表。最后，如果发现Q值被初始化，则Q值图表被初始化:</p>
+<pre class="chapter-content">$scope.run = function () {<br/>    var formData = new FormData(document.getElementById('form'));<br/>    $http.post('/api/compute', formData, {<br/>    headers: {'Content-Type': undefined}}).then(function successCallback(response) {<br/>    $scope.result = response.data;<br/>    $('#canvasContainer').html('');<br/><br/>    if (response.data.OPTIMAL) {<br/>        $('#canvasContainer').append('&lt;canvas id="optimalCanvas"&gt;&lt;/canvas&gt;')<br/>        Chart.Scatter(document.getElementById("optimalCanvas").getContext("2d"), {data: { datasets:             [{data: response.data.OPTIMAL}] }, options: {...}});}if (response.data.Q_VALUE) {<br/>        $('#canvasContainer').append('&lt;canvas id="valuesCanvas"&gt;&lt;/canvas&gt;')<br/>        Chart.Line(document.getElementById("valuesCanvas").getContext("2d"), {<br/>        data: { labels: new Array(response.data.Q_VALUE.length), datasets: [{<br/>        data: response.data.Q_VALUE }] }, options: {...}});}});}}]<br/>    );</pre>
+<p class="chapter-content">然后将前面的前端代码嵌入HTML(见<kbd>PlayML/public/index.html</kbd>)中，以使UI在<kbd>http://localhost:9000/</kbd>作为一个别致的应用程序在网络上被访问。请根据您的要求随意编辑内容。我们很快就会看到细节。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Running and Deployment Instructions</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">运行和部署说明</h1>
+                
+            
+            
+                
+<p>正如在<a href="51e66c26-e12b-4764-bbb7-444986c05870.xhtml" target="_blank">第三章</a>、<em>从历史数据进行高频比特币价格预测</em>中已经说过的，你需要Java 1.8+和SBT作为依赖。然后按照以下说明操作:</p>
+<ul>
+<li>下载应用程序。我把这个代码命名为<kbd>PlayML.zip</kbd>。</li>
+<li>解压文件，你会得到文件夹<kbd>ScalaML</kbd>。</li>
+<li>转到PlayML项目文件夹。</li>
+<li>运行<kbd>$ sudo sbt run</kbd>下载所有的依赖项并运行应用程序。</li>
+</ul>
+<p>然后可以在<kbd>http://localhost:9000/</kbd>访问该应用程序，在这里我们可以上传IBM股票和期权价格，当然，还可以提供其他配置参数:</p>
+<div><img height="250" width="568" src="img/db3fee1d-a5a3-495e-99f3-1019e92ac422.png"/></div>
+<p>图17:使用QLearning进行期权交易的用户界面</p>
+<p class="chapter-content">现在，如果您上传股票价格和期权价格数据并单击run按钮，将会生成一个图表，如下所示:</p>
+<div><img height="471" width="641" src="img/9e0609eb-4652-44ce-84ef-b70bbc57c84a.png"/></div>
+<p>图18: QLearning达到目标状态81，覆盖126个状态和15，750个转换，覆盖率为0.2</p>
+<p class="chapter-content">另一方面，可以在<a href="http://localhost:9000/api/compute">http://localhost:9000/API/compute</a>访问API端点。</p>
+<div><img src="img/bb375ce1-4039-41c1-97e4-7c6924a92171.png"/></div>
+<p>图19:API端点(简略)</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Model deployment</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">模型部署</h1>
+                
+            
+            
+                
+<p class="chapter-content">通过将应用程序HTTP端口设置为9000，可以轻松地将应用程序部署为独立服务器，例如:</p>
+<pre class="chapter-content"><strong>$ /path/to/bin/&lt;project-name&gt; -Dhttp.port=9000</strong></pre>
+<p class="chapter-content">请注意，您可能需要root权限才能将进程绑定到此端口。下面是一个简短的工作流程:</p>
+<ul>
+<li>运行<kbd>$ sudo sbt dist</kbd>来构建应用程序二进制文件。输出可以在<kbd>PlayML /target/universal/APP-NAME-SNAPSHOT.zip</kbd>找到。在我们这里是<kbd>playml-1.0.zip</kbd>。</li>
+<li>现在，要运行应用程序，解压文件，然后运行<kbd>bin</kbd>目录中的脚本:</li>
+</ul>
+<pre class="chapter-content"><strong>$ unzip APP-NAME-SNAPSHOT.zip$ APP-NAME-SNAPSHOT /bin/ APP-NAME -Dhttp.port=9000</strong></pre>
+<p class="chapter-content">然后，您需要配置您的web服务器，以映射到应用程序端口配置。不过，通过将应用程序HTTP端口设置为<kbd>9000</kbd>，您可以轻松地将应用程序部署为独立的服务器:</p>
+<pre class="chapter-content"><strong>$ /path/to/bin/&lt;project-name&gt; -Dhttp.port=9000</strong></pre>
+<p class="chapter-content">但是，如果您计划在同一台服务器上托管几个应用程序，或者为了可伸缩性或容错性而对应用程序的几个实例进行负载平衡，那么您可以使用前端HTTP服务器。请注意，使用前端HTTP服务器很少会比直接使用播放服务器给你带来更好的性能。</p>
+<p class="chapter-content">然而，HTTP服务器非常擅长处理HTTPS、条件GET请求和静态资产，许多服务都假设前端HTTP服务器是您的架构的一部分。更多信息可以在<a href="https://www.playframework.com/documentation/2.6.x/HTTPServer">https://www . play framework . com/documentation/2.6 . x/http server</a>找到。</p>
+
+
+            
+
+            
+        
+    
+
+
+
+
+
+
+    
+        <title>Summary</title>
+        
+        <meta charset="utf-8"/>
+    
+
+    
+        
+
+                            
+                    <h1 class="header-title">摘要</h1>
+                
+            
+            
+                
+<p class="chapter-content">在本章中，我们学习了如何使用称为Q-learning的RL算法开发一个名为options trading的实际应用程序。IBM股票数据集被用来设计一个由批评和奖励驱动的机器学习系统。此外，我们学习了一些理论背景。最后，我们学习了如何使用Scala Play框架将一个Scala桌面应用程序包装成一个web应用程序，并将其部署到生产环境中。</p>
+<p class="chapter-content">在下一章中，我们将看到两个在银行营销数据集上使用H2O构建非常稳健和准确的预测模型进行预测分析的示例。在本例中，我们将使用银行营销数据集。该数据与一家葡萄牙银行机构的直接营销活动相关。营销活动以电话为基础。这个端到端项目的目标是预测客户将认购定期存款。</p>
+
+
+            
+
+            
+        
+    
+
+
+</body></html>

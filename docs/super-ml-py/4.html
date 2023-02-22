@@ -1,0 +1,1312 @@
+<html><head/><body><html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Advanced Topics in Supervised Machine Learning</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">监督机器学习的高级主题</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>在这一章中，我们将关注一些高级主题。我们将讨论两个主题:推荐系统和神经网络。我们将从协同过滤开始，然后将基于内容的相似性集成到协同过滤系统中。我们将进入神经网络并转移学习。最后，在学习Python代码之前，我们将介绍每种方法背后的数学和概念。</p>
+
+<p>我们将讨论以下主题:</p>
+
+<ul>
+
+<li>推荐系统和协作过滤介绍</li>
+
+<li>矩阵分解</li>
+
+<li>基于内容的过滤</li>
+
+<li>神经网络和深度学习</li>
+
+<li>使用迁移学习</li>
+
+</ul>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Technical requirements</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">技术要求</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p class="mce-root">对于本章，您需要安装以下软件，如果您还没有这样做:</p>
+
+<ul>
+
+<li>Jupyter笔记本</li>
+
+<li>蟒蛇</li>
+
+<li>计算机编程语言</li>
+
+</ul>
+
+<p class="mce-root">本章的代码文件可以在<a href="https://github.com/PacktPublishing/Supervised-Machine-Learning-with-Python" target="_blank"> https:/ / github找到。com/ PacktPublishing/ <br/>用Python监督机器学习</a>。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Recommended systems and an introduction to collaborative filtering</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">推荐系统和协作过滤介绍</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>在这一部分，我们将讨论协同过滤和推荐系统。我们将从解释什么可能构成推荐系统开始，用户如何在不知情的情况下自愿分享关于他们自己的大量数据，然后我们将讨论协同过滤。</p>
+
+<p>不管你是否意识到，你每天都在与众多的推荐系统互动。如果你曾经在亚马逊上购物，或者在脸书上浏览，或者在网飞上观看过一个节目，你就会得到某种形式的个性化内容。这就是电子商务平台如何最大限度地提高转化率，并让你再次购买。</p>
+
+<p>一个真正好的推荐系统的标志之一是它知道你想要什么，不管你是否已经知道。一个好的会让你很好奇:他们是怎么知道的？因此，事实证明，人类的行为是非常可预测的，即使不必分享关于他们自己的信息，我们称之为用脚投票，这意味着用户可能声称喜欢一种类型的电影，比如喜剧，但不成比例地消费另一种类型的电影，比如爱情片。所以，推荐系统的目标只是让你上钩；然而，次要目标通常因平台本身而异。它可以是最大化销售收入，创造客户满意度，或任何数量的其他指标。但真正让这些变得如此有趣的是，它们可以被人类直接消费，而如此多的其他<strong>机器学习</strong> ( <strong> ML </strong>)模型的存在可以取代自动化过程。</p>
+
+<p>这里有一个例子，解释用脚投票:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img src="img/c749c0af-0f08-44c1-b582-95fa2b95603b.png" style="width:30.50em;height:11.42em;"/></p>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p>这位用户说他喜欢足球、辣鸡翅和滑水。然而，他的收视率历史表明，他竖起大拇指去了一家翼餐厅，竖起大拇指去了另一家，然后竖起大拇指去了一家电影院。所以，这意味着他不喜欢第二翼餐厅的某些东西。可能是环境的原因，也可能是鸡翅酱。不管是什么，他对辣鸡翅的兴趣——他声称对辣鸡翅的兴趣——比他最初让我们相信的要微妙得多。同样，他表达了对电影的兴趣，尽管他没有透露。所以，这里的要点是，人们用行动说的比用言语说的多，而且他们对行动比对言语更诚实。我们可以利用推荐系统来学习商品和人们兴趣之间的微妙模式。</p>
+
+<p>协同过滤是一种常见的推荐系统。它基于一个被称为<strong>同性</strong>的概念，基本上是<em>物以类聚</em>。所以，也就是说，如果你喜欢某样东西，同样喜欢那件东西的人很可能和你有一些其他的共同兴趣；现在我们有了一个很好的兴趣池，可以开始互相推荐东西了。</p>
+
+<p>在典型的协同过滤系统中，我们的数据将会是这样的格式:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img src="img/614624c4-1538-437a-afc7-0bb5068263f1.png" style="width:35.00em;height:24.00em;"/></p>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p>在前面的屏幕截图中，用户沿着<em> y </em>轴显示，它们是行，而项目沿着<em> x </em>轴显示，它们是列。你可能有明确的评级，通常是连续的，或者隐含的，通常是二元的。我们在这里展示的是明确的。我们试图回答的问题是，用户的预测评分是多少？但是为了达到这个目的，我们必须以某种方式计算项目之间的相似性。这是一种协作过滤的形式，称为项目到项目的协作过滤，我们只能计算由用户共同评价的项目之间的相似性。这通常对明确评级的系统最有效；它基于亚马逊几年前发表的一篇论文。</p>
+
+<p>计算项目之间的相似性很简单。我们可以使用几种常见的度量标准之一来计算成对相似性，包括<strong>皮尔逊相关</strong>或余弦相似性。例如，我们将使用余弦相似度如下:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img class="fm-editor-equation" src="img/0a4dde7f-f4c5-4c07-bd5b-7ea6512187f0.png" style="width:14.58em;height:2.92em;"/></p>
+
+<p>它的计算方式与我们在<a href="028b1786-df10-4e2b-96be-541675edd2cd.xhtml" target="_blank">第三章</a>、<em>中使用非参数模型</em>、<strong>欧几里德距离</strong>研究聚类的方式非常相似。然而，这是计算相似性而不是空间距离。因此，它是概念的精确逆，但是以相似的方式计算。</p>
+
+<p>由于我们的数据非常稀疏，我们将首先使用SciPy将其放入稀疏的CSR矩阵中，而不是必须存储32个元素，现在我们只需存储14个:</p>
+
+<pre>from scipy import sparse<br/>import numpy as np<br/><br/>rows = np.array([0,0,0,0,1,1,1,2,2,2,2,3,3,3])<br/>cols = np.array([0,1,4,5,2,3,4,0,4,6,7,1,4,7])<br/>data = np.array([5.,1.,2.5,4.5,3.5,2.,3.,1.5,<br/>                 4.,4.5,4.,1.,1.,5.])<br/># Make a sparse matrix<br/>R = sparse.csr_matrix((data, (rows, cols)), shape = (4, 8))<br/>print(R.todense())</pre>
+
+<p>上述代码的输出如下:</p>
+
+<pre class="mce-root">[[5. 1. 0. 0. 2.5 4.5 0. 0. ]<br/> [0. 0. 3.5 2. 3. 0. 0. 0. ]<br/> [1.5 0. 0. 0. 4. 0. 4.5 4. ]<br/> [0. 1. 0. 0. 1. 0. 0. 5. ]]</pre>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p>这是一个基于我们实际看到的密集矩阵。所以，你可以想象当我们有成千上万的用户和数以百万计的商品时，这将变得多么方便——例如，亚马逊就是如此。</p>
+
+<p>我们只需要计算矩阵转置的成对余弦相似度。这里有很多零。这并不是说很多都是正交的，从数学上来说，余弦相似度用0来表示；那就是我们正在经历一种被称为“冷启动”的东西，其中有几个项目从未被共同评定过。因此，我们不能有效地仅基于评级来计算相似性。</p>
+
+<p>现在，我们将看到如何为给定用户生成预测，给出他们在计算项中的历史相似性。在下面的例子中，我们使用同一个用户，我们只是预测<kbd>user_3</kbd>:</p>
+
+<pre>from sklearn.metrics.pairwise import cosine_similarity<br/><br/># Compute the sim matrix<br/>sim = cosine_similarity(R.T).round(3)<br/>sim<br/>top_k = 3<br/>user_3 = np.array([0., 1., 0., 0., 1., 0., 0., 5.])<br/><br/># compute dot product btwn user vec and the sim matrix<br/>recommendations = user_3.dot(sim)<br/>item_indices = np.arange(recommendations.shape[0])<br/><br/># now arg sort descending (most similar items first)<br/>order = np.argsort(-recommendations)[:top_k]<br/>items = item_indices[order]<br/><br/># zip them together (item, predicted rating)<br/>list(zip(items, recommendations[order]))</pre>
+
+<p>上述代码的输出如下:</p>
+
+<pre>[(7, 6.130000000000001), (4, 4.326), (1, 4.196)]</pre>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p class="mceNonEditable"/>
+
+<p class="mceNonEditable"/>
+
+<p>因此，在这个算法中，计算预测非常简单。您只需计算用户评分向量和相似度矩阵的点积。然后，<kbd>argsort</kbd>按照降序排列，与我们处理最近邻的方式非常相似，但是降序与升序相反。所以，这里有需要注意的地方。第一，预测评级超过了<kbd>6.12</kbd>的地面真实评级规模。我们最多只能评定五个等级，但我们不能保证一定的等级。因此，我们可以调用这些评级或使用其他策略，但其他两个评级实际上是用户之前已经评级的。如果你回头看看评分矩阵，这两个都被用户评为一星。因此，我们可以看到，这不是一个伟大的推荐模型，它的排名和用户数量都很低。</p>
+
+<p>推荐系统在技术上是监督学习，但它们不同于传统意义上的<em> x </em>，<em> y </em>配对，因为我们的基础事实在技术上是我们的数据本身。因此，在我们的示例中，我们可以查看第四项和第一项的评分，并说明我们与实际情况的差距。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Item-to-item collaborative filtering</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">项目对项目的协同过滤</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>让我们看看代码。这是项目对项目的协同过滤。让我们从出现在<kbd>packtml/recommendation</kbd>中的<kbd>base.py</kbd>文件开始:</p>
+
+<pre>class RecommenderMixin(six.with_metaclass(ABCMeta)):<br/>    """Mixin interface for recommenders.<br/><br/>    This class should be inherited by recommender algorithms. It provides an<br/>    abstract interface for generating recommendations for a user, and a<br/>    function for creating recommendations for all users.<br/>    """<br/>    @abstractmethod<br/>    def recommend_for_user(self, R, user, n=10, filter_previously_seen=False,<br/>                           return_scores=True, **kwargs):<br/>        """Generate recommendations for a user.<br/><br/>        A method that should be overridden by subclasses to create<br/>        recommendations via their own prediction strategy.<br/>        """<br/><br/>    def recommend_for_all_users(self, R, n=10,<br/>                                filter_previously_seen=False,<br/>                                return_scores=True, **kwargs):<br/>        """Create recommendations for all users."""<br/>        return (<br/>            self.recommend_for_user(<br/>                R, user, n=n, filter_previously_seen=filter_previously_seen,<br/>                return_scores=return_scores, **kwargs)<br/>            for user in xrange(R.shape[0]))</pre>
+
+<p>这个<kbd>base</kbd>级叫做<kbd>RecommenderMixin</kbd>。它只是一个界面。有两种方法:一种是已经为所有子类编写好的，那就是<kbd>recommend_for_all_users</kbd>；另一个是<kbd>recommended_for_user</kbd>。因此，我们需要基于子类覆盖它。我们要看的子类是项目对项目的协同过滤。</p>
+
+<p>在下面的<kbd>itemitem.py</kbd>文件中，我们看到两个参数:</p>
+
+<pre> def __init__(self, R, k=10):<br/>        # check the array, but don't copy if not needed<br/>        R = check_array(R, dtype=np.float32, copy=False) # type: np.ndarray<br/><br/>        # save the hyper param for later use later<br/>        self.k = k<br/>        self.similarity = self._compute_sim(R, k)<br/><br/>    def _compute_sim(self, R, k):<br/>        # compute the similarity between all the items. This calculates the<br/>        # similarity between each ITEM<br/>        sim = cosine_similarity(R.T)<br/><br/>        # Only keep the similarities of the top K, setting all others to zero<br/>        # (negative since we want descending)<br/>        not_top_k = np.argsort(-sim, axis=1)[:, k:] # shape=(n_items, k)<br/><br/>        if not_top_k.shape[1]: # only if there are cols (k &lt; n_items)<br/>            # now we have to set these to zero in the similarity matrix<br/>            row_indices = np.repeat(range(not_top_k.shape[0]),<br/>                                    not_top_k.shape[1])<br/>            sim[row_indices, not_top_k.ravel()] = 0.<br/><br/>        return sim<br/><br/>    def recommend_for_user(self, R, user, n=10,<br/>                           filter_previously_seen=False,<br/>                           return_scores=True, **kwargs):<br/>        """Generate predictions for a single user.</pre>
+
+<p class="mce-root">我们有<kbd>R</kbd>和<kbd>k</kbd>。<kbd>R</kbd>，这是我们的评级矩阵，它不同于其他基本估计量，因为我们没有相应的<kbd>y</kbd>值。<kbd>R</kbd>是我们的地面真理以及训练阵列。<kbd>k</kbd>是一个参数，我们可以用它来限制相似项目的最大数量。它有助于减少我们比较的空间，使计算更容易。因此，对于构造函数来说，拟合过程只是通过<kbd>compute_sim</kbd>函数计算相似性数组。我们取<kbd>R</kbd>数组，转置它，使项目沿着行轴，然后我们计算行之间的余弦相似性，这就是现在的项目。我们有一个<em> n x n </em>矩阵，第一个<em> n </em>代表11月矩阵，第二个<em> n </em>是项目数量的维度。基本上，我们会说任何不在<kbd>top_k</kbd>中的东西，我们会设置相似度为零。这里的一个策略是，它允许我们以某种方式增加我们的相似性矩阵，否则，我们不能。这就是我们正在做的:按降序排列。我们首先想要最相似的，沿着列的argsorting。我们获取相似性矩阵并将其存储在<kbd>self.similarity</kbd>中。我们在计算预测时会用到它。</p>
+
+<p class="mce-root">所以，<kbd>recommend_for_user</kbd>是我们在超抽象接口中要覆盖的函数。我们可以提出几个论点。因此，我们有了用户向量，这是一个索引，还有<em> n </em>，<em> </em>这是我们想要产生的推荐数量。现在我们从<kbd>R</kbd>中得到<kbd>user_vector</kbd>:</p>
+
+<p class="mce-root">推荐——原始推荐——是用户向量和相似性矩阵之间的内积，这在NumPy中产生了一个<em> nD </em>或<em> 1D </em>数组。</p>
+
+<p class="mce-root">我们借助NumPy中的<kbd>arange</kbd>方法得到<kbd>item_indices</kbd>:</p>
+
+<p class="mceNonEditable">我们将根据推荐的降序来排序。现在，如果我们愿意，我们可以将它们限制在顶部<kbd>n</kbd>。</p>
+
+<p class="mceNonEditable"/>
+
+<p>We have <kbd>R</kbd> and <kbd>k</kbd>. <kbd>R</kbd>, which is our ratings matrix, it is different from other base estimators in that we don't have the corresponding <kbd>y</kbd> value. <kbd>R</kbd> is our ground truth as well as the training array. <kbd>k</kbd> is a parameter that we can use to limit the top number of items that are similar. It helps reduce our space that we're comparing within and makes computations easier. So, for the constructor, the fit procedure is simply computing the similarity array via the <kbd>compute_sim</kbd> function. We take the <kbd>R</kbd> array, transpose it so items are along the row axis, and then we compute the cosine similarity between the rows, which are now the items. We have an <em>n x n</em> matrix, the first <em>n</em> stands for the November matrix and the second <em>n</em> is the dimensionality of the number of items. Basically, we're going to say anything that's not in <kbd>top_k</kbd>, we'll set to zero similarity. One of the strategies here is that it allows us to augment our similarity matrix in a way that, otherwise, we couldn't. And that's what we're doing: argsorting into the descending order. We want the most similar first, argsorting along the columns. We take the similarity matrix and store that in <kbd>self.similarity</kbd>. And we're going to use that when we compute predictions.</p>
+
+<p>如果你想对每件事都产生推荐，你可以把<kbd>None</kbd>作为<kbd>n</kbd>传递。我们将返回<kbd>items</kbd>、<kbd>indices</kbd>和<kbd>recommendations</kbd>，它们是每个相应项目的预测评分，如下所示:</p>
+
+<pre># check the array and get the user vector<br/>R = check_array(R, dtype=np.float32, copy=False)<br/>user_vector = R[user, :]</pre>
+
+<p>我们转到<kbd>example_item_item_recommender.py</kbd>文件。我们将加载名为<kbd>get_completely_fabricated_ratings_data</kbd>的有趣的<kbd>titled</kbd>数据集，它在<kbd>data.py</kbd>文件中可用。这里，我们有几个用户，如下面的代码所示:</p>
+
+<p>We get <kbd>item_indices</kbd> with the help of an <kbd>arange</kbd> method in NumPy:</p>
+
+<pre># compute the dot product between the user vector and the similarity<br/># matrix<br/>recommendations = user_vector.dot(self.similarity) # shape=(n_items,)<br/><br/># if we're filtering previously-seen items, now is the time to do that<br/>item_indices = np.arange(recommendations.shape[0])<br/>if filter_previously_seen:<br/>    rated_mask = user_vector != 0.<br/>    recommendations = recommendations[~rated_mask]<br/>    item_indices = item_indices[~rated_mask]</pre>
+
+<p>We're going to order this based on the descending <kbd>argsort</kbd> of the recommendations. Now we can limit them to the top <kbd>n</kbd> if we want to.</p>
+
+<p class="mce-root">假设用户0是经典的30岁千禧一代，热爱90年代的怀旧。所以，他们对<kbd>The Princess Bride</kbd>、<kbd>Ghost Busters</kbd>、<kbd>Ghost Busters 2</kbd>评价很高。用户1，40岁，只喜欢动作片。于是，他们评了<kbd>Die Hard</kbd>和<kbd>Pulp Fiction</kbd>。用户2是一个12岁的孩子，他的父母相当严格，所以我们可以假设用户2没有看过<kbd>Pulp Fiction</kbd>或类似的东西。但是用户2已经观看了<kbd>Ghost Busters</kbd>、<kbd>Ghost Busters 2</kbd>和<kbd>The Goonies</kbd>。用户2对它们的评价都很高。用户3已经看到了这一切。用户4刚刚开了一个网飞账户，还没有机会看太多。因此，用户4可能是我们有兴趣为其产生推荐的用户。</p>
+
+<p class="mce-root">所有这些都是一个NumPy数组。我们正在返回一个密集数组。您可以将此作为稀疏数组返回。</p>
+
+<p>在<kbd>examples/recommendation</kbd>中的<kbd>example_item_item_recommender.py</kbd>文件中，我们将从<kbd>get_completely_fabricated_ratings_data</kbd>中获取<kbd>R</kbd>评级矩阵和<kbd>titles</kbd>:</p>
+
+<pre># now arg sort descending (most similar items first)<br/>order = np.argsort(-recommendations)[:n]<br/>items = item_indices[order]<br/><br/>if return_scores:<br/>   return items, recommendations[order]<br/>return items</pre>
+
+<p>我们用<kbd>k=3</kbd>创建一个<kbd>recommender</kbd>项目。我们只保留每个项目的三个最相似的对应项目。然后我们为用户0产生推荐。</p>
+
+<pre>    return (np.array([<br/>        # user 0 is a classic 30-yo millennial who is nostalgic for the 90s<br/>        [5.0, 3.5, 5.0, 0.0, 0.0, 0.0, 4.5, 3.0,<br/>         0.0, 2.5, 4.0, 4.0, 0.0, 1.5, 3.0],<br/><br/>        # user 1 is a 40-yo who only likes action<br/>        [1.5, 0.0, 0.0, 1.0, 0.0, 4.0, 5.0, 0.0,<br/>         2.0, 0.0, 3.0, 3.5, 0.0, 4.0, 0.0],<br/><br/>        # user 2 is a 12-yo whose parents are strict about what she watches.<br/>        [4.5, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 4.0,<br/>         3.5, 5.0, 0.0, 0.0, 0.0, 0.0, 5.0],<br/><br/>        # user 3 has just about seen it all, and doesn't really care for<br/>        # the goofy stuff. (but seriously, who rates the Goonies 2/5???)<br/>        [2.0, 1.0, 2.0, 1.0, 2.5, 4.5, 4.5, 0.5,<br/>         1.5, 1.0, 2.0, 2.5, 3.5, 3.5, 2.0],<br/><br/>        # user 4 has just opened a netflix account and hasn't had a chance<br/>        # to watch too much<br/>        [0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0,<br/>         0.0, 0.0, 0.0, 1.5, 4.0, 0.0, 0.0],<br/>    ]), np.array(["Ghost Busters", "Ghost Busters 2",<br/>                  "The Goonies", "Big Trouble in Little China",<br/>                  "The Rocky Horror Picture Show", "A Clockwork Orange",<br/>                  "Pulp Fiction", "Bill &amp; Ted's Excellent Adventure",<br/>                  "Weekend at Bernie's", "Dumb and Dumber", "Clerks",<br/>                  "Jay &amp; Silent Bob Strike Back", "Tron", "Total Recall",<br/>                  "The Princess Bride" ]))</pre>
+
+<p class="mce-root"/>
+
+<p class="mce-root">如果我们运行<kbd>example_item_item_recommender.py</kbd>文件，让我们看看用户0排名前三的电影是什么:</p>
+
+<p><img class="alignnone size-full wp-image-386 image-border" src="img/4b81ee6d-5478-4e70-86f7-dde29b7d95dd.png" style="width:98.00em;height:11.25em;"/></p>
+
+<p>用户0评分最高的三部电影分别是:<kbd>Ghost Busters</kbd>、<kbd>The Goonies</kbd>和<kbd>Pulp Fiction</kbd>。这意味着用户0高度评价了<kbd>Ghost Busters</kbd>和<kbd>The Goonies</kbd>，但没有评价<kbd>Pulp Fiction</kbd>。</p>
+
+<p>我们还可以看到，平均精度大约是2/3。平均精度是我们将用于推荐系统的一个指标。它实际上来自信息检索领域。它不像，比如说，平均绝对误差或均方误差。我们所做的是陈述我们推荐的那些存在于地面真实集合中的比例。在这种情况下，它意味着哪些用户一开始就评价很高，这表明我们生产的产品非常好。</p>
+
+<pre># #############################################################################<br/># Use our fabricated data set<br/>R, titles = get_completely_fabricated_ratings_data()<br/><br/># #############################################################################<br/># Fit an item-item recommender, predict for user 0<br/>rec = ItemItemRecommender(R, k=3)<br/>user0_rec, user_0_preds = rec.recommend_for_user(<br/>    R, user=0, filter_previously_seen=True,<br/>    return_scores=True)</pre>
+
+<p>矩阵分解</p>
+
+<p class="mce-root">在这一部分，我们将研究推荐系统并介绍矩阵分解技术。在典型的协同过滤问题中，我们在一个轴上有用户，在另一个轴上有商品或报价。我们希望解决任何给定项目的用户的预测评级，但要达到这一点，我们必须以某种方式计算用户或项目之间的亲和力。在上一节中，我们研究了项目到项目的协同过滤，其中我们使用余弦相似性度量来显式计算相似性矩阵，但现在我们想探索一种方法，该方法不会显式比较项目到项目或用户到用户。</p>
+
+<p>矩阵分解是一种协作过滤的形式，关注产品的无形资产。例如，在概念层面上，每一种产品或每一家餐馆都有无形的东西让你喜欢、不喜欢或对它们漠不关心。例如，对于一家餐馆，也许你感受到的气氛或氛围比菜单更重要。或者，考虑下面的陈述:食物很难吃，但快乐时光很棒。在这种情况下，我们感兴趣的是了解隐藏或潜在的变量，这些变量是数据模式的基础和表现。</p>
+
+<p class="CDPAlignCenter CDPAlign">矩阵分解将允许我们通过将我们的单个评级矩阵分解成两个低秩矩阵来发现这些潜在变量，这两个低秩矩阵相乘时，近似原始评级矩阵。直观地说，我们正在学习这些隐藏的因素或潜在的变量，并学习我们的用户和项目如何对它们进行评分。如下图所示，其中一个低等级矩阵映射了用户对所发现因素的密切关系，另一个映射了项目在因素上的排名:</p>
+
+<p><img src="img/4934bcc4-61ec-4baf-9f3a-3d5399ace61b.png" style="width:40.50em;height:26.17em;"/></p>
+
+<p>矩阵因式分解的一个缺点是在组成一个因子的背后缺乏清晰度或直觉。这类似于一种<strong>主成分</strong>分析(<strong> PCA </strong>)类型的技术，其中一个因素可以被概念化为一个主题。一个细心的、有洞察力的、拥有大量主题专业知识的分析师可以从主题中提取出意义，但是这样做非常困难，因此，考虑到其难度，通常不会进行这种分析。例如，也许上图中的<strong>因子1 </strong>是一个多变的大气。因此，鸡翅店被分为不同的等级。正如你在上图的右边所看到的，在<strong>机翼商店A </strong>和第一个因素<strong>潜水杆</strong>之间有很强的关联性。你也可以假设<strong>运动酒吧</strong>在那个尺度上的评级可能相当高。那么，也许<strong>因素2 </strong>是一个有一些健康意识选项的地方。因此，这种联系的强度是一个人或一个产品相对于潜在因素的等级。您可以在上图的左侧和右侧看到这一点。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Matrix factorization</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">本质上，我们有一个评级矩阵，<em xmlns:epub="http://www.idpf.org/2007/ops"> Q </em>。在不同的文献中，它被称为<em xmlns:epub="http://www.idpf.org/2007/ops"> Q </em>或<em xmlns:epub="http://www.idpf.org/2007/ops"> R </em>。我们在这里称它为<em xmlns:epub="http://www.idpf.org/2007/ops"> Q </em>。我们想要发现两个较低等级的矩阵，<em xmlns:epub="http://www.idpf.org/2007/ops"> X </em>和<em xmlns:epub="http://www.idpf.org/2007/ops"> Y </em>，使得两者的乘积近似于评级矩阵。即<em xmlns:epub="http://www.idpf.org/2007/ops"> Q </em>或<em xmlns:epub="http://www.idpf.org/2007/ops"> Q </em>质数约等于<em xmlns:epub="http://www.idpf.org/2007/ops">X . Y<sup>T</sup>T34】:</em></h1>
+
+                
+
+            
+
+            
+
+                
+
+<p><img class="fm-editor-equation" src="img/9d2b83e8-9d17-4d53-9871-343eaf4841a3.png" style="width:45.00em;height:6.00em;"/></p>
+
+<p>我们的目标函数在底部，基本上是一个正则化的均方误差。因此，我们看到的是<em> X </em>和<em> Y </em>和<em> Q </em>质数之间的均方误差，或者说重构误差，另一边是正则项，λ。</p>
+
+<p>对于数学工作者来说，分解矩阵并不新鲜。但是在非凸优化问题中寻找这种低秩矩阵的情况下这样做可能有点困难。所以，我们将要看到的方法叫做<strong>交替最小二乘法</strong> ( <strong> ALS </strong>)。</p>
+
+<p class="CDPAlignCenter CDPAlign">ALS算法如下:</p>
+
+<p>初始化两个随机矩阵，<em> X </em>和<em> Y </em></p>
+
+<p>设置<em> Q </em>和<em> O </em>的空值</p>
+
+<p class="CDPAlignCenter CDPAlign">从<em> X </em>开始，解决以下问题:</p>
+
+<p><img class="fm-editor-equation" src="img/7d8bb3e8-3235-4620-928a-0563034418ed.png" style="width:11.58em;height:1.42em;"/></p>
+
+<p>现在用新的<em> X </em>求解<em> Y </em>:</p>
+
+<p><img class="fm-editor-equation" src="img/4aa21afa-3c85-45b0-81d8-c752d7bc6bdb.png" style="width:12.33em;height:1.50em;"/></p>
+
+<ol>
+
+<li>迭代，在<em> X </em>和<em> Y </em>之间交替，直到收敛</li>
+
+<li>本质上，我们将交替求解各自的矩阵，最终会达到一个收敛点。因此，我们首先将<em> X </em>和<em> Y </em>初始化为随机值。然后，从<em> X </em>开始，我们求解<em> X </em>素数。现在我们有了一个更精确的X素数版本，我们可以用它来求解Y素数。在每次迭代中，每个矩阵都会为另一个矩阵创建一个更好的解决方案。我们可以像这样交替进行任意多次迭代，或者直到我们达到收益递减点，我们可以说我们已经收敛了。</li>
+
+<li>这里的符号有一个简单的注释:你在lambda旁边看到的<em> I </em>只是一个<em> F x F </em>单位矩阵，其中<em> F </em>是我们想要发现的潜在因素的数量。我们将其乘以正则化参数λ。所以，沿着对角线轴我们有λ，然后剩下的就是零。</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign">下面是Python中ALS的一个30行代码的近似版本。我们从定义<kbd>Q</kbd>或评级矩阵开始:</p>
+
+<ol start="4">
+
+<li>Now solve for <em>Y</em> with the new <em>X</em>:</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign"><img class="fm-editor-equation" src="img/4aa21afa-3c85-45b0-81d8-c752d7bc6bdb.png" style="width:12.33em;height:1.50em;"/></p>
+
+<ol start="5">
+
+<li>这是我们在前面的示例和上一节中看到的评级。现在我们要得到一个布尔掩码，<kbd>nan_mask</kbd>。首先，我们要为随后的计算将所有缺失值设置为零。接下来，我们将初始化<kbd>I</kbd>作为我们的单位矩阵，并乘以λ。我们只需要做一次，这很好。Lambda目前只有0.01，但这是一个可以使用交叉验证进行调整的超参数。所以，λ越高，我们就越正则化。然后，我们用<kbd>random_state</kbd>初始化<kbd>X</kbd>和<kbd>Y</kbd>。<kbd>X</kbd>将要等于<em> M x F </em>，也就是用户数乘以因子数。<kbd>Y</kbd>将等于因子数乘以项数:<em> F x N </em>。</li>
+
+</ol>
+
+<p>在迭代中，我们求解<kbd>X</kbd>，然后在给定新的<kbd>X</kbd>的情况下求解<kbd>Y</kbd>。然后，我们计算我们的训练损失，这也是均方误差的屏蔽版本，其中我们屏蔽掉原始真实数组(即我们的评级数组)中的缺失值。然后我们继续迭代，直到达到收敛。</p>
+
+<p class="mce-root">在前面代码的底部，您可以看到<kbd>X</kbd>和<kbd>Y</kbd>之间的近似值的输出。这是一个近似值。如果你看看<kbd>Q</kbd>的定义，3和底部的输出，看起来非常相似。因此，我们在最后创建预测的方式是，我们利用整个系统中的错误，并返回预测最高的项目，供用户过滤之前评级的项目。因此，用户4(最后一个用户)将获得牛排店的推荐，即<em> 2.0 </em>，这是该用户的最高非先前评级项目。这实际上只是乘法误差或近似误差的结果。</p>
+
+<p>在下图中，您可以看到训练损失在每次迭代中是如何减少的:</p>
+
+<p><img class="alignnone size-full wp-image-487 image-border" src="img/7195d7ee-a2ae-4df0-a5e9-142bc00d8fb4.png" style="width:28.17em;height:20.50em;"/></p>
+
+<pre>import numpy as np<br/>from numpy.linalg import solve<br/><br/>nan = np.nan<br/>Q = np.array([[5.0, 1.0, nan, nan, 2.5, 4.5, nan, nan],<br/>              [nan, nan, 3.5, 2.0, 3.0, nan, nan, nan],<br/>              [1.5, nan, nan, nan, 4.0, nan, 4.5, 4.0],<br/>              [nan, 1.0, nan, nan, 1.0, nan, nan, 5.0]])<br/><br/>nan_mask = np.isnan(Q) # mask applied when computing loss<br/>Q[nan_mask] = 0.<br/><br/>f = 3 # num factors<br/>n_iter = 5 # num iterations<br/>I_lambda = np.eye(f) * 0.01 # regularizing term<br/>random_state = np.random.RandomState(42)<br/><br/># initialize X, Y randomly<br/>X = random_state.rand(Q.shape[0], f)<br/>Y = random_state.rand(f, Q.shape[1])<br/>W = nan_mask.astype(int) # weights for calculating loss (0/1)<br/><br/># iterate:<br/>errors = []<br/>for i in range(n_iter):<br/>    X = solve(Y.dot(Y.T) + I_lambda, Y.dot(Q.T)).T<br/>    Y = solve(X.T.dot(X) + I_lambda, X.T.dot(Q))<br/>    errors.append(((W * (Q - X.dot(Y))) ** 2).sum())<br/>    <br/>X.dot(Y).round(3)</pre>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p>This is the rating that we've seen in the earlier example, and in the previous section. Now we're going to get a Boolean mask, <kbd>nan_mask</kbd>. First, we're going to set all the missing values to zero for the ensuing computations. Next, we're going to initialize <kbd>I</kbd> as our identity matrix and multiply it by lambda. We only have to do that one time, which is nice. Lambda is just 0.01 for now, but that's a hyperparameter that can be tuned using cross-validation. So, the higher lambda is, the more we'll regularize. Then, we initialize <kbd>X</kbd> and <kbd>Y</kbd> with <kbd>random_state</kbd>. <kbd>X</kbd> is going to be equal to <em>M x F</em>, that is, the number of users by the number of factors. <kbd>Y</kbd> is going to be equal to the number of factors by the number of items: <em>F x N</em>.</p>
+
+<p>Python中的矩阵分解</p>
+
+<p>在上一节中，我们希望将我们的评级矩阵分解为两个低秩矩阵，以发现驱动消费者决策的无形潜在因素。一个矩阵映射用户对发现的因素的密切关系，另一个映射项目在这些因素上的排名。</p>
+
+<p>所以，让我们看看这是如何在Python中实现的。我们有两个文件，<kbd>als.py</kbd>和<kbd>example_als_recommender</kbd>。让我们看看我们的<kbd>als.py</kbd>文件。在上一节中，我们看到了项目到项目的协作过滤器；ALS很像。它将实现<kbd>RecommenderMixin</kbd>:</p>
+
+<p class="CDPAlignCenter CDPAlign">ALS有几个参数。第一个，也是唯一一个非可选的，是<kbd>R</kbd>，我们的评级矩阵。在我们看到的一些数学中，我们将这种情况互换称为<kbd>R</kbd>和<kbd>Q</kbd>。再说一次，这是文学的一种怪癖。这取决于你读的是什么报纸，非此即彼。第二个参数是<kbd>factors</kbd>。<kbd>factors</kbd>参数是我们想要发现的潜在变量的数量。我用过float，但是你也可以用整数。浮点将会在0和1之间。<kbd>n_iter</kbd>为迭代次数。在此模块中，ALS不支持提前收敛或提前停止。这是你完全可以写出来的东西。但是如果你有太多的迭代，发生的事情是你可能会过度拟合你的数据。Lambda是我们的正则化参数，然后你可以通过<kbd>random_state</kbd>作为再现性的一种方式。</p>
+
+<p class="CDPAlignCenter CDPAlign">第一步，像往常一样，我们将检查我们的数组，以确保我们只有浮点:</p>
+
+<p class="mce-root">这里我们将允许丢失数据，因为丢失数据在推荐系统中是很自然的。我们几乎可以保证总会有丢失的数据。</p>
+
+<p class="mce-root"/>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Matrix factorization in Python</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">Matrix factorization in Python</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>在下面的代码中，我们确保我们的因子是一个整数。如果是<kbd>float</kbd>，我们计算出将要发现的<kbd>factors</kbd>的数量:</p>
+
+<p>所以，这里的<kbd>W</kbd>等于<kbd>nan_mask</kbd>，我们在上一节已经看过了:</p>
+
+<pre>def __init__(self, R, factors=0.25, n_iter=10, lam=0.001,<br/> random_state=None):</pre>
+
+<p>本质上，这将是一个加权数组，表示值是否从一开始就丢失了。因此，当我们在迭代过程中计算均方误差时，我们用这个来掩盖评级矩阵中的基本事实。</p>
+
+<p>这里，我们初始化<kbd>Y</kbd>:</p>
+
+<pre># check the array<br/>R = check_array(R, dtype=np.float32) # type: np.ndarray<br/>n_users, n_items = R.shape<br/># get the random state<br/>random_state = check_random_state(random_state)</pre>
+
+<p>我们没有初始化<kbd>X</kbd>,因为我们知道这将是我们迭代求解的第一个问题。因此，正如我们在上一节中看到的，我们还将<kbd>I</kbd>初始化为单位矩阵，即<em> F x F </em>，并将其乘以我们的正则化参数。</p>
+
+<p class="mce-root">现在我们将进行迭代，如以下代码所示:</p>
+
+<p class="mce-root">首先求解<kbd>X</kbd>，然后求解<kbd>Y</kbd>。在每次迭代中，我们将只计算训练误差，即均方误差。我们将它添加到列表中，并在下面的代码中作为<kbd>self</kbd>参数存储。</p>
+
+<p>In the following code, we're making sure that our factor is an integer. And if it's <kbd>float</kbd>, we figure out the number of <kbd>factors</kbd> we're going to discover:</p>
+
+<pre># get the number of factors. If it's a float, compute it<br/>if isinstance(factors, float):<br/>    factors = min(np.ceil(factors * n_items).astype(int), n_items)</pre>
+
+<p>ALS的训练阶段实际上非常容易。在上一节中，我们没有看到如何具体地生成预测。我们看到了它背后的数学原理，但是我们还没有实现它。如果您在ALS上调用predict，如以下代码所示，它将简单地计算用户因子和项目因子的乘积，以返回<kbd>R</kbd>质数—基本上是近似值:</p>
+
+<pre>W = (R &gt; 0.).astype(np.float32)</pre>
+
+<p>你可以传入<kbd>R</kbd>，它表面上是测试数据。这是包括最初没有包括在fit中的新用户的数据，或者这可能意味着用户已经更新了他们的数据。但是如果我们愿意，我们可以重新计算用户因素。因此，如果用户已经及时移动，并且我们的拟合是大约一周前的，那么我们可以相对于现有的项目因子重新计算用户因子。然后，在最后，我们只是返回<kbd>X</kbd>和<kbd>Y</kbd>的乘积。</p>
+
+<p>现在我们将调用<kbd>recommend_for_user</kbd>函数。因此，给定您的测试矩阵和用户指数，我们想知道哪些最重要的<kbd>n</kbd>项目可以推荐给用户，我们也做了同样的事情:</p>
+
+<pre># initialize the first array, Y, and X to None<br/> Y = random_state.rand(factors, n_items)<br/> X = None<br/># the identity matrix (time lambda) is added to the XX or YY product<br/># at each iteration.<br/> I = np.eye(factors) * lam</pre>
+
+<p>我们将创建这个预测，但是提取出预测的用户向量。因此，我们使用<kbd>self.predict</kbd>方法，如下面的代码所示:</p>
+
+<p>如果我们对过滤掉之前看到的感兴趣，我们只需屏蔽掉它们，并返回我们感兴趣的项目的降序argsorted索引。这与我们之前看到的空间聚类非常相似，但在这里，我们所做的只是计算<kbd>X</kbd>和<kbd>Y</kbd>的近似值，并对列进行argsorting。</p>
+
+<pre class="mce-root"># for each iteration, iteratively solve for X, Y, and compute the<br/> # updated MSE<br/> for i in xrange(n_iter):<br/> X = solve(Y.dot(Y.T) + I, Y.dot(R.T)).T<br/> Y = solve(X.T.dot(X) + I, X.T.dot(R))<br/># update the training error<br/> train_err.append(mse(R, X, Y, W))<br/># now we have X, Y, which are our user factors and item factors<br/> self.X = X<br/> self.Y = Y<br/> self.train_err = train_err<br/> self.n_factors = factors<br/> self.lam = lam</pre>
+
+<p>让我们看看<kbd>example_als_recommender.py</kbd>文件中的一个例子:</p>
+
+<p class="mce-root">您可以从前面的代码中回忆起推荐的数据。这是我们在前面章节中提到的完全捏造的数据。我们将采用相同的数据，并在其上安装ALS。我们想知道用户0的预测，所以在运行之前，我们需要一些信息。假设用户0对<kbd>Ghost Busters</kbd>的评价很高，对<kbd>The Goonies</kbd>的评价也很高。这家伙知道他们的东西！所以，这家伙是典型的90/80后千禧一代。</p>
+
+<p>你会注意到，在下面的截图中，我们已经激活了我的<kbd>packt-sml</kbd> conda环境:</p>
+
+<pre>def predict(self, R, recompute_users=False):<br/>        """Generate predictions for the test set.<br/><br/>        Computes the predicted product of ``XY`` given the fit factors.<br/>        If recomputing users, will learn the new user factors given the<br/>        existing item factors.<br/>        """<br/>        R = check_array(R, dtype=np.float32, copy=False) # type: np.ndarray<br/>        Y = self.Y # item factors<br/>        n_factors, _ = Y.shape<br/><br/>        # we can re-compute user factors on their updated ratings, if we want.<br/>        # (not always advisable, but can be useful for offline recommenders)<br/>        if recompute_users:<br/>            I = np.eye(n_factors) * self.lam<br/>            X = solve(Y.dot(Y.T) + I, Y.dot(R.T)).T<br/>        else:<br/>            X = self.X<br/><br/>        return X.dot(Y)</pre>
+
+<p><img class="alignnone size-full wp-image-489 image-border" src="img/bfc0e9e8-ca51-4a3a-be29-063f86051706.png" style="width:100.17em;height:8.67em;"/></p>
+
+<p>上述代码的输出如下:</p>
+
+<pre>def recommend_for_user(self, R, user, n=10, recompute_user=False,<br/>                       filter_previously_seen=False,<br/>                       return_scores=True):</pre>
+
+<p><img class="alignnone size-full wp-image-392 image-border" src="img/8e71358d-9e6c-4a09-9a07-701681ebf40f.png" style="width:23.00em;height:20.75em;"/></p>
+
+<pre>R = check_array(R, dtype=np.float32, copy=False)<br/># compute the new user vector. Squeeze to make sure it's a vector<br/> user_vec = self.predict(R, recompute_users=recompute_user)[user, :]<br/> item_indices = np.arange(user_vec.shape[0])<br/># if we are filtering previously seen, remove the prior-rated items<br/> if filter_previously_seen:<br/> rated_mask = R[user, :] != 0.<br/> user_vec = user_vec[~rated_mask]<br/> item_indices = item_indices[~rated_mask]<br/>order = np.argsort(-user_vec)[:n] # descending order of computed scores<br/> items = item_indices[order]<br/> if return_scores:<br/> return items, user_vec[order]<br/> return items</pre>
+
+<p>If we are interested in filtering out the ones we previously saw, we just mask those out and return the descending argsorted indices of items that we're interested in. This is very similar to what we've seen before when we were looking at spatial clustering, but here, all we're doing is computing the approximation of <kbd>X</kbd> and <kbd>Y</kbd> and argsorting the columns.</p>
+
+<p>你也需要这样做。因此，当我们运行这个时，我们将得到前面的图，它显示了训练误差如何随着迭代而减小，正如我们所预期的那样。因此，我们将推荐用户0观看<kbd>Weekend at Bernie's</kbd>作为最高评级的建议。鉴于<kbd>The Goonies</kbd>和<kbd>Ghost Busters</kbd>，这似乎是有道理的。但是<kbd>Pulp Fiction</kbd>有点暴力，所以我们也推荐了<kbd>Clockwork Orange</kbd>，它似乎也与此相呼应。因此，平均精度本质上是查看推荐，然后将它们与实际情况进行比较，并指出其中有多少实际上是以前被高度评价的。</p>
+
+<pre># -*- coding: utf-8 -*-<br/><br/>from __future__ import absolute_import<br/><br/>from packtml.recommendation import ALS<br/>from packtml.recommendation.data import get_completely_fabricated_ratings_data<br/>from packtml.metrics.ranking import mean_average_precision<br/>from matplotlib import pyplot as plt<br/>import numpy as np<br/>import sys<br/><br/># #############################################################################<br/># Use our fabricated data set<br/>R, titles = get_completely_fabricated_ratings_data()<br/><br/># #############################################################################<br/># Fit an item-item recommender, predict for user 0<br/>n_iter = 25<br/>rec = ALS(R, factors=5, n_iter=n_iter, random_state=42, lam=0.01)<br/>user0_rec, user_0_preds = rec.recommend_for_user(<br/>    R, user=0, filter_previously_seen=True,<br/>    return_scores=True)<br/><br/># print some info about user 0<br/>top_rated = np.argsort(-R[0, :])[:3]<br/>print("User 0's top 3 rated movies are: %r" % titles[top_rated].tolist())<br/>print("User 0's top 3 recommended movies are: %r"<br/>      % titles[user0_rec[:3]].tolist())</pre>
+
+<p>ALS的局限性</p>
+
+<p>我们一直在使用明确的评级。比如在亚马逊上，评分在一星到五星之间。这里的问题是，显式评级系统通常很难让用户对项目进行评级，因为从用户角度来看，消费内容比评估内容更容易。因此，隐式评级与显式评级相反，它们通常可以在用户不知情的情况下由系统收集。很多时候这是更有利的，因为它不需要用户在第二种意义上与系统交互来明确地对项目进行评级，我们可以获得更多的数据，这意味着更少的稀疏数据。因此，隐含评级可能包括一首歌曲的收听次数。上一个FM团队收集了非常著名的评分数据集，它使用隐式评分，通常用于推荐系统的基准测试。ALS有一个隐含版本，但是我们只讨论了它的显式版本。但是如果你在谷歌上搜索隐性ALS，有各种各样的相关文献。我们鼓励你去查一下。</p>
+
+<p class="CDPAlignCenter CDPAlign">推荐器的下一个挑战是稀疏性对密度。正如我们所见，评级矩阵可能相当稀疏。对于一些系统，比如Amazon，每个用户可能只有不到大约1%的所有项目的评级，很多时候甚至更少。因此，密集矩阵通常不是最好的解决方案，而且常常是不可行的。因此，我们要么使用稀疏矩阵，要么非常聪明地分配数据，这样我们就不会完全耗尽我们的内存。</p>
+
+<p>推荐者通常需要很长时间来训练。像许多其他机器学习模型一样，我们也会遇到同样的事情，但推荐器有点不同，因为它们必须以更高的频率更新，在许多情况下，每天多次，这取决于系统本身。因此，目录中的新项目或开始消费媒体的新用户意味着推荐器必须更新。但是我们不能在网上或实时做这些，否则我们就有系统瘫痪的危险。因此，一般来说，推荐人会以离线方式定期接受再培训。并且以在线或更实时的方式对模型评分。</p>
+
+<p class="CDPAlignCenter CDPAlign"><img class="alignnone size-full wp-image-392 image-border" src="img/8e71358d-9e6c-4a09-9a07-701681ebf40f.png" style="width:23.00em;height:20.75em;"/></p>
+
+<p class="mce-root">在这一节中，我们看了在<kbd>packtml</kbd>库中ALS的Python实现和一个例子。最后，我们讨论了我们在推荐系统中面临的一些现实挑战。</p>
+
+<p>基于内容的过滤</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Limitations of ALS</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">在这一节中，我们将通过介绍一种完全独立的计算相似性的方法来总结我们关于推荐系统的讨论，并看看我们如何使用它来增强我们的协同过滤系统。</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>基于内容的推荐器的操作类似于我们前面看到的原始的项目对项目的协作系统，但是它们不使用评级数据来计算相似性。相反，他们通过使用目录中提供的项目属性来直接计算相似性。然后，可以通过计算评级矩阵和相似性矩阵的乘积，以与项目到项目协作过滤相同的方式来计算预测。</p>
+
+<p>The next challenge of recommenders is sparsity versus density. As we've seen, ratings matrices can be pretty sparse. For some systems, such as Amazon, there may only be ratings for less than approximately one percent of all items per user, and a lot of times even less than that. So, dense matrices are not usually the best solution, and oftentimes they're not even feasible. So, we either have to use sparse matrices or get really clever with how we distribute the data, so we don't totally blow up our memory.</p>
+
+<p>下面是我们如何使用内容向量来直接计算项目相似性矩阵的示例:</p>
+
+<p class="mce-root">上述代码的输出如下:</p>
+
+<p>我们使用了与前几节相同的评分矩阵，并为不同的餐厅创建了11个不同的属性。通常，这些伪编码特征的内容向量指示一个项目是否属于给定的类别。所以，你可以看到相似度是以完全相同的方式计算的。所以，我们只是计算行之间的余弦相似度。然后我们甚至以同样的方式产生预测。我们计算相似度和评分的乘积。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Content-based filtering</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">基于内容的系统的局限性</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>基于内容的系统有几个明显的局限性，这使得它们在大多数情况下都不太理想。第一个是特征工程的手动性质，考虑到收集关于项目的数据的困难可能非常耗时，并且很多时候，我们呈现的关于项目的数据仅限于文本描述，这可能会非常困难。因此，我们没有得到这个好的编码矩阵，这意味着我们必须从描述中提取属性，这可能是具有挑战性的，并且非常耗时。</p>
+
+<p>接下来，我们最终得到了大量虚拟编码的内容向量集，这意味着它严重地零膨胀。因此，自然地，我们的相似性计算相对于我们从可比较的协作方法计算中可能得到的结果来说是相当低的。最后，随着我们的特征矩阵在等级上的增长，两个给定项目之间的相似性将是正交的或零，所以这种可能性接近1。更多信息可以参考<a href="https://math.stackexchange.com/questions/995623/why-are-randomly-drawn-vectors-nearly-perpendicular-in-high-dimensions">https://math . stack exchange . com/questions/995623/why-are-random-drawn-vectors-near-vertical-in-high-dimensions</a>。这是一个松散的证明，表明等级越高，越有可能接近正交性，这是我们不想要的。所有这些限制很好地解释了为什么基于内容的系统不如基于协作的系统有利。</p>
+
+<p>但也有一些情况下，他们真的很有用。其中一个叫做<strong>冷启动问题</strong>，我们在本节前面已经讨论过，我们在每个协同过滤应用中都遇到过。这是当一个新项目被添加，并且由于其自身缺乏评级而不能在评级的基础上与现有项目进行比较时。所以，这里的挑战，除了不能计算相似性，是如果你用0或其他随机值来估算，你可能永远不会把它呈现给消费者。你含蓄地减少了你推荐那个项目的机会。</p>
+
+<p>在项目对项目的协同过滤中，由于我们无法计算相似性，所以在有两个项目没有被同一用户相互评价的情况下也会发生这种情况。因此，这是一个额外的情况，在这种情况下，它将导致矩阵中的相似度为0，因为我们用0来估算所有缺失值，即使理论上我们有评级来衡量亲和力。在这些情况下，有一个后备计划是很有用的。</p>
+
+<p>这里，我们安装了一个项目到项目的协同过滤推荐器:</p>
+
+<pre>import numpy as np<br/>from sklearn.metrics.pairwise import cosine_similarity<br/><br/>ratings = np.array(([5.0, 1.0, 0.0, 0.0, 2.5, 4.5, 0.0, 0.0],<br/>                    [0.0, 0.0, 3.5, 2.0, 3.0, 0.0, 0.0, 0.0],<br/>                    [1.5, 0.0, 0.0, 0.0, 4.0, 0.0, 4.5, 4.0],<br/>                    [0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0]))<br/># content vector<br/><br/>categories = ['Alcohol license',<br/>              'Healthy options',<br/>              'Burgers on menu',<br/>              'Located in downtown',<br/>              '$', '$$', '$$$', '$$$$',<br/>              'Full bar', 'Southern cooking',<br/>              'Grilled food']<br/># categories        a1   he  bu  dt  1$  2$  3$  4$  fb  sc  gf<br/>content = np.array([[0., 1., 0., 0., 0., 1., 0., 0., 0., 0., 0.],<br/>                    [1., 0., 1., 1., 0., 1., 0., 0., 1., 0., 0.],<br/>                    [0., 1., 1., 0., 1., 0., 0., 0., 0., 0., 1.],<br/>                    [1., 1., 1., 1., 0., 0., 1., 0., 0., 1., 1.],<br/>                    [0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 1.],<br/>                    [1., 0., 1., 0., 0., 0., 1., 0., 0., 1., 1.],<br/>                    [1., 1., 0., 1., 0., 0., 0., 1., 1., 0., 1.],<br/>                    [1., 1., 1., 0., 0., 0., 1., 0., 0., 0., 1.]<br/>                   ])<br/>sim = cosine_similarity(content)<br/>ratings.dot(sim).round(3)</pre>
+
+<p>上述代码的输出如下:</p>
+
+<pre>array([[6.337, 4.381, 6.169, 6.738, 5.703, 5.545, 4.813, 6.872],<br/> [2.997, 1.797, 7.232, 5.294, 6.904, 4.03 , 4.078, 5.587],<br/> [5.697, 4.539, 8.515, 8.305, 8.799, 5.876, 9.01 , 9.005],<br/> [2.306, 3. , 4.444, 5.169, 3.582, 4.658, 3.758, 5.916]])</pre>
+
+<p>We're using the same ratings matrix as we have over the last few sections, and we've created 11 different attributes about the various restaurants. Generally, the content vectors of these dummy-encoded features indicate whether an item belongs to a given category. So, you can see the similarity is computed in exactly the same fashion. So, we just compute the cosine similarity between the rows. And then we even generate predictions in the same way. We compute the product of the similarities and the ratings.</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Limitations of content-based systems</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">从前面的代码中，我们看到了评级数据上的<kbd>packtml</kbd>包中的几个部分，这是我们在过去几个部分中一直使用的。我们将使用内容相似性计算来估算遭受冷启动问题的数据。当我们检查相似性矩阵时，您可以看到不再有0。因此，有一种可能得到0的极端情况，即如果缺少相互相似性或冷启动问题，那么实际内容向量中的正交性是完美的。但我们没有看到这一点。因此，从表面上看，这让我们更接近一个更稳健的模型。但是您仍然受限于我们之前看到的限制，即收集内容属性和计算那些潜在的正交向量。</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>所以，在这一点上，你熟悉这个概念，你意识到仅仅基于内容的相似性是不可行的。但是如果你有合适的环境和设置，它们实际上可以增强你的协同过滤方法。围绕使用神经网络来自动混合基于内容的系统和协作系统，已经有了很多研究。他们中的许多人正在使用神经网络从文本描述中创建特征，这在自动意义上有点不正式，然后创建一个单独的网络来分解矩阵。因此，在未来，内容和协作系统可以平等共存，这是很有希望的。</p>
+
+<p>下面是两篇采用这种方法的论文:</p>
+
+<p class="mce-root"><em>神经网络混合协同过滤</em>，Florian Strub，Jeremie Mary和Romaric Gaudel，2016年</p>
+
+<p class="mce-root"><em>基于高斯混合模型的半监督聚类混合推荐系统</em>，Cyberworlds (CW)，2016年国际会议，第155-158页，2016</p>
+
+<p>神经网络和深度学习</p>
+
+<p>这是机器学习中一个巨大的话题，所以我们无法在本章涵盖所有内容。如果你以前从未见过神经网络，它们看起来就像一个巨大的蜘蛛网。这些蜘蛛网的顶点被称为神经元或单元，它们基于一种被称为感知器的老式线性分类器。这个想法是，你的向量进来，用相应的参数权重向量计算点积，然后加上一个偏差值。然后，我们通过一个激活函数来转换它。一般来说，如果使用sigmoid变换，感知器在规范上可以与逻辑回归相同。</p>
+
+<p>Here, we're fitting an item-to-item collaborative filtering recommender:</p>
+
+<pre>from packtml.recommendation import ItemItemRecommender<br/><br/>rec = ItemItemRecommender(ratings, k=5)<br/><br/>zero_mask = rec.similarity == 0<br/>rec.similarity[zero_mask] = sim[zero_mask]<br/>rec.similarity</pre>
+
+<p>The output of the preceding code is as follows:</p>
+
+<pre>array([[0.99999994, 0.67728543, 0.35355338, 0.26726124, 0.62405604,<br/>        0.95782626, 0.28734788, 0.31622776],<br/>       [0.67728543, 0.99999994, 0.2236068 , 0.50709254, 0.43580094,<br/>        0.70710677, 0.5477226 , 0.5521576 ],<br/>       [0.35355338, 0.2236068 , 1. , 1. , 0.52827054,<br/>        0.4472136 , 0.4082483 , 0.6708204 ],<br/>       [0.26726124, 0.50709254, 1. , 1. , 0.52827054,<br/>        0.8451542 , 0.6172134 , 0.8451542 ],<br/>       [0.62405604, 0. , 0.52827054, 0.4364358 , 1. ,<br/>        0.2581989 , 0.7043607 , 0.577514 ],<br/>       [0.95782626, 0.70710677, 0.4472136 , 0.8451542 , 0.44022545,<br/>        1. , 0.36514837, 0.8 ],<br/>       [0.28734788, 0.5477226 , 0.4082483 , 0.6172134 , 0.7043607 ,<br/>        0.36514837, 1. , 0.62469506],<br/>       [0.1795048 , 0.5521576 , 0.6708204 , 0.8451542 , 0.577514 ,<br/>        0.8 , 0.62469506, 0.99999994]], dtype=float32)</pre>
+
+<p class="mce-root">当你把所有这些串在一起时，你得到的是一个巨大的感知器网络，为感知器提供信息:这被称为多层感知器，但也被称为神经网络。当这些感知机中的每一个馈入下一层时，神经元最终学习输入空间中的一系列非线性变换，最终在最后一层产生预测。</p>
+
+<p>这些模型的历史实际上非常迷人。它们在20世纪50年代初首次被提出，但是它们的潜力在很长一段时间内都没有被真正释放出来，因为它们是如此的计算密集型。然而现在，我们到处都听到关于深度学习的说法，它实际上只是指更广泛的神经网络家族，包括它们的一些无监督和生成的变体。</p>
+
+<p>那么，神经网络实际上是如何学习的呢？好吧，我们将通过网络的各层在各个时期反复输入数据。向前馈送层就像计算一层和下一层之间的矩阵乘积一样简单，沿着列轴添加偏置向量，然后通过激活函数转换输出。有很多不同的激活函数可以使用，但一些最常见的是乙状结肠；双曲正切，类似于sigmoid，但介于负1和1之间，而不是零和1之间；和<strong>整流线性单元</strong> ( <strong> ReLUs </strong>)，它们实际上只是值和零之间的地板函数。它确保没有任何负面的东西从单元中产生。因此，在每个时期或迭代之后，在输出层之外，我们将计算网络的误差，并通过各层向上传递消息，它们可以相应地调整权重。这个过程被称为反向传播。对此我们通常使用梯度下降。</p>
+
+<p>对于我们的两层示例，它实际上只是中间的一层，最后是一个输出层，我们只需为每个时期计算两个矩阵乘积。人们发现，如何初始化你的权重对网络的学习能力有很大的影响。有几种方法可以实现这种策略，但最简单的方法是将它们初始化为非常小的值。我们通常在负0.1和正0.1之间选择随机值。你可以变小；你可以变得更聪明。我们将偏差初始化为1个向量。同样，还有其他聪明的方法可以做到这一点。我们将使用1，权重矩阵本身将一层映射到下一层。因此，从第1层到第2层，我们从三个单元到四个单元。你可以从单位的数量上看到这种维度。我们对应的权重矩阵将是<em> 3 x 4 </em>，同样，第二个权重矩阵将是<em> 4 x 2 </em>。</p>
+
+<ul>
+
+<li>这里，我们只是将我们的网络表示为一个线性方程组:</li>
+
+<li><img class="fm-editor-equation" src="img/e1a9a508-461c-4283-8b21-ad4998d3eba1.png" style="width:15.17em;height:1.42em;"/></li>
+
+</ul>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Neural networks and deep learning</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">第一层被传递到嵌套在内侧括号中的第二层，然后传递到外侧括号中的最后一层。我们最终得到的是这个真正的矩阵，在<em> m x 2 </em>中。</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>下面是一段高度简化的Python代码:</p>
+
+<p class="mce-root">我们正在定义我们的激活函数。<kbd>f</kbd>是逻辑或sigmoid变换。<kbd>lam</kbd>，或<kbd>lambda</kbd>，将是我们的学习率，我们在讨论梯度下降时已经知道了。你们会从逻辑回归中记住这一点，我们可以控制下降梯度的速度。初始化<kbd>X</kbd>和<kbd>y</kbd>后，我们只是用它们作为随机值，我们创建隐藏的<kbd>H1</kbd>和<kbd>H2</kbd>层，以及<kbd>b1</kbd>和<kbd>b2</kbd>偏差。在这个例子中，我们使用NumPy <kbd>rand</kbd>函数创建了层。但是这是你想要变聪明的地方，把它们限制在负的<kbd>0.1</kbd>和正的<kbd>0.1</kbd>之间。然后，通过将我们的<kbd>f</kbd>激活函数应用于<kbd>AX + b</kbd>线性方程来计算我们的隐藏层1的结果<kbd>H1_res</kbd>。因此，我们只需计算<kbd>X</kbd>和<kbd>H1</kbd>之间的内积，然后沿着列向量添加偏置向量。</p>
+
+<p class="mce-root">通过以相同的方式将第二个隐藏层应用于第一个隐藏层的输出来计算输出。因此，我们将这些线性系统连接起来，并将这种非线性变换应用到输出中。</p>
+
+<p>When you string a whole bunch of these together, what you get is the massive web of perceptrons feeding perceptrons: this is called a multi layer perceptron, but it's also known as a neural network. As each of these perceptrons feeds the next layer, the neurons end up learning a series of nonlinear transformations in the input space, ultimately producing a prediction in the final layer.</p>
+
+<p>The history of these models is actually really fascinating. They were first proposed in the early 1950s, but their potential was not really unlocked for quite a long time, since they're so computationally intensive. Nowadays, though, we hear a bout deep learning everywhere, and it's really just referring to the broader family of neural networks, including some of their unsupervised and generative variants.</p>
+
+<p>因此，现在我们已经完成了第一个纪元，我们需要调整网络的权重以获得误差最小化状态，因为现在，我们的网络很可能产生了一个可怕的误差。因此，这里开始了反向传播的乐趣，如果你认为我们在这本书的前面有很多微积分，你在这里得到了款待。我们要计算四个导数:每层两个。我们用它们来调整上一层的权重，就像我们在逻辑回归中所做的一样。然后，下一次我们进行前向传递时，权重已经被调整，理论上，我们在网络中的误差会比以前小。</p>
+
+<p>这里，我们从头开始实现反向传播:</p>
+
+<p>我们将计算四个导数:每个权重层的导数和损失函数，这是两个，偏差层也是两个。第一个增量很容易计算:它只是预测的概率，也就是这个矩阵减去<kbd>y</kbd>的真实指数。接下来，我们将使用刚刚计算的δ来计算第一层的输出，它将是最后一层(即输出层)的导数。然后，我们可以对结果的列求和，得到第二层偏差的导数。</p>
+
+<p class="CDPAlignCenter CDPAlign">我们可以用同样的方法计算下一层<kbd>H1</kbd>和<kbd>b1</kbd>的导数。一旦我们计算出这些梯度，我们就可以用与逻辑回归中相同的方式更新权重和偏差，即将每个导数乘以负学习率，并分别添加到权重矩阵和<kbd>H1</kbd>和<kbd>b1</kbd>，以及<kbd>H2</kbd>和<kbd>b2</kbd>偏差向量。现在我们已经更新了我们的权重和偏差，沿着我们函数中变化最大的轴:损失函数。</p>
+
+<p>因此，如果反向传播正确，将会得到类似下图的误差项:</p>
+
+<p><img src="img/b327eaec-85b2-43ee-9655-f34f1aef814b.png" style="width:24.67em;height:19.08em;"/></p>
+
+<pre>import numpy as np<br/><br/># define activation function<br/>f = (lambda v: 1./ (1. + np.exp(-v)))<br/>lam = 0.01<br/># input matrix<br/>X = np.array([[1.5, 5.0, 2.5],<br/>             [0.6, 3.5, 2.8],<br/>             [2.4, 5.6, 5.6]])<br/><br/>y = np.array([1, 1, 0])<br/># initialize hidden layers, bias<br/><br/>rs = np.random.RandomState(42)<br/>H1 = rs.rand(3, 4)<br/>H2 = rs.rand(4, 2)<br/>b1, b2 = np.ones(4), np.ones(2)<br/><br/># feed forward<br/>H1_res = f(X.dot(H1) + b1)<br/>output = f(H1_res.dot(H2) + b2)</pre>
+
+<p>训练神经网络的提示和技巧</p>
+
+<p>这里有一些技巧，可以让你从头开始训练神经网络时变得更容易。你可以提前一点停止训练，以避免过度适应。在上图中，你可以看到有一条长尾，误差不再减少，我们仍在训练。大约在公元前25或30年。我们本可以早点停下来的。</p>
+
+<p class="mce-root">正规化和辍学是防止你的网络过度适应的方法。现在，对于非常大的数据，您可以在每个时期进行部分拟合，这意味着您可以在每次向前传递时通过您的网络拟合许多批次，这样您就不必将所有内容都保存在内存中。这也使得反向传播变得更容易，不同的激活函数会给你不同的结果。所以，要经常尝试。最后，正如我们之前讨论的那样，始终使用交叉验证来选择模型超参数，这样就不会无意中造成验证集的模型泄漏，甚至不会过度拟合训练集。</p>
+
+<p class="mce-root"/>
+
+<p>So, now that we have our first epoch complete, we need to adjust the weights of the network to get an error-minimizing state because, right now, the chances are our network produced a terrible error. And so, here begins the fun of backpropagation, and if you thought we had a lot of calculus earlier in this book, you're in for a treat here. We're going to compute four derivatives: two for each layer. We use them to adjust the weight in the layer immediately above, much like we did in logistic regression. Then, the next time we do a forward pass, the weights have been adjusted and we'll, in theory, have less error in the network than we did previously.</p>
+
+<p>神经网络</p>
+
+<pre># back prop<br/>out_delta = output.copy() # get a copy of the output<br/>out_delta[range(X.shape[0]), y] -= 1.<br/>H2_d = H1_res.T.dot(out_delta)<br/>b2_d = H2_d.sum(axis=0)<br/>delta2 = out_delta.dot(H2.T) * (1. - np.power(H1_res, 2.))<br/>H1_d = X.T.dot(delta2)<br/>b1_d = delta2.sum(axis=0)<br/><br/># update weights, bias<br/><br/>H1 += -lam * H1_d<br/>b1 += -lam * b1_d<br/>H2 += -lam * H2_d<br/>b2 += -lam * b2_d</pre>
+
+<p>我们将通过网络中的各层在各个时期反复输入数据。每次迭代后，我们将计算网络和输出的误差，并将信号向上传回各层，以便它们可以相应地调整权重。所以，这是所有的理论和概述。</p>
+
+<p>我们有两份文件要看。我们有源代码和一个例子:<kbd>base.py</kbd>和<kbd>mlp.py</kbd>，代表多层感知器。先说<kbd>base.py</kbd>:</p>
+
+<p>我们有两个功能。一个函数，<kbd>tanh</kbd>，是一个双曲正切函数，我们将使用它作为激活函数。这只是<kbd>np.tanh</kbd>的包装。然后，我们有一个<kbd>NeuralMixin</kbd>类，这是一种抽象接口，我们将使用它来导出我们每个网络的权重和偏差。</p>
+
+<p class="CDPAlignCenter CDPAlign">在<kbd>mlp.py</kbd>中，我们将依赖scikit-learn中的典型<kbd>check_X_y</kbd>，<kbd>check_classification_targets</kbd>。因为我们只执行二元或多类分类，所以我们将使用softmax，然后使用<kbd>check_random_state</kbd>。因此，我们可以在我们的神经网络中使用一个可复制的<kbd>random_state</kbd>。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Tips and tricks for training a neural network</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">Tips and tricks for training a neural network</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>在类本身之外有一个函数— <kbd>calculate_loss</kbd>:</p>
+
+<p>本质上，这将是我们的神经网络内部的目标函数，我们可以计算，并通过网络反向传播损失。Softmax将成为泛化，也就是说，我们的逻辑函数适用于多个类。这就是我们从中得到的。从<kbd>K</kbd>矩阵，其中<kbd>K</kbd>是类数的维数，我们有一个三类问题；我们可以计算每一类成员的概率。这就是softmax所做的。</p>
+
+<p class="mce-root">现在，我们的神经网络分类器将采用一些不同的参数，如下所示:</p>
+
+<p class="mce-root">像往常一样，我们有我们的<kbd>X</kbd>和<kbd>y</kbd>，然后我们有<kbd>hidden</kbd>，这将是一个元组或其他一些具有位置元素的可迭代对象，指示每层中单元的数量。因此，如果我们想要有两层，我们可能有<kbd>X</kbd>、<kbd>25</kbd>，其中每层将有<kbd>25</kbd>个单元。没有精确的科学来决定你想要多少单位，这取决于你的目标。如果要压缩维度，可以使单位数小于输入维度。如果你想发现各种细微的特征，那么你可以增加单元的数量。迭代的次数实际上是我们要执行的历元数。学习率是我们在逻辑回归中看到的λ。正规化是我们的<kbd>l2</kbd>惩罚，这将帮助我们防止过度拟合。而<kbd>random_state</kbd>又是我们用来控制<kbd>random_state</kbd>的种子，所以这是可复制的。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Neural networks</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">在构造函数中，我们所做的就是给算法自动分配不同的属性:</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>然后，我们初始化权重和偏差。我们在追踪最后一个矩阵的最后一个维度，或者说隐藏权重矩阵。所以，我们将从<kbd>none</kbd>开始输入。我们将使用列维度作为下一层的输入维度。所以，我们在例子中提到，我们从三个到四个。我们的第一个隐藏矩阵或隐藏层的维数可能是<em>3×4</em>。我们跟踪最后一列的维度，因为它成为下一层的行维度。我们返回到<kbd>X</kbd>、<kbd>y</kbd>、<kbd>weights</kbd>、<kbd>biases</kbd>，稍后子类也会用到它，这就是为什么它是一个类函数。</p>
+
+<p>现在，我们开始向前推进我们的网络。首先，我们计算向前的步骤:</p>
+
+<pre>def tanh(X):<br/>    """Hyperbolic tangent.<br/><br/>    Compute the tan-h (Hyperbolic tangent) activation function.<br/>    This is a very easily-differentiable activation function.<br/><br/>    Parameters<br/>    ----------<br/>    X : np.ndarray, shape=(n_samples, n_features)<br/>        The transformed X array (X * W + b).<br/>    """<br/>    return np.tanh(X)<br/><br/><br/>class NeuralMixin(six.with_metaclass(ABCMeta)):<br/>    """Abstract interface for neural network classes."""<br/>    @abstractmethod<br/>    def export_weights_and_biases(self, output_layer=True):<br/>        """Return the weights and biases of the network"""</pre>
+
+<p>向前一步很容易。我们有自己的体重和偏见。我们将把我们的权重和偏见压缩在一起，这样我们就可以一起跟踪它们。我们将计算出<kbd>X.dot(w)</kbd>、<kbd>w</kbd>的乘积，即权重，并加上偏差。这又是那个<kbd>AX</kbd>线性系统加上<kbd>b</kbd>。然后，我们应用这个非线性变换，<kbd>tanh</kbd>。但是如果你想用乙状结肠，你可以这样做。最后一层略有不同。我们不是在最后一层运行<kbd>tanh</kbd>，我们实际上是在运行softmax。这是一个分类问题，所以我们将softmax应用于<kbd>X</kbd>的输出，而不是<kbd>tanh</kbd>。这是输出层。</p>
+
+<p>在构造函数中，我们已经计算了第一个前进步骤和第一个纪元:</p>
+
+<p class="mce-root">现在我们要计算损失；这种损失就是我们之前看到的对数损失。在<kbd>train_loss</kbd>中，我们将跟踪每个时期的损失。如果你想加快速度，你可以只计算损失，比如说，每五次迭代。在下面的反向传播示例中，我们将得到一个关于如何以一种比上一个示例中的两层示例更具可扩展性的方式实现这些渐变的巧妙想法。</p>
+
+<p>There is a function outside of the class itself—<kbd>calculate_loss</kbd>:</p>
+
+<pre>def _calculate_loss(truth, preds, weights, l2):<br/>    """Compute the log loss.<br/><br/>    Calculate the log loss between the true class labels and the predictions<br/>    generated by the softmax layer in our neural network.<br/><br/>    Parameters<br/>    ----------<br/>    truth : np.ndarray, shape=(n_samples,)<br/>        The true labels<br/><br/>    preds : np.ndarray, shape=(n_samples, n_classes)<br/>        The predicted class probabilities<br/><br/>    weights : list<br/>        The list of weights matrices. Used for computing the loss<br/>        with the L2 regularization.<br/><br/>    l2 : float<br/>        The regularization parameter<br/>    """<br/>    # get the log probs of the prediction for the true class labels<br/>    n_samples = truth.shape[0]<br/>    logprobs = -np.log(preds[range(n_samples), truth])<br/><br/>    # compute the sum of log probs<br/>    sum_logprobs = logprobs.sum()<br/><br/>    # add the L2 regularization term<br/>    sum_logprobs += l2 / 2. * sum(np.square(W).sum() for W in weights)<br/>    return 1. / n_samples * sum_logprobs</pre>
+
+<p>现在，在反向传播函数中，我们再次计算delta，它是每个类的概率减去真实指数:</p>
+
+<p>这是我们的第一个三角洲。现在，迭代地，我们要做的是计算该层结果乘以当前增量的导数。我们从刚刚减去的这些概率的当前增量开始。现在我们已经得到了梯度，我们可以通过对导数中的列求和来计算偏差的导数。现在我们有了偏差的导数，下一次迭代时，我们将计算下一个增量。我们使用正则化的方法是将正则化乘以<kbd>next_weights</kbd>。因此，<kbd>next_weights</kbd>是我们计算梯度的权重矩阵。我们将其正则化，并将其添加到导数中，然后我们将调整权重。所以，我们可以加上<kbd>learning_rate</kbd>乘以δ，或者梯度，我们对偏差做同样的处理。我们已经改变了<kbd>next_weights</kbd>和<kbd>next_biases</kbd>的权重和偏差。这是一个<kbd>void</kbd>功能。它不返回任何东西，因为它都发生在原地。</p>
+
+<pre> def __init__(self, X, y, hidden=(25,), n_iter=10, learning_rate=0.001,<br/>              regularization=0.01, random_state=42):</pre>
+
+<p class="mce-root">现在，权重和偏差已经迭代更新。下一次我们在迭代中前进——下一个纪元——我们应该会看到更低的误差。因此，我们将通过迭代次数来继续这一过程，通过我们所有的时代来进步，并保存我们的权重和偏差。然后，我们将生成一个预测，并通过在最后使用softmax向前传递来计算这些概率。取列的<kbd>argmax</kbd>:那是概率最高的类。这就是我们用压缩向量返回的结果。</p>
+
+<p class="mce-root"/>
+
+<p>在<kbd>example_mlp_classifier</kbd>文件中，我们使用了与决策树分类相似的数据集，这些<kbd>multivariate_normal</kbd>气泡是我们二维空间中的一种聚类。我们将像往常一样做<kbd>train_test_split</kbd>:</p>
+
+<p>现在我们要训练两个神经网络。第一个将只使用四次迭代，并有一个10个单位的隐藏层。第二个有点复杂。我们将进行150次迭代，每次迭代有两个隐藏层的<kbd>25</kbd>单元。</p>
+
+<pre class="mce-root">self.hidden = hidden<br/>self.random_state = random_state<br/>self.n_iter = n_iter<br/>self.learning_rate = learning_rate<br/>self.regularization = regularization<br/># initialize weights, biases, etc.<br/>X, y, weights, biases = self._init_weights_biases(<br/>    X, y, hidden, random_state, last_dim=None)</pre>
+
+<p>所以，我们运行<kbd>example_mlp_classifier.py</kbd>文件:</p>
+
+<p><img class="alignnone size-full wp-image-491 image-border" src="img/ddf90324-3d58-4c30-8efb-ca9745dcad6e.png" style="width:71.33em;height:6.33em;"/></p>
+
+<pre>    def _forward_step(X, weights, biases):<br/>        # track the intermediate products<br/>        intermediate_results = [X]<br/><br/>        # progress through all the layers EXCEPT the very last one.<br/>        for w, b in zip(weights[:-1], biases[:-1]):<br/><br/>            # apply the activation function to the product of X and the weights<br/>            # (after adding the bias vector)<br/>            X = tanh(X.dot(w) + b)<br/><br/>            # append this layer result<br/>            intermediate_results.append(X)<br/><br/>        # we handle the very last layer a bit differently, since it's out<br/>        # output layer. First compute the product...<br/>        X = X.dot(weights[-1]) + biases[-1]<br/><br/>        # then rather than apply the activation function (tanh), we apply<br/>        # the softmax, which is essentially generalized logistic regression.<br/>        return softmax(X), intermediate_results</pre>
+
+<p>我们用10个单元的单一隐藏层获得了相当好的测试精度:94.4%。但是你可以看到，如果我们有两个25度的隐藏层，我们几乎可以得到100%。我们也有第一个的训练迭代。</p>
+
+<p>In the constructor, we've computed the first forward step and our first epoch:</p>
+
+<pre>        # for each iteration, feed X through the network, compute the loss,<br/>        # and back-propagate the error to correct the weights.<br/>        for _ in xrange(n_iter):<br/>            # compute the product of X on the hidden layers (the output of<br/>            # the network)<br/>            out, layer_results = self._forward_step(X, weights, biases)<br/><br/>            # compute the loss on the output<br/>            loss = _calculate_loss(truth=y, preds=out, weights=weights,<br/>                                   l2=self.regularization)<br/>            train_loss.append(loss)<br/><br/>            # now back-propagate to correct the weights and biases via<br/>            # gradient descent<br/>            self._back_propagate(y, out, layer_results, weights,<br/>                                 biases, learning_rate,<br/>                                 self.regularization)</pre>
+
+<p>在下图中，您可以看到损失有所波动:</p>
+
+<p class="mce-root"><img class="alignnone size-full wp-image-488 image-border" src="img/64669de4-b82b-4bfd-a530-913e36491b02.png" style="width:44.92em;height:30.42em;"/></p>
+
+<p>但是随着时间的推移，这种损失会减少。它不能保证是完美的下降，它可能会上升或下降一点，但我们可以看到，随着时间的推移，我们的损失达到了一个非常小的点。我们在这里学到的更复杂的函数是一个非常有趣的非线性决策边界。对这些边界点进行分类有点困难，但这就是我们如何使用神经网络来学习一个比逻辑回归学习更复杂的函数。</p>
+
+<pre class="mce-root">probas[range(n_samples), truth] -= 1.<br/># iterate back through the layers computing the deltas (derivatives)<br/> last_delta = probas<br/> for next_weights, next_biases, layer_res in \<br/> zip(weights[::-1], biases[::-1], layer_results[::-1]):<br/># the gradient for this layer is equivalent to the previous delta<br/># multiplied by the intermittent layer result<br/> d_W = layer_res.T.dot(last_delta)<br/># column sums of the (just-computed) delta is the derivative<br/># of the biases<br/> d_b = np.sum(last_delta, axis=0)<br/># set the next delta for the next iter<br/> last_delta = last_delta.dot(next_weights.T) * \<br/> (1. - np.power(layer_res, 2.))<br/># update the weights gradient with the L2 regularization term<br/> d_W += l2 * next_weights<br/># update the weights in this layer. The learning rate governs how<br/># quickly we descend the gradient<br/> next_weights += -learning_rate * d_W<br/> next_biases += -learning_rate * d_b</pre>
+
+<p>使用迁移学习</p>
+
+<p>在本节中，我们将更进一步，探索神经网络是否可以从其他神经网络学习以及它们已经学习了什么的问题。我们将从迁移学习的概念开始，然后我们将进入一些Python代码。</p>
+
+<p class="mce-root"/>
+
+<p>迁移学习本质上是机器学习的弗兰肯斯坦怪物。这个想法来自于这样一个问题:我怎样才能利用其他网络已经学到的东西，并从那里继续前进？我们基本上要在几个不同的网络之间做一个大脑拼接。如果网络是根据您无法访问的数据进行训练的，或者训练过程需要花费数小时或数天的时间，这一点非常有价值，这在文本或图像处理领域很常见。</p>
+
+<pre># Fit a simple neural network<br/>n_iter = 4<br/>hidden = (10,)<br/>clf = NeuralNetClassifier(X_train, y_train, hidden=hidden, n_iter=n_iter,<br/>                          learning_rate=0.001, random_state=42)<br/>print("Loss per training iteration: %r" % clf.train_loss)<br/><br/>pred = clf.predict(X_test)<br/>clf_accuracy = accuracy_score(y_test, pred)<br/>print("Test accuracy (hidden=%s): %.3f" % (str(hidden), clf_accuracy))<br/><br/># #############################################################################<br/># Fit a more complex neural network<br/>n_iter2 = 150<br/>hidden2 = (25, 25)<br/>clf2 = NeuralNetClassifier(X_train, y_train, hidden=hidden2, n_iter=n_iter2,<br/>                           learning_rate=0.001, random_state=42)<br/><br/>pred2 = clf2.predict(X_test)<br/>clf_accuracy2 = accuracy_score(y_test, pred2)<br/>print("Test accuracy (hidden=%s): %.3f" % (str(hidden2), clf_accuracy2))</pre>
+
+<p>我们不想重新训练我们的模型，因为那会花很长时间，但是我们想利用我们已经学到的关于其他两个类的知识，开始学习关于其他类的其他知识。我们可以使用迁移学习来重新开始我们离开的地方，而不是重新培训整个过程。现在，你已经有了背后的想法和概念，让我们看看如何将其应用于我们现在熟悉的现有多层感知器框架。</p>
+
+<p>在<kbd>transfer.py</kbd>文件中，从<kbd>TransferLearningClassifier</kbd>开始，比在<kbd>MLPClassifier</kbd>中多了一个参数:那就是预训练网络。那可以是<kbd>NeuralNetClassifier</kbd>也可以是<kbd>TransferLearningClassifier</kbd>。但是在这个例子中，我们只取<kbd>NeuralNetClassifier</kbd>。类似于MLP构造函数，我们将使用前几行将所有内容保存为自身属性，然后我们将确保您作为预训练网络传入的任何内容都是某种形式的<kbd>NeuralMixin</kbd>:</p>
+
+<p class="CDPAlignCenter CDPAlign">因为我们必须访问以前课程中的权重和偏差，所以我们得到了预训练权重和预训练偏差。我们只想初始化新的权重和偏差，我们可以一直叠加到最后。因此，如果我们之前有一个四层网络，这些只是辅助性的。我们不会训练它们——我们只是要冷冻它们。然后，我们想在最后叠加几层，这样我们就可以训练和教授新的特性——我们可能想要预测的新类的新特性。我们将仅对新的权重和偏差进行初始化的权重和偏差。</p>
+
+<p>时代看起来略有不同；他们看起来很像MLPs，但是有一点点不同。</p>
+
+<p class="mce-root">因此，对于每个时期，我们将执行一个预训练的前进步骤。基本上，我们在这里要做的是，对于预训练权重和偏差中的每一层，我们将使用我们的<kbd>tanh</kbd>函数计算<em> AX + b </em>。请注意，即使在输出层，我们也将计算<kbd>tanh</kbd>，而不是计算softmax，因为我们不再对获取那些类概率感兴趣。现在我们只想把它输送到下一层。所以，我们要用那个激活函数。可能是<kbd>sigmoid</kbd>或者<kbd>relu</kbd>。</p>
+
+<p>现在，我们希望在现有的或新的权重和偏差层上向前迈出一步，我们确实希望进行训练:</p>
+
+<p class="CDPAlignCenter CDPAlign">我们将计算<kbd>loss</kbd>，然后我们将只在新图层上反向传播。所以，我们根本不是在训练旧的权重和偏见，而是在训练新的权重和偏见。</p>
+
+<p>预测略有不同:</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Using transfer learning</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">我们不仅要计算单个前进步长，还要计算预训练的前进步长，因为我们不希望softmax出现在另一个网络的末端。然后，我们将使用预训练的前进步骤的输出来计算正常的前进步骤，这将把softmax堆叠到末端。</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>In this section, we're going to take it one step further and explore the question of whether a neural network could learn from other neural networks and what they've already learned. We'll start by covering the concept of transfer learning, and then we'll get into some Python code.</p>
+
+<p class="mce-root"/>
+
+<p>对于预测，我们再一次取列的<kbd>argmax</kbd>。也就是说，从预测概率中获取最高概率类。</p>
+
+<p>让我们看一个示例文件。这看起来很像我们在之前的MLP示例中设置的内容，只是我们有两个数据集:</p>
+
+<p>第一个将有两个blob:我们一直在使用的<kbd>multivariate_normal</kbd>blob和多数类。这里的第三个将把第三个类放在两个类之间。我们的迁移学习任务是在已经从二进制分类例子中学到的基础上学习这个新类。</p>
+
+<pre>    def __init__(self, X, y, pretrained, hidden=(25,), n_iter=10,<br/>                 regularization=0.01, learning_rate=0.001, random_state=42):<br/><br/>        # initialize via the NN static method<br/>        self.hidden = hidden<br/>        self.random_state = random_state<br/>        self.n_iter = n_iter<br/>        self.learning_rate = learning_rate<br/>        self.regularization = regularization<br/><br/>        # this is the previous model<br/>        self.model = pretrained<br/><br/>        # assert that it's a neural net or we'll break down later<br/>        assert isinstance(pretrained, NeuralMixin), \<br/>            "Pre-trained model must be a neural network!"<br/><br/>        # initialize weights, biases, etc. for THE TRAINABLE LAYERS ONLY!<br/>        pt_w, pt_b = pretrained.export_weights_and_biases(output_layer=False)<br/>        X, y, weights, biases = NeuralNetClassifier._init_weights_biases(<br/>            X, y, hidden, random_state,<br/><br/>            # use as the last dim the column dimension of the last weights<br/>            # (the ones BEFORE the output layer, that is)<br/>            last_dim=pt_w[-1].shape[1])</pre>
+
+<p>让我们来拟合我们将使用的第一个神经网络，这是我们的预训练网络:</p>
+
+<p>Epochs look slightly different; they look a lot like MLPs, but there's a little bit of difference.</p>
+
+<p>这将非常类似于我们在第一个例子中看到的，我们有一个两层网络，每层都有<kbd>25</kbd>单元。我们将为<kbd>75</kbd>纪元设定一个相当低的学习率，我们将看看它在学习二进制分类任务时表现如何。</p>
+
+<p>现在，假设我们预测某种类型的疾病，有一型和二型。我不会用糖尿病，因为只有两种类型。但是假设第三种类型出现了。也许这是一种寨卡病毒，我们想预测这种新类型的病毒是否存在于进来的病人身上。我们不想重新培训一切，因为这可能要花很长时间。因此，我们将把这个新层放在最后，上面写着“了解第三类的这些新功能”。然后我们将为三个类而不是两个类生成一个新的输出层。我们只打算做<kbd>25</kbd>新时代，只是基于我们已经从前面的二进制分类任务中学到的东西。我们想看看我们是否能在不重新训练一切的情况下学习这个新的职业。这就是我们在这里要做的:</p>
+
+<pre>        train_loss = []<br/>        for _ in xrange(n_iter):<br/>            # first, pass the input data through the pre-trained model's<br/>            # hidden layers. Do not pass it through the last layer, however,<br/>            # since we don't want its output from the softmax layer.<br/>            X_transform = _pretrained_forward_step(X, pt_w, pt_b)<br/><br/>            # NOW we complete a forward step on THIS model's<br/>            # untrained weights/biases<br/>            out, layer_results = NeuralNetClassifier._forward_step(<br/>                X_transform, weights, biases)<br/><br/>            # compute the loss on the output<br/>            loss = _calculate_loss(truth=y, preds=out, weights=pt_w + weights,<br/>                                   l2=self.regularization)<br/>            train_loss.append(loss)<br/><br/>            # now back-propagate to correct THIS MODEL's weights and biases via<br/>            # gradient descent. NOTE we do NOT adjust the pre-trained model's<br/>            # weights!!!<br/>            NeuralNetClassifier._back_propagate(<br/>                truth=y, probas=out, layer_results=layer_results,<br/>                weights=weights, biases=biases,<br/>                learning_rate=learning_rate,<br/>                l2=self.regularization)</pre>
+
+<p>然后我们会把这两个都画出来，这样你就可以看到二进制和三类分类问题的决策边界。</p>
+
+<p>让我们运行一个迁移学习的例子:</p>
+
+<pre>    def predict(self, X):<br/>        # compute the probabilities and then get the argmax for each class<br/>        probas = self.predict_proba(X)<br/><br/>        # we want the argmaxes of each row<br/>        return np.argmax(probas, axis=1)<br/><br/>    def predict_proba(self, X):<br/>        # Compute a forward step with the pre-trained model first:<br/>        pt_w, pt_b = self.model.export_weights_and_biases(output_layer=False)<br/>        X_transform = _pretrained_forward_step(X, pt_w, pt_b)<br/><br/>        # and then complete a forward step with the trained weights and biases<br/>        return NeuralNetClassifier._forward_step(<br/>            X_transform, self.weights, self.biases)[0]<br/><br/>    def export_weights_and_biases(self, output_layer=True):<br/>        pt_weights, pt_biases = \<br/>            self.model.export_weights_and_biases(output_layer=False)<br/>        w = pt_weights + self.weights<br/>        b = pt_biases + self.biases<br/><br/>        if output_layer:<br/>            return w, b<br/>        return w[:-1], b[:-1]</pre>
+
+<p><img class="alignnone size-full wp-image-395 image-border" src="img/e8008426-04ac-43df-aef3-d7cc146fa30d.png" style="width:98.42em;height:8.67em;"/></p>
+
+<p class="mce-root">我们的测试精度下降到了百分之<kbd>95.2</kbd>。</p>
+
+<p class="mce-root"/>
+
+<p>您可以在下图中看到，我们能够在二元分类任务中学习复杂的决策边界:</p>
+
+<p><img class="alignnone size-full wp-image-486 image-border" src="img/c7aee88f-511e-437d-af4c-8807b5852299.png" style="width:81.42em;height:56.50em;"/></p>
+
+<pre># these are the majority classes<br/>n_obs = 1250<br/>x1 = rs.multivariate_normal(mean=[0, 0], cov=covariance, size=n_obs)<br/>x2 = rs.multivariate_normal(mean=[1, 5], cov=covariance, size=n_obs)<br/><br/># this is the minority class<br/>x3 = rs.multivariate_normal(mean=[0.85, 3.25], cov=[[1., .5], [1.25, 0.85]],<br/>                            size=n_obs // 3)<br/><br/># this is what the FIRST network will be trained on<br/>n_first = int(0.8 * n_obs)<br/>X = np.vstack((x1[:n_first], x2[:n_first])).astype(np.float32)<br/>y = np.hstack((np.zeros(n_first), np.ones(n_first))).astype(int)<br/><br/># this is what the SECOND network will be trained on<br/>X2 = np.vstack((x1[n_first:], x2[n_first:], x3)).astype(np.float32)<br/>y2 = np.hstack((np.zeros(n_obs - n_first),<br/>                np.ones(n_obs - n_first),<br/>                np.ones(x3.shape[0]) * 2)).astype(int)</pre>
+
+<p>然后我们把它拿来，我们说让我们用一个新的类来做迁移学习，我们仍然能够学得很好。现在，我们已经了解了在初始决策边界之上构建的第二个决策边界，它看起来非常好。所以，我们有95.2%的准确率。</p>
+
+<p>摘要</p>
+
+<pre># Fit the transfer network - train one more layer with a new class<br/>t_hidden = (15,)<br/>t_iter = 25<br/>transfer = TransferLearningClassifier(X2_train, y2_train, pretrained=clf,<br/>                                      hidden=t_hidden, n_iter=t_iter,<br/>                                      random_state=42)<br/><br/>t_pred = transfer.predict(X2_test)<br/>trans_accuracy = accuracy_score(y2_test, t_pred)<br/>print("Test accuracy (hidden=%s): %.3f" % (str(hidden + t_hidden),<br/>                                           trans_accuracy))</pre>
+
+<p class="mce-root">迁移学习是一个灵活的概念，它允许你将网络堆叠在一起，完成比你想象的更复杂的任务。我们讨论了推荐系统，特别是协同过滤，然后我们看了矩阵分解技术，以及如何用基于内容的相似性来补充你的推荐器。最后，我们研究了神经网络和迁移学习。</p>
+
+<p>This is going to be very similar to what we saw in the first example, where we have a two-layer network with <kbd>25</kbd> units in each layer. We're going to fit <kbd>75</kbd> epochs with a pretty low learning rate and we'll see how it does on learning the binary classification task.</p>
+
+<p>Now, let's say we're predicting some type of disease, and there's type one something and type two something. I'm not going to use diabetes because there's only two types. But let's say, a third type comes out. Maybe it's a type of Zika virus, and we want to predict whether this new class is present in a patient who comes in. We don't want to retrain everything, because it's going to take forever, perhaps. So, we're going to just stack this new layer on the end that says learn these new features about this third class. And then we'll produce a new output layer for three classes rather than two. We're only going to do <kbd>25</kbd> new epochs, just based on what we've already learned from the previous binary classification task. We want to see if we can learn this new class without retraining everything. And that's all we're going to do here:</p>
+
+<pre># Fit the transfer network - train one more layer with a new class<br/>t_hidden = (15,)<br/>t_iter = 25<br/>transfer = TransferLearningClassifier(X2_train, y2_train, pretrained=clf,<br/>                                      hidden=t_hidden, n_iter=t_iter,<br/>                                      random_state=42)<br/><br/>t_pred = transfer.predict(X2_test)<br/>trans_accuracy = accuracy_score(y2_test, t_pred)<br/>print("Test accuracy (hidden=%s): %.3f" % (str(hidden + t_hidden),<br/>                                           trans_accuracy))</pre>
+
+<p>And then we're going to plot both out so you can see the decision boundary from both the binary and this three-class classification problem.</p>
+
+<p>Let's run an example of transfer learning:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img class="alignnone size-full wp-image-395 image-border" src="img/e8008426-04ac-43df-aef3-d7cc146fa30d.png" style="width:98.42em;height:8.67em;"/></p>
+
+<p>Our test accuracy is down to <kbd>95.2</kbd> percent.</p>
+
+<p class="mce-root"/>
+
+<p>You can see in the following graph that we are able to learn a complex decision boundary in the binary classification task:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img class="alignnone size-full wp-image-486 image-border" src="img/c7aee88f-511e-437d-af4c-8807b5852299.png" style="width:81.42em;height:56.50em;"/></p>
+
+<p>And then we took that and we said let's do transfer learning with a new class, and we were still able to learn it really well. So, now we've learned the second decision boundary that we built on top of our initial decision boundary and it looks really good. So, we get 95.2 percent accuracy.</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Summary</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">Summary</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>Transfer learning is a flexible concept that'll allow you to stack networks together to accomplish far more complex tasks than you thought possible. We covered recommender systems and collaborative filtering in particular, and then we looked at matrix factorization techniques and how to supplement your recommenders with content-based similarities. Lastly, we worked with neural networks and transfer learning.</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html></body></html>

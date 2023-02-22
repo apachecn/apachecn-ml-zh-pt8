@@ -1,0 +1,862 @@
+<html><head/><body>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Managing Machine Learning Services for SQL Server 2017 and R</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1565U0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">为SQL Server 2017和R管理机器学习服务</h1>
+                
+            
+            
+                
+<p class="calibre2">本章将介绍R服务的管理以及从SQL Server数据库运行R服务的必要步骤。具体而言，本章将涵盖以下主题:</p>
+<ul class="calibre7">
+<li class="calibre8">安装带有R服务的SQL Server</li>
+<li class="calibre8">为Visual Studio  ( <strong xmlns:epub="http://www.idpf.org/2007/ops" class="calibre1"> RTVS </strong>)配置环境和安装<strong xmlns:epub="http://www.idpf.org/2007/ops" class="calibre1"> R工具</strong></li>
+<li class="calibre8">资源调控器</li>
+<li class="calibre8">安全性</li>
+<li class="calibre8">会话和日志</li>
+<li class="calibre8">安装新的R包</li>
+<li class="calibre8">使用PowerShell管理SQL Server R服务</li>
+<li class="calibre8">了解<kbd class="calibre11">sp_execute_external_script</kbd>外部程序</li>
+</ul>
+<p class="calibre2">与最初引入R时SQL Server 2016的运行方式相比，SQL Server 2017的安装、配置和设置工作环境并没有太大的不同。如果版本之间有差异，将会指出来。</p>
+<p class="calibre2">使用SQL Server 2016和2017安装带有machine learning R Services的SQL Server具有最低硬件要求，具体取决于您将安装的SQL Server版本。SQL Server有几个版本。有关更多信息，请访问Microsoft网页:</p>
+<p class="calibre2"><a href="https://www.microsoft.com/en-us/sql-server/sql-server-2017-editions" class="calibre10">https://www . Microsoft . com/en-us/SQL-server/SQL-server-2017-editions</a></p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Minimum requirements</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="164MG0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">最低要求</h1>
+                
+            
+            
+                
+<p class="calibre2">基本的R集成在几乎所有的SQL Server版本中都可用，除了Express版(除非它是带有高级服务的Express版)。这意味着一个标准的SQL Server将支持R服务到使用普通的和本地的R代码的程度，但是没有高级的R集成或者将计算推到其他计算环境。相同的逻辑将适用于SQL Server 2017(在撰写本文时)，并且版本和功能已经在以下URL公开:</p>
+<p class="calibre2"><a href="https://docs.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2017" class="calibre10">https://docs . Microsoft . com/en-us/SQL/SQL-server/editions-and-components-of-SQL-server-2017</a></p>
+<p class="calibre2">在操作系统方面，支持许多微软操作系统版本(如Windows Server 2012及更高版本、Windows 8及更高版本)，并且从SQL Server 2016及更高版本开始，还支持Linux。要运行R服务，最少需要1 GB，但推荐4 GB，2.0 GHz或更快的处理器(x64处理器类型)速度可以完成这项工作。此外，6 GB硬盘空间可用于主要安装，但根据任何附加功能或SQL Server服务，将需要更多磁盘空间。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Choosing the edition</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="173720-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">选择版本</h1>
+                
+            
+            
+                
+<p class="calibre2">SQL Server不再仅仅是一个数据库，它已经成长为一个数据库平台——一个生态系统——由许多附加服务(如SSRS、SSAS和SSIS)组成，支持并扩展了现代数据库的功能。当安装机器学习R服务(在数据库中)时，人们应该考虑生态系统环境以及哪些附加服务将与R服务一起使用。如果业务需要高级R(或Python)集成和分析，那么企业版是合适的。如果只需要基本的R集成，标准版本将满足需要。此外，如果您需要分析服务或报告服务，请按照其他分析工具的思路来考虑，以及为此还需要哪些开发工具(例如，基于OLAP多维数据集的MDX和对同一个数据集市运行R代码)。</p>
+<p class="calibre2">决定好版本后，下载SQL Server 2017(或2016)的ISO或CAB安装文件，开始安装。我将安装SQL Server 2017的开发者版(从安装角度来看，与2016版几乎相同):</p>
+<div><img class="aligncenter7" src="img/00015.jpeg"/></div>
+<p>图SQL Server的安装类型</p>
+<p class="calibre2">安装SQL Server的新安装将保证正确安装带有R的机器学习服务(或数据库内服务)。</p>
+<p class="calibre2">在下一步中，必须安装安装功能。要安装R服务，必须在SQL Server服务(数据库内)的R上打勾，而对于SQL Server 2017，必须在机器学习服务(数据库内)部分的R上打勾:</p>
+<div><img class="aligncenter8" src="img/00016.jpeg"/></div>
+<p>图SQL Server的功能选择</p>
+<p class="calibre2">在下面的服务器配置步骤中，您必须检查有权访问服务的用户和帐户。对于R服务(数据库内)，将安装并自动启动SQL Server Launchpad服务。此服务可以在安装后通过Windows应用程序服务启动或停止:</p>
+<div><img class="aligncenter9" src="img/00017.jpeg"/></div>
+<p>图SQL Server的服务器配置</p>
+<p class="calibre2">配置数据库引擎后，将提示您接受安装Microsoft R Open的协议，确保您知道R受GNU许可。通过请求同意，Microsoft只是想确保管理员同意，并且R Open版本的所有新更新和修补程序都将符合SQL Server更新首选项:</p>
+<div><img class="aligncenter10" src="img/00018.jpeg"/></div>
+<p>图4:提示安装Microsoft R Open的内容</p>
+<p class="calibre2">除了同意R的协议，请注意微软R服务器的生命周期是两年。如果2016年1月发布MRS 8.0，2018年1月官方支持结束；更准确地说，安全和关键更新将持续一年(直到2017年1月)，之后，只有安全更新将持续到2018年1月。在这一年中，还将收到升级。请注意，它与独立产品-微软机器学习服务器相关，但值得一提的是支持时间表将持续多久。</p>
+<p class="calibre2">如果您也要安装Python，也需要同样的许可:</p>
+<div><img class="aligncenter11" src="img/00019.jpeg"/></div>
+<p>图5:提示内容安装Python</p>
+<p class="calibre2">一旦您选择了所有功能、配置和许可，您将看到要安装的服务和功能的概述:</p>
+<div><img class="aligncenter12" src="img/00020.jpeg"/></div>
+<p>图6:准备安装的选定特性</p>
+<p class="calibre2">安装完成后，您将拥有R Engine for Machine Learning Services和安装了R(如果选择)的Microsoft Machine Learning Server。请注意，R Engine for R Services(in-database)将有一个不同的R安装，作为独立的Microsoft R Server，并且所有安装的包也将不同，在不同的路径、权限和安全设置下。</p>
+<div><img class="aligncenter13" src="img/00021.jpeg"/></div>
+<p>图7:完成安装过程</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Configuring the database</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="181NK0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">配置数据库</h1>
+                
+            
+            
+                
+<p class="calibre2">在安装后过程中，数据库配置将是下一个任务。考虑一下数据库排序，因为R语言是区分大小写的，它关系到您将向SQL Server引擎提供什么样的数据，以及将什么样的数据推送到Launchpad。一些语言区分大小写(例如，土耳其语；尤其是字母L ),当SQL Server和R数据类型配对时，这可能是一个额外的挑战。此外，基于您的生态系统，身份验证也应该在设置环境中发挥重要作用。</p>
+<p class="calibre2">随着SQL Server 2016提供实时数据评分，并在SQL Server 2017中得到改进，值得一试。此外，对于机器学习服务的任何扩展使用，文件数据库可能是一种非常有用和强大的方式来存储图形和结果以供以后分析，或者存储可以暴露给Power BI、SSRS或外部应用程序的结果。如果您的业务中包含用于处理非结构化数据的filestream，这也是数据库配置需要额外关注的另一项服务。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Configuring the environment and installing R Tools for Visual Studio (RTVS)</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="190860-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">为Visual Studio配置环境和安装R Tools(RTVS)</h1>
+                
+            
+            
+                
+<p class="calibre2">安装完成后，需要执行一些安装后流程。</p>
+<p class="calibre2">必须启用外部脚本服务器，以便存储过程可以调用外部脚本。为此，对您的SQL Server实例运行以下命令，在该实例中，您安装了R服务(在数据库中):</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_configure 'show advanced options',1;</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">RECONFIGURE;</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">EXEC sp_configure 'external scripts enabled';</strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">如果您是第一次运行它，默认情况下它是禁用的，因此必须启用它；否则，将无法运行<kbd class="calibre11">sp_execute_external_script</kbd>程序:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_configure 'external scripts enabled', 1;</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">RECONFIGURE WITH OVERRIDE;</strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">您可以随时检查启用的外部脚本的<kbd class="calibre11">run_value</kbd>是否设置为1，如下所示:</p>
+<div><img class="aligncenter14" src="img/00022.gif"/></div>
+<p>图8:设置sp_configure</p>
+<p class="calibre2">如果服务器配置没有生效，您需要重新启动SQL Server服务。在服务下，找到您的<kbd class="calibre11">MSSQLSERVER</kbd>服务名并重启它(停止并启动):</p>
+<div><img src="img/00023.jpeg" class="calibre26"/></div>
+<p>图9:检查MSSQLSERVER服务</p>
+<p class="calibre2">重启<kbd class="calibre11">MSSQLSERVER</kbd>服务将自动重启所有相关服务，以及<kbd class="calibre11">MSSQLLaunchpad</kbd>服务。服务器重启后，将启用外部脚本。</p>
+<p class="calibre2">安装后过程完成后，可以设置安全性。它是可选的，因为默认的数据库读取器已经设置好了，但是，基于您公司的环境，建议您研究一下并正确设置它。</p>
+<p class="calibre2">此外，您还需要安装用于Visual Studio的<strong class="calibre1"> R工具</strong> ( <strong class="calibre1"> RTVS </strong>)。为此，需要Visual Studio 2015或更高版本，一旦安装了VS2015+，您需要从Visual Studio网站(<a href="https://www.visualstudio.com/vs/rtvs/" class="calibre10">https://www.visualstudio.com/vs/rtvs/</a>)下载RTVS本身。从那时起，安装过程非常简单，现在不需要任何进一步的说明。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Security</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="19UOO0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">安全性</h1>
+                
+            
+            
+                
+<p class="calibre2">在配置了数据库和您的生态系统中使用的任何其他设置之后，您将需要考虑安全性，即谁将有权运行<kbd class="calibre11">sp_execute_external_script</kbd>。</p>
+<p class="calibre2">您可以直接在外部过程上创建安全设置。在这种情况下，您需要向用户添加执行外部脚本的数据库权限。</p>
+<p class="calibre2">一个简单的SQL登录将如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">USE [master]</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">CREATE LOGIN [RR1] WITH PASSWORD=N'Read!2$17', DEFAULT_DATABASE=[SQLR], CHECK_EXPIRATION=ON, CHECK_POLICY=ON</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">ALTER SERVER ROLE [sysadmin] ADD MEMBER [RR1]</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">CREATE DATABASE SQLR;</strong>
+<strong class="calibre1">GO</strong>
+    
+<strong class="calibre1">USE [SQLR]</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">CREATE USER [RR1] FOR LOGIN [RR1]</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">USE [SQLR]</strong>
+<strong class="calibre1">GO</strong>
+<strong class="calibre1">ALTER USER [RR1] WITH DEFAULT_SCHEMA=[dbo]</strong>
+<strong class="calibre1">GO</strong></pre>
+<p class="calibre2">现在，让我们开始外部程序:</p>
+<pre class="calibre19">    
+<strong class="calibre1">EXECUTE AS USER = 'RR1';</strong>
+<strong class="calibre1">GO</strong>
+    
+<strong class="calibre1">EXEC sp_execute_external_script</strong>
+<strong class="calibre1">      @language = N'R'</strong>
+<strong class="calibre1">      ,@script = N'OutputDataSet&lt;- InputDataSet'</strong>
+ <strong class="calibre1">     ,@input_data_1 = N'SELECT 1 AS Numb UNION ALL SELECT 2;'</strong>
+<strong class="calibre1">WITH RESULT SETS</strong>
+<strong class="calibre1">((</strong>
+<strong class="calibre1">    Res INT</strong>
+<strong class="calibre1">))</strong>
+    
+    
+<strong class="calibre1">REVERT;</strong>
+<strong class="calibre1">GO</strong></pre>
+<p class="calibre2">错误消息将是，用户<kbd class="calibre11">RR1</kbd>没有权限:</p>
+<pre class="calibre19"><strong class="calibre1">Msg 297, Level 16, State 101, Procedure sp_execute_external_script, Line 1 [Batch Start Line 34]</strong>
+<strong class="calibre1">The user does not have permission to perform this action.</strong></pre>
+<p class="calibre2">您还必须授予数据库一个datareader角色，以便执行<kbd class="calibre11">sp_execute_external_script</kbd>命令:</p>
+<pre class="calibre19"><strong class="calibre1">USE [SQLR]
+GO
+ALTER ROLE [db_datareader] ADD MEMBER [RR1]
+GO
+</strong></pre>
+<p class="calibre2">您还应该检查是否启用了执行外部脚本:</p>
+<pre class="calibre19"><strong class="calibre1">GRANT EXECUTE ANY EXTERNAL SCRIPT TO [RR1];</strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">设置数据库角色并授予执行权限后，重新运行<kbd class="calibre11">sp_execute_external_script</kbd>过程，执行外部脚本的结果应该如下:</p>
+<div><img class="aligncenter15" src="img/00024.gif"/></div>
+<p>图10:外部过程的结果</p>
+<p class="calibre2">如何管理用户认证(Windows或SQL)和主要安全原则；应该使用本地DBA、SysAdmin和架构师来帮助您委派谁可以访问系统。</p>
+<p class="calibre2">经验法则是准备存储过程来处理不同级别的数据操作，并在存储过程级别授予访问权限。使用以下命令清理数据:</p>
+<pre class="calibre19"><strong class="calibre1">DROP USER RR1; </strong><br class="title-page-name"/><strong class="calibre1">GO </strong><br class="title-page-name"/><strong class="calibre1">USE [master]; </strong><br class="title-page-name"/><strong class="calibre1">GO </strong><br class="title-page-name"/><strong class="calibre1">DROP LOGIN RR1; </strong><br class="title-page-name"/><strong class="calibre1">GO </strong><br class="title-page-name"/><strong class="calibre1">--DROP TABLE IF EXISTS SQLR; </strong><br class="title-page-name"/><strong class="calibre1">GO</strong></pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Resource Governor</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1AT9A0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">资源调控器</h1>
+                
+            
+            
+                
+<p class="calibre2">资源调控器是R Services (in-database)的一个非常受欢迎的特性，因为它可以通过一个简单的数据集来控制服务器的工作负载，这个数据集可以通过附带的代码数据库<kbd class="calibre11">RevoTestDB</kbd>获得，它需要首先被恢复<strong class="calibre1"> : </strong></p>
+<pre class="calibre19"><strong class="calibre1">USE [master]</strong>
+<strong class="calibre1">RESTORE DATABASE [RevoTestDB] FROM  DISK = N'C:\SQLServer2017MLServicesR\CH03\RevoTestDB.bak';</strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">恢复后，我们将看到数据库的负载以及如何管理资源:</p>
+<pre class="calibre19"><strong class="calibre1">USE RevoTestDB;
+GO
+
+-- TEST query
+EXECUTE  sp_execute_external_script
+                 @language = N'R'
+                 ,@script = N'
+            library(RevoScaleR)
+f &lt;- formula(as.numeric(ArrDelay) ~ as.numeric(DayOfWeek) + CRSDepTime)
+s &lt;- system.time(mod &lt;- rxLinMod(formula = f, data = AirLine))
+            OutputDataSet &lt;-  data.frame(system_time = s[3]);'
+                ,@input_data_1 = N'SELECT * FROM AirlineDemoSmall'
+                ,@input_data_1_name = N'AirLine'
+WITH RESULT SETS ((Elapsed_time FLOAT));</strong></pre>
+<p class="calibre2">在我的计算机上使用这个测试查询，整个运行时间为21秒，从R引擎返回的运行时间为1.43秒。</p>
+<p class="calibre2">设置资源管理器来处理挑钉。为了在需要时或在运行大量数据时让执行操作运行得更快，我们需要配置外部资源池和资源池来授予资源:</p>
+<pre class="calibre19"><strong class="calibre1">-- Default value
+ALTER EXTERNAL RESOURCE POOL [default] 
+WITH (AFFINITY CPU = AUTO)
+GO
+
+CREATE EXTERNAL RESOURCE POOL RService_Resource_Pool
+WITH (  
+      MAX_CPU_PERCENT = 10  
+      ,MAX_MEMORY_PERCENT = 5
+);  
+
+ALTER RESOURCE POOL [default] WITH (max_memory_percent = 60, max_cpu_percent=90);  
+ALTER EXTERNAL RESOURCE POOL [default] WITH (max_memory_percent = 40, max_cpu_percent=10);  
+ALTER RESOURCE GOVERNOR reconfigure;
+
+ALTER RESOURCE GOVERNOR RECONFIGURE;  
+GO
+</strong></pre>
+<p class="calibre2">在最后一步中，必须创建并重新配置分类功能:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE FUNCTION RG_Class_function()
+RETURNS sysname
+WITH schemabinding
+AS  
+BEGIN  
+    IF program_name() in ('Microsoft R Host', 'RStudio') RETURN 'R_workgroup';  
+    RETURN 'default'
+    END;  
+GO  
+
+ALTER RESOURCE GOVERNOR WITH  (classifier_function = dbo.RG_Class_function);  
+ALTER RESOURCE GOVERNOR reconfigure;  
+GO
+</strong></pre>
+<p class="calibre2">之后，我可以再次运行相同的查询:</p>
+<pre class="calibre19"><strong class="calibre1">-- TEST 2 - performance normal; with governor enabled</strong>
+<strong class="calibre1">EXECUTE  sp_execute_external_script</strong>
+<strong class="calibre1">                 @language = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+<strong class="calibre1">library(RevoScaleR)</strong>
+<strong class="calibre1">f &lt;- formula(as.numeric(ArrDelay) ~ as.numeric(DayOfWeek) + CRSDepTime)</strong>
+<strong class="calibre1">s &lt;- system.time(mod &lt;- rxLinMod(formula = f, data = AirLine))</strong>
+<strong class="calibre1">OutputDataSet&lt;-  data.frame(system_time = s[3]);'</strong>
+<strong class="calibre1">,@input_data_1 = N'SELECT * FROM AirlineDemoSmall'</strong>
+<strong class="calibre1">,@input_data_1_name = N'AirLine'</strong>
+<strong class="calibre1">WITH RESULT SETS ((Elapsed_time FLOAT));</strong>  </pre>
+<p class="calibre2">最终在性能上的对比是显而易见的。在我的测试环境中，因为我将更多的CPU和RAM资源用于执行R代码，所以运行时间为3秒，R运行时间为0.63秒。客户机上的结果可能不同，但是从默认资源调控器设置到新设置的变化应该非常明显。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Installing new R packages</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1BRPS0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">安装新的R包</h1>
+                
+            
+            
+                
+<p class="calibre2">R包是一个函数的容器，这些函数与相关的二进制源代码(通常是C、C++或Fortran)、文档和样本数据一起服务于特定的目的。包是位于库文件夹中的这些文件的集合。如果您导航到您的R库文件夹，您将看到为您的R引擎安装的所有包。根据操作系统的不同，软件包也可能被称为二进制软件包或tarball。</p>
+<p class="calibre2">包不等同于库，也不应该被误认为是库。在R语言中，当安装一个包时，使用命令<kbd class="calibre11">install.packages</kbd>。<kbd class="calibre11">library()</kbd>是一个将特定包中的函数加载到R环境中的函数。源自Windows OS的共享对象被称为<strong class="calibre1">动态链接库</strong>(<strong class="calibre1">dll</strong>)。因此，使用了库这个词，它指的是公共的和共享的对象。因此，要将一个包加载到您的R环境中，需要使用函数<kbd class="calibre11">library()</kbd>,用括号指定包的名称。</p>
+<p class="calibre2">在R脚本中引用R库超级容易；只需添加库或使用<kbd class="calibre11">require()</kbd>方法。但是在系统中，首先必须安装库。</p>
+<p class="calibre2">库是通过安装公共存储库中可用的软件包来安装的，例如CRAN、Biocondutor、GitHub和MRAN(微软存储库)。在R语言中，通过调用以下命令来安装库:</p>
+<pre class="calibre19"><strong class="calibre1">install.packages("Package_Name")</strong>  </pre>
+<p class="calibre2">在SQL Server 2016中，无法通过运行带有外部存储过程的R脚本来安装此类包，并且代码返回错误，如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">--Install Package using sp_execute_external_script</strong>
+<strong class="calibre1">EXECUTE sp_execute_external_script</strong>
+<strong class="calibre1">       @language = N'R'</strong>
+<strong class="calibre1">,@script = N'install.packages("AUC")'</strong>  </pre>
+<p class="calibre2">这段T-SQL代码返回一个错误，说这个包不可用于我的R版本。但是，我们稍后将看到如何安装同一个软件包:</p>
+<div><img class="aligncenter16" src="img/00025.jpeg"/></div>
+<p>图11:安装AUC包时的警告消息</p>
+<p class="calibre2">因此，我们可以扩展原始存储过程，如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">EXECUTE sp_execute_external_script
+        @language = N'R'
+,@script = N'   library(Hmisc)
+               u &lt;- unlist(rcorr(Customers_by_invoices$InvoiceV, Customers_by_invoices$CustCat, type="spearman"))
+statistical_significance&lt;-as.character(u[10])
+OutputDataSet &lt;- data.frame(statistical_significance)'
+
+,@input_data_1 = N'SELECT
+SUM(il.Quantity) AS InvoiceQ
+,SUM(il.ExtendedPrice) AS InvoiceV
+,c.CustomerID AS Customer
+,c.CustomerCategoryID AS CustCat
+
+                                         FROM sales.InvoiceLines AS il
+                                         INNER JOIN sales.Invoices AS i
+                                         ON il.InvoiceID = i.InvoiceID
+                                         INNER JOIN sales.Customers AS c
+                                         ON c.CustomerID = i.CustomerID
+                                         GROUP BY
+c.CustomerID
+,c.CustomerCategoryID'
+
+,@input_data_1_name = N'Customers_by_invoices'
+
+WITH RESULT SETS (( statistical_significance FLOAT(20) ));
+GO
+</strong></pre>
+<p class="calibre2">如果我们这样做，我们将能够计算两个变量之间相关性的统计显著性。这里的要点是，我们用适当的包名来引用R函数<kbd class="calibre11">library(Hmisc)</kbd>。以下是脚本的详细部分:</p>
+<pre class="calibre19"><strong class="calibre1">-- part of R script with reference to call method library</strong>
+<strong class="calibre1">,@script = N'   library(Hmisc)</strong>
+<strong class="calibre1">                 u &lt;- unlist(rcorr(Customers_by_invoices$InvoiceV, Customers_by_invoices$CustCat, type="spearman"))</strong>
+<strong class="calibre1">statistical_significance &lt;-as.character(u[10])</strong>
+<strong class="calibre1">OutputDataSet &lt;- data.frame(statistical_significance)'</strong>  </pre>
+<p class="calibre2">当提到一个库时，我们需要已经预装了这个包；否则，您将收到一条错误消息，指出该包不存在。如果您拼错了包名，将会收到同样的错误，并且由于R语言是区分大小写的，在<kbd class="calibre11">Hmisc</kbd>包的情况下，当错误地将其键入为<kbd class="calibre11">hmisc</kbd>(没有大写字母<kbd class="calibre11">H</kbd>)时，将会出现错误:</p>
+<div><img class="aligncenter17" src="img/00026.jpeg"/></div>
+<p>图12</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Package information</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1CQAE0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">包装信息</h1>
+                
+            
+            
+                
+<p class="calibre2">包总是保存在<kbd class="calibre11">library</kbd>文件夹中，但是根据您的R版本(Open、Client或Server), SQL Server实例名称和路径可能会有所不同。</p>
+<p class="calibre2">通常，客户端或服务器版本会将库存储在主驱动器上。对于客户端版本，默认路径是<kbd class="calibre11">C:\Program Files\Microsoft\R Client\R_SERVER\library</kbd>。可以在下面的截图中看到文件夹内容:</p>
+<div><img class="aligncenter18" src="img/00027.jpeg"/></div>
+<p>图13</p>
+<p class="calibre2">在R Server版本中，您将在默认SQL Server实例的路径中找到库:<kbd class="calibre11">C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\R_SERVICES\library</kbd>。以下是服务器安装的内容:</p>
+<div><img class="aligncenter19" src="img/00028.jpeg"/></div>
+<p>图14</p>
+<p class="calibre2">子文件夹代表已安装和可用的软件包的名称。要找到包的默认路径，可以执行以下代码:</p>
+<pre class="calibre19"><strong class="calibre1">-- Path to libraries on your computer/server</strong>
+<strong class="calibre1">EXECUTE sp_execute_external_script</strong>
+<strong class="calibre1">       @language = N'R'</strong>
+<strong class="calibre1">,@script = N'OutputDataSet &lt;- data.frame(.libPaths());'</strong>
+<strong class="calibre1">WITH RESULT SETS (([DefaultLibraryName] VARCHAR(MAX) NOT NULL));</strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">在我的例子中，下面是R Server edition中R包的默认路径:</p>
+<div><img class="aligncenter20" src="img/00029.jpeg"/></div>
+<p>图15</p>
+<p class="calibre2">使用R函数<kbd class="calibre11">installed.packages()</kbd>可以检索更多的信息。在此示例中，我们提取了有关包的更多信息，并将这些信息插入到SQL Server表中:</p>
+<pre class="calibre19"><strong class="calibre1">-- You can create a table for libraries and populate all the necessary information
+CREATE TABLE dbo.Libraries
+       (
+               ID INT IDENTITY NOT NULL CONSTRAINT PK_RLibraries PRIMARY KEY CLUSTERED
+,Package NVARCHAR(50)
+,LibPath NVARCHAR(200)
+,[Version] NVARCHAR(20)
+,Depends NVARCHAR(200)
+,Imports NVARCHAR(200)
+,Suggests NVARCHAR(200)
+,Built NVARCHAR(20)
+       )
+
+INSERT INTO dbo.Libraries
+EXECUTE sp_execute_external_script
+              @language = N'R'
+,@script=N'x &lt;- data.frame(installed.packages())
+OutputDataSet &lt;- x[,c(1:3,5,6,8,16)]'
+
+
+SELECT * FROM dbo.Libraries
+DROP TABLE dbo.Libraries
+</strong></pre>
+<p class="calibre2">通过查询这个表，您可以在一次执行<kbd class="calibre11">sp_execute_external_script</kbd>中获得关于库依赖、版本、导入和构建的信息:</p>
+<div><img class="aligncenter21" src="img/00030.jpeg"/></div>
+<p>图16</p>
+<p class="calibre2">在下面，我们将探索如何安装缺失的R包。对于SQL Server 2016，有几种方法(官方或非官方)可以解决这个问题，而对于SQL Server 2017，我们有一种使用<kbd class="calibre11">rxInstall</kbd>包或创建外部库的优雅方式。SQL Server 2017中引入的两种新方法都是更好、更安全、更快速的安装缺失包的方法。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using R Tools for Visual Studio (RTVS) 2015 or higher</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1DOR00-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用R Tools for Visual Studio(RTVS)2015或更高版本</h1>
+                
+            
+            
+                
+<p class="calibre2">对于SQL Server 2016，微软建议通过RTVS安装缺失的软件包。为了安装软件包，用户应该已经在客户端上安装了RTVS(<a href="https://www.visualstudio.com/vs/rtvs/" class="calibre10">https://www.visualstudio.com/vs/rtvs/</a>)。检查默认路径:</p>
+<pre class="calibre19"><strong class="calibre1">sessionInfo()</strong>
+<strong class="calibre1">.libPaths()</strong>  </pre>
+<p class="calibre2">这也返回了我机器上库文件夹的路径——对于R服务器(默认为<kbd class="calibre11">C:/Program Files/Microsoft SQL Server/MSSQL14.MSSQLSERVER/R_SERVICES/library</kbd>)和当前使用RTVS的用户(<kbd class="calibre11">C:/Users/Tomaz/Documents/R/win-library/3.2</kbd>):</p>
+<div><img src="img/00031.jpeg" class="calibre27"/></div>
+<p>图17</p>
+<p class="calibre2">检查选项...部分:</p>
+<div><img src="img/00032.jpeg" class="calibre28"/></div>
+<p>图18</p>
+<p class="calibre2">然后选择R工具|高级(如下所示):</p>
+<div><img class="aligncenter22" src="img/00033.jpeg"/></div>
+<p>图19</p>
+<p class="calibre2">您将看到R引擎已经定义了一个路径。这个路径是安装R包的根路径。r包安装在子文件夹-library ( <kbd class="calibre11">C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\R_SERVICES\Library</kbd>)下。</p>
+<p class="calibre2">因此，通过运行<kbd class="calibre11">install.packages("AUC")</kbd>，我可以看到服务器路径被忽略，库被安装到用户指定的文件夹中:</p>
+<div><img class="aligncenter23" src="img/00034.jpeg"/></div>
+<p>图20</p>
+<p class="calibre2">要在R Server文件夹中安装软件包，您需要拥有管理员级别的访问权限，或者让管理员为您完成这项工作。微软已经在MSDN上讨论了这个问题(<a href="https://docs.microsoft.com/en-us/sql/advanced-analytics/r/installing-and-managing-r-packages" class="calibre10">https://docs . Microsoft . com/en-us/SQL/advanced-analytics/r/installing-and-managing-r-packages</a>)。以管理员身份运行Visual Studio和RTVS不会改变结果。为了避免这个问题，您需要声明要安装软件包的R服务器的library文件夹的路径:</p>
+<pre class="calibre19"><strong class="calibre1">install.packages("AUC", dependencies = TRUE, lib = "C:/Program Files/Microsoft SQL Server/MSSQL14.MSSQLSERVER/R_SERVICES/library")</strong>  </pre>
+<p class="calibre2">该软件包将自动安装在R Server repository文件夹中:</p>
+<div><img src="img/00035.jpeg" class="calibre27"/></div>
+<p>图21</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using R.exe in CMD</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1ENBI0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">在CMD中使用R.exe</h1>
+                
+            
+            
+                
+<p class="calibre2">在R服务器(<kbd class="calibre11">C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\R_SERVICES\bin</kbd>)的二进制文件夹中以管理员身份执行<kbd class="calibre11">R.exe</kbd>时，会有一个命令窗口提示你:</p>
+<div><img class="aligncenter24" src="img/00036.jpeg"/></div>
+<p>图22</p>
+<p class="calibre2">从那里，用户总是可以安装丢失的软件包。</p>
+<pre class="calibre19"><strong class="calibre1">install.packages("AUC")</strong>  </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using XP_CMDSHELL</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1FLS40-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用XP_CMDSHELL</h1>
+                
+            
+            
+                
+<p class="calibre2">到目前为止，这种方法是最快的，在共享T-SQL代码时非常有用，但它会影响命令shell的使用，许多用户和DBA对此并不感兴趣。通过在配置中启用<kbd class="calibre11">xp_cmdshell</kbd>并使用这个存储过程，您可以安装任何缺失的包。使用带有<kbd class="calibre11">-e</kbd>开关的代码，您可以轻松安装库:</p>
+<pre class="calibre19"><strong class="calibre1">R cmd -e install.packages("Hmisc")</strong>  </pre>
+<p class="calibre2">以下代码将在R服务器上安装缺失的软件包:</p>
+<pre class="calibre19"><strong class="calibre1">-- enable xp_cmdshell</strong>
+<strong class="calibre1">EXECUTE SP_CONFIGURE 'xp_cmdshell','1';</strong>
+<strong class="calibre1">GO</strong>
+    
+<strong class="calibre1">RECONF</strong><strong class="calibre1">IGURE;</strong>
+<strong class="calibre1">GO </strong>
+<strong class="calibre1">EXEC xp_cmdshell '"C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\R_SERVICES\bin\R.EXE"cmd -e</strong></pre>
+<pre class="calibre19"><strong class="calibre1">install.packages(''Hmisc'')';   </strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">运行Vanilla R并添加<kbd class="calibre11">install.packages()</kbd>函数可以在用户被授予权限的情况下完成。结果如下:</p>
+<div><img src="img/00037.jpeg" class="calibre29"/></div>
+<p>图23</p>
+<p class="calibre2">使用CMD和<kbd class="calibre11">-e</kbd>开关，可以执行和简化R代码的部署和计算，但由于这不是一种正式的方式，我不建议使用它，因为它会暴露安全问题。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Copying files</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1GKCM0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">复制文件</h1>
+                
+            
+            
+                
+<p class="calibre2">乍一看，复制文件可能听起来有点奇怪，但是对于大多数包来说，将整个库文件夹复制到目标文件夹也可以完成这项工作。想象一下，作为一名系统管理员，负责配置一个新的R环境或沙箱。在这种情况下，您不希望运行数百行代码来安装所有需要的包；因此，您只需从映像或备份中复制/粘贴文件夹。这会快一百倍，也方便得多。此外，这些包已经用R引擎测试过了。</p>
+<p class="calibre2">使用简单的复制/粘贴、拖放操作，我在我的R客户机环境中复制并安装了<kbd class="calibre11">acepack</kbd>包(从R服务器复制):</p>
+<div><img class="aligncenter25" src="img/00038.jpeg"/></div>
+<p>图24</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using the rxInstallPackages function</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1HIT80-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用rxInstallPackages函数</h1>
+                
+            
+            
+                
+<p class="calibre2">随着SQL Server R Services for SQL Server 2017的新版本，一个非常需要的R函数——在<kbd class="calibre11">RevoScaleR</kbd>包中——已经公开可用。通过<kbd class="calibre11">rxInstallPackages</kbd>功能，用户将能够为所需的计算环境安装任何额外的R包。</p>
+<p class="calibre2">使用下面的代码，可以真正加快软件包的安装速度，而不用担心变通方法、打开额外的工具或其他任何事情。</p>
+<p class="calibre2">来自RTVS的运行代码如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">RSQLServicesCC &lt;- RxInSqlServer(connectionString = "Driver=SQL Server;Server=myServer;Database=TestDB;Trusted_Connection=True;")</strong>
+    
+<strong class="calibre1">rxInstallPackages("AUC", verbose = TRUE, scope = "private", computeContext = RSQLServicesCC)</strong>  </pre>
+<p class="calibre2">从SQL Server运行相同的代码如下:</p>
+<pre class="calibre19"><strong class="calibre1">EXECUTE sp_execute_external_script </strong><br class="title-page-name"/><strong class="calibre1">      @language = N'R' </strong><br class="title-page-name"/><strong class="calibre1">           ,@script = N'</strong><br class="title-page-name"/><br class="title-page-name"/><strong class="calibre1">            packagesToInstall &lt;- c("caret","tree","party") library(MicrosoftML) </strong><br class="title-page-name"/><strong class="calibre1">            RSqlServerCC &lt;- RxInSqlServer(connectionString = "Driver=SQL Server; +Server=SICN-KASTRUN\\SQLSERVER2017C2;Database=SQLR; +Trusted_Connection=True;") </strong><br class="title-page-name"/><strong class="calibre1">            rxInstallPackages(pkgs = packagesToInstall, owner = '', +scope = "shared", computeContext = "SqlServerCC");'; </strong><br class="title-page-name"/><strong class="calibre1">GO</strong></pre>
+<p class="calibre2">这太容易了，不可能是真的，但它是真的。确保在运行这段代码之前做几件事情:</p>
+<ul class="calibre7">
+<li class="calibre8">将计算环境设置为软件包的安装位置</li>
+<li class="calibre8">设置正确的权限和访问</li>
+<li class="calibre8">检查TCP/IP协议</li>
+</ul>
+<p class="calibre2">在<kbd class="calibre11">rxInstallPackages</kbd>功能中，使用<kbd class="calibre11">computeContext</kbd>参数设置<kbd class="calibre11">Local</kbd>或您的<kbd class="calibre11">SqlServer</kbd>环境；您还可以将作用域作为共享或私有使用(区别在于，如果您将一个包作为共享安装，它可以由不同数据库中的不同用户使用)。如果您从<kbd class="calibre11">db_owner</kbd>角色运行这个命令，您也可以指定所有者。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Managing SQL Server R Services with PowerShell</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1IHDQ0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用PowerShell管理SQL Server R服务</h1>
+                
+            
+            
+                
+<p class="calibre2">PowerShell对于管理远程机器、虚拟机甚至Azure VM机器非常有用。除了这种常见的行政工作，它还有许多其他积极和有益的好处。</p>
+<p class="calibre2">用户可以列出、计划或处理任何任务计划的作业或SQL Server作业，具体取决于您需要运行什么作业，以及如何运行，比如说每天获取数据或重新计算和初始化预测模型，甚至运行模型。</p>
+<p class="calibre2">PowerShell的另一个非常有用的方面是不同环境和系统中的API通信。</p>
+<p class="calibre2">对于系统管理员来说，PowerShell对于在客户机之间甚至在R Server服务器之间分发和维护任何额外的R包将非常有用。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Getting to know the sp_execute_external_script external procedure</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1JFUC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">了解sp_execute_external_script外部过程</h1>
+                
+            
+            
+                
+<p class="calibre2"><kbd class="calibre11">SP_EXECUTE_EXTERNAL_SCRIPT</kbd>是一个存储过程，它将提供的脚本作为外部脚本的参数执行给提供的语言(在本例中是R语言)。SQL Server 2017还支持Python，据说将来还会支持其他语言，如Java、C#和C++(通过Launchpad)。</p>
+<p class="calibre2"><kbd class="calibre11">sp_execute_external_script</kbd>是一个系统过程，调用并向外部引擎发送传递的代码，并将结果以表格的形式返回给SQL Server。脚本有一组参数，将导航到T-SQL代码和R引擎的数据，包括R代码。</p>
+<p class="calibre2">以下是可用的参数:</p>
+<pre class="calibre19"><strong class="calibre1">sp_execute_external_script</strong>
+<strong class="calibre1">     @language = N''</strong>
+<strong class="calibre1">,@script = N'',  </strong>
+<strong class="calibre1">,@input_data_1 =  'input_data_1'</strong>
+<strong class="calibre1">,@input_data_1_name =  N'input_data_1_name'</strong>
+<strong class="calibre1">,@output_data_1_name = 'output_data_1_name'</strong>
+<strong class="calibre1">,@parallel = 0 | 1   </strong>
+<strong class="calibre1">,@params =  N''</strong>
+<strong class="calibre1">,@parameter1 = ''</strong>  </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Arguments</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1KEEU0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">争论</h1>
+                
+            
+            
+                
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">@language</kbd>:指定在外部程序中使用哪种语言。对于SQL Server 2016，R语言可用，对于SQL Server 2017，Python可用。该参数属于<kbd class="calibre11">sysname</kbd>内置数据类型，长度限制为128个Unicode字符。这就是为什么我们在值的前面使用N，来表示<kbd class="calibre11">nvarchar</kbd>类型。</li>
+<li class="calibre8"><kbd class="calibre11">@script</kbd>:原生R或Python代码通过这个参数传递给Launchpad服务。这个外部代码(SQL Server外部的)必须经过验证和正确格式化(仅在Python的情况下)，因为SSMS或RTVS不会验证这个参数。因此，最简单的方法就是使用Visual Studio，在RTVS中验证你的R代码，或者用<strong class="calibre1">Python Tools for Visual Studio</strong>(<strong class="calibre1">PTVS</strong>)验证你的Python代码。该字段属于<kbd class="calibre11">nvarchar</kbd>类型。</li>
+<li class="calibre8"><kbd class="calibre11">@input_data_1</kbd>:这将您的T-SQL代码作为外部过程的数据源。该代码将由SSMS或VS进行验证和检查。该字段也是<kbd class="calibre11">nvarchar</kbd>类型，可以执行任何T-SQL代码。由于外部引擎(R语言)的限制，可以输入的数据类型有一些限制。与SQL Server 2016相比，R语言本身支持的数据类型更少。支持的数据类型有逻辑、数值、整数、复杂、字符和原始。因此，很快就可以看出，下面的数据类型(除非转换成R数据类型)会带来一些问题。让我们只陈述几个SQL Server数据类型:<ul class="calibre17">
+<li class="calibre8"><kbd class="calibre11">Cursor</kbd></li>
+</ul>
+<ul class="calibre17">
+<li class="calibre8"><kbd class="calibre11">Timestamp</kbd>(哈希格式不是日期时间格式)</li>
+<li class="calibre8"><kbd class="calibre11">Datetime2</kbd>、<kbd class="calibre11">datetimeoffset</kbd>、<kbd class="calibre11">time</kbd></li>
+<li class="calibre8">所有Unicode文本数据类型:<kbd class="calibre11">nvarchar</kbd>、<kbd class="calibre11">nchar</kbd>、<kbd class="calibre11">ntext</kbd></li>
+<li class="calibre8"><kbd class="calibre11">Sql_variant</kbd></li>
+<li class="calibre8"><kbd class="calibre11">Text</kbd>，<kbd class="calibre11">image</kbd></li>
+<li class="calibre8"><kbd class="calibre11">XML</kbd>(包括JSON，因为它是SQL Server 2017中的XML数据类型格式)</li>
+<li class="calibre8"><kbd class="calibre11">Hierarchy</kbd>、<kbd class="calibre11">geometry</kbd>、<kbd class="calibre11">geography</kbd></li>
+<li class="calibre8">使用。NET框架或任何Launchpad服务支持的语言</li>
+</ul>
+</li>
+</ul>
+<p class="calibre2">除了一些数据类型的限制之外，还有一些T-SQL子句和语句不能用作输入数据参数的一部分。这些措施如下:</p>
+<ul class="calibre7">
+<li class="calibre8">存储过程(UDF、表值函数)</li>
+<li class="calibre8">逻辑<kbd class="calibre11">IF</kbd>和<kbd class="calibre11">WHILE</kbd>、<kbd class="calibre11">FOR</kbd>循环</li>
+<li class="calibre8">临时变量或表</li>
+<li class="calibre8">没有更新、插入或删除(仅选择)</li>
+<li class="calibre8"><kbd class="calibre11">GO</kbd>语句或分号</li>
+<li class="calibre8"><kbd class="calibre11">OUTPUT</kbd>来自和DML语句的子句</li>
+<li class="calibre8">引用任何游标</li>
+</ul>
+<p class="calibre2">可以使用以下语句(除了<kbd class="calibre11">SELECT</kbd>语句之外):</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">SELECT</kbd>带多个<kbd class="calibre11">JOINS</kbd></li>
+<li class="calibre8"><kbd class="calibre11">WITH</kbd>常见表情</li>
+<li class="calibre8"><kbd class="calibre11">UNION</kbd>、<kbd class="calibre11">UNIONALL</kbd>、<kbd class="calibre11">EXCEPT</kbd>、<kbd class="calibre11">INTERSECT</kbd></li>
+<li class="calibre8">任何<kbd class="calibre11">SET</kbd>、<kbd class="calibre11">STRING</kbd>、<kbd class="calibre11">LOGICAL</kbd>、<kbd class="calibre11">COMPARISON</kbd>、<kbd class="calibre11">BITWISE</kbd>、<kbd class="calibre11">ARITHMETIC</kbd>、<kbd class="calibre11">COMPOUND</kbd>操作员</li>
+<li class="calibre8">
+<p class="calibre9"><kbd class="calibre11">COLLATE</kbd></p>
+</li>
+</ul>
+<p class="calibre2">正如已经提到的DML语句，<kbd class="calibre11">@input_data_1</kbd>自变量也不支持任何DDL语句或子句。</p>
+<p class="calibre2">为了避免T-SQL语言和外部脚本之间的数据类型冲突，最佳实践是在将所需数据集放入参数之前，尽可能多地进行数据准备、争论和优化。此外，转换到R closed数据类型会损害许多限制。</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">@input_data_1_name</kbd>:它保存了将在R脚本中用作输入数据集的数据集的名称。默认情况下，外部程序<kbd class="calibre11">sp_execute_external_script</kbd>将使用以下内容:- <kbd class="calibre11">InputDataSet</kbd>输入数据和- <kbd class="calibre11">OutputDataSet</kbd>返回结果数据(两者均为默认值)。请注意，R语言是区分大小写的，所以在这个参数中提供的数据集名称也必须以相同的方式用R代码编写。</li>
+<li class="calibre8"><kbd class="calibre11">@output_data_1_name</kbd>:该参数将外部脚本返回结果的定义保存为返回给任何存储过程的变量。返回的数据集必须是R语言中的<kbd class="calibre11">data.frame</kbd>格式。Data.frame是一组向量，是表的一种表示形式，T-SQL Server可以导入该表，并将其进一步用于任何其他T-SQL子句或语句:或者它可以将结果直接存储到SQL Server表中。该参数是一个<kbd class="calibre11">sysname</kbd>数据类型。</li>
+<li class="calibre8"><kbd class="calibre11">@parallel</kbd>:这是一个显式地告诉R引擎在R中并行化计算的参数。该参数已在SQL Server 2016 (SP/CU)的更高版本中引入，并且非常受任何类型的R代码、函数或包的欢迎，这些代码、函数或包不使用针对<kbd class="calibre11">RevoScaleR</kbd>计算函数的并行性。当然，对于琐碎的R脚本和大型输入数据集来说，这是正确的。如果特定R包本身是用C++(而不是最初的Fortran)编写的，并且如果R脚本不包括相对复杂的数据争论/咀嚼指令，特别是<kbd class="calibre11">plyr</kbd> / <kbd class="calibre11">dplyr</kbd>或<kbd class="calibre11">data.table</kbd>函数的and，那么来自该包的R函数将提供更好的性能结果。记住越简单越好。</li>
+</ul>
+<p class="calibre2">要检查工作负载是否可以并行分布，只需观察执行计划，并在运行T-SQL代码时查找计划中的并行度。另请注意，MAXDOP的任何本地设置也会对所需的并行度产生影响。换句话说，如果MAXDOP关闭，并且您设置了您的参数<kbd class="calibre11">@parallel = 1</kbd>，不要期望太多的分布式工作负载，因为并行性在默认情况下是关闭的。</p>
+<p class="calibre2">当运行和使用<kbd class="calibre11">RevoScaleR</kbd>包中可用的任何计算函数时，Launchpad将使用R Server或SQL Server R Services中可用的distribute R函数自动处理并行性。</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">@params</kbd>:这是一个参数，其中任何附加变量都可以声明并指定为可在R脚本中使用的变量。这些参数可以指定为输入或输出，在将预测模型输入到R代码中或从R代码中导出附加信息(除了指定的结果集)时非常方便。使用此参数作为输出可以返回单个值/列，而不是表。</li>
+<li class="calibre8"><kbd class="calibre11">@parameter1</kbd>:这是一个参数，在R脚本中以输入或输出变量的形式指定和使用参数值。</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Summary</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1LCVG0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">摘要</h1>
+                
+            
+            
+                
+<p class="calibre2">本章介绍了机器学习服务(数据库内)的安装、服务的配置以及如何管理服务。它还探讨了缺失包的安装，并介绍了安全性和资源调控器。在最后一节，本章还解释了如何使用外部过程和带有所有参数的<kbd class="calibre11">sp_execute_external_script</kbd>。通过深入研究安全问题和缺失包的安装，已经讨论了几个例子。缺失包的安装严重依赖于SQLServerCentral中的项目。</p>
+<p class="calibre2">对机器学习服务和使用外部过程的介绍将是所有后续章节的基础，这些章节在很大程度上依赖于对配置和使用该过程的良好理解。</p>
+
+
+            
+
+            
+        
+    </body></html>
+</body></html>

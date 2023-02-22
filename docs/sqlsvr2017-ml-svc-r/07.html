@@ -1,0 +1,1510 @@
+<html><head/><body>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Operationalizing R Code</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="318PC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">操作化R代码</h1>
+                
+            
+            
+                
+<div><p class="calibre2">在前一章中，您已经学习了预测建模的基本知识，并探索了<kbd class="calibre11">RevoScaleR</kbd>包中提供的高级预测算法，现在是学习如何操作它的好时机。本章讨论如何在SQL Server 2016和SQL Server 2017中操作R预测模型。</p>
+<p class="calibre2">将SQL Server和机器学习结合起来的想法是为了让分析贴近数据，并消除成本和安全风险。此外，使用Microsoft R库有助于提高R解决方案的规模和性能。</p>
+<p class="calibre2">本章概述了将R预测模型操作化到集成在SQL Server中的强大工作流中的步骤。首先，我们将讨论使用可扩展性框架、原生评分(SQL Server 2017)和实时评分将现有R模型集成到SQL Server的概念。然后，我们将讨论如何管理角色和权限以在SQL Server中运行R模型。您还将了解如何使用正确的工具在SQL Server中操作R模型，以及如何将R模型作为工作流、PowerShell、SQL Server代理作业和SSIS的一部分来执行。</p>
+</div>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating an existing R model</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3279U0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">集成现有的R模型</h1>
+                
+            
+            
+                
+<p class="calibre2">本节将生成R模型并针对SQL Server数据集运行的现有R代码引入工作流，在工作流中可以定期刷新和评估模型，然后用于预测分析。下图显示了R脚本中的典型预测建模工作流:</p>
+<div><img src="img/00108.jpeg" class="calibre73"/></div>
+<p>图7.1:典型的预测建模工作流程</p>
+<p class="calibre2">要将该脚本集成到SQL Server中，您需要将工作流组织成三个步骤:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">为培训准备数据</li>
+<li value="2" class="calibre8">使用T-SQL定型并保存模型</li>
+<li value="3" class="calibre8">将模型付诸实施</li>
+</ol>
+<p class="calibre2">在本节中，最后两步将使用<kbd class="calibre11">sp_execute_external_script</kbd>，它调用一个R流程。这些步骤使用了SQL Server可扩展性框架，稍后将对此进行描述。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Prerequisite – prepare the data</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="335QG0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">先决条件-准备数据</h1>
+                
+            
+            
+                
+<p class="calibre2">我们将使用来自<em class="calibre12"> R:针对SQL开发人员的数据库内分析</em>教程的纽约市出租车样本数据，如<a href="https://github.com/Microsoft/sql-server-samples/blob/master/samples/features/r-services/predictive-analytics/scripts/Lab.md" class="calibre10">https://github . com/Microsoft/SQL-server-samples/blob/master/samples/features/R-services/predictive-Analytics/scripts/lab . MD</a>中所述。</p>
+<p class="calibre2">您也可以从Packt代码文件库中下载<kbd class="calibre11">nyctaxi_sample.csv</kbd>文件，并执行下面的<kbd class="calibre11">bcp</kbd>命令:</p>
+<pre class="calibre19"><strong class="calibre1">bcp &lt;database name&gt;.dbo.nyctaxi_sample in &lt;file path&gt; -c -t, -T -S&lt;server name&gt;</strong></pre>
+<p class="calibre2">其中:</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">&lt;database name&gt;</kbd>是数据库的名称</li>
+<li class="calibre8"><kbd class="calibre11">&lt;file path&gt;</kbd>是<kbd class="calibre11">nyctaxi_sample.csv</kbd>文件的位置</li>
+<li class="calibre8"><kbd class="calibre11">&lt;server name&gt;</kbd>是您的服务器名。</li>
+</ul>
+<p class="calibre2">举个例子:</p>
+<pre class="calibre19"><strong class="calibre1">bcp NYCTaxi.dbo.nyctaxi_sample in c:\nyctaxi_sample.csv -c -t, -T -SMsSQLGirl</strong></pre>
+<p class="calibre2">在这种情况下，目标是预测倾翻的可能性。作为该过程的一部分，我们将创建一个逻辑回归模型，以及该模型的<strong class="calibre1">受试者操作特征</strong> ( <strong class="calibre1"> ROC </strong>)曲线及其曲线下的<strong class="calibre1">面积</strong> ( <strong class="calibre1"> AUC </strong>)。ROC是诊断测试的各种阈值点的真阳性率对假阳性率的图。曲线越接近ROC空间的对角线，测试越不准确。</p>
+<p class="calibre2">曲线越靠近左边界和上边界，就越精确。AUC以数字形式提供准确性测试。幸运的是，ROC图和AUC值都可以很容易地用r计算出来。</p>
+<p class="calibre2">一旦我们确信模型足够准确，我们就可以分享它，并根据提供的输入信息，重新使用它来预测出租车司机是否会被小费。</p>
+<p class="calibre2">以下是我们将用于训练的纽约市出租车数据集的表定义:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE TABLE [dbo].[nyctaxi_sample]( 
+   [medallion] [varchar](50) NOT NULL, 
+   [hack_license] [varchar](50) NOT NULL, 
+   [vendor_id] [char](3) NULL, 
+   [rate_code] [char](3) NULL, 
+   [store_and_fwd_flag] [char](3) NULL, 
+   [pickup_datetime] [datetime] NOT NULL, 
+   [dropoff_datetime] [datetime] NULL, 
+   [passenger_count] [int] NULL, 
+   [trip_time_in_secs] [bigint] NULL, 
+   [trip_distance] [float] NULL, 
+   [pickup_longitude] [varchar](30) NULL, 
+   [pickup_latitude] [varchar](30) NULL, 
+   [dropoff_longitude] [varchar](30) NULL, 
+   [dropoff_latitude] [varchar](30) NULL, 
+   [payment_type] [char](3) NULL, 
+   [fare_amount] [float] NULL, 
+   [surcharge] [float] NULL, 
+   [mta_tax] [float] NULL, 
+   [tolls_amount] [float] NULL, 
+   [total_amount] [float] NULL, 
+   [tip_amount] [float] NULL, 
+   [tipped] [int] NULL, 
+   [tip_class] [int] NULL 
+) ON [PRIMARY] 
+GO</strong> </pre>
+<p class="calibre2">我们可以用几个变量来分析出租车司机被小费的可能性。正如您在前一章中所了解到的，您会想要尝试一些变量和算法来确定哪一个更准确。这可能涉及到一些迭代过程，这就是数据科学的魅力所在——您不断地进行实验。</p>
+<p class="calibre2">首先，让我们使用以下变量:</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">变量</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">类型</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">栏目名称</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">出租车司机得到小费(是/否)</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">输出</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">tipped</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">乘客数量</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">投入</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">passenger_count</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">以秒为单位的行程时间</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">投入</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">trip_time_in_seconds</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">出租车计价器显示的行程距离</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">投入</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">trip_distance</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">基于两个位置之间的经度和纬度的直接距离</p>
+</td>
+<td class="calibre22">
+<p class="calibre2">投入</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">pickup_longitude</kbd></p>
+<p class="calibre2"><kbd class="calibre11">pickup_latitude</kbd></p>
+<p class="calibre2"><kbd class="calibre11">dropoff_longitude</kbd></p>
+<p class="calibre2"><kbd class="calibre11">dropoff_latitude</kbd></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="calibre2"> </p>
+<p class="calibre2">为了更容易计算直接距离，让我们定义以下函数:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE FUNCTION [dbo].[fnCalculateDistance]  
+(@Lat1 FLOAT, @Long1 FLOAT, @Lat2 FLOAT, @Long2 FLOAT) 
+-- User-defined function calculate the direct distance  
+-- between two geographical coordinates. 
+RETURNS FLOAT 
+AS 
+BEGIN 
+  DECLARE @distance DECIMAL(28, 10) 
+  -- Convert to radians 
+  SET @Lat1 = @Lat1 / 57.2958 
+  SET @Long1 = @Long1 / 57.2958 
+  SET @Lat2 = @Lat2 / 57.2958 
+  SET @Long2 = @Long2 / 57.2958 
+  -- Calculate distance 
+  SET @distance = (SIN(@Lat1) * SIN(@Lat2)) + (COS(@Lat1) * COS(@Lat2) * COS(@Long2 - @Long1)) 
+  --Convert to miles 
+  IF @distance &lt;&gt; 0 
+  BEGIN 
+    SET @distance = 3958.75 * ATAN(SQRT(1 - POWER(@distance, 2)) / @distance); 
+  END 
+  RETURN @distance 
+END</strong> </pre>
+<p class="calibre2">这是我们希望存储在数据库中的已训练预测模型的表定义。将训练好的预测模型存储在表中的一个优点是，我们可以在以后轻松地重用它，并且可以对我们的实验进行版本控制。</p>
+<p class="calibre2">请注意，有一个专栏叫做<kbd class="calibre11">IsRealTimeScoring</kbd>。SQL Server 2017增加了实时评分的新功能，这将在<em class="calibre12">集成R模型进行实时评分</em>一节中讨论。如果您使用的是SQL Server 2016，请忽略此值:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE TABLE [dbo].[NYCTaxiModel]( 
+   [Model] VARBINARY(MAX) NOT NULL, 
+   [AUC] FLOAT NULL, 
+   [CreatedOn] DATETIME NOT NULL 
+         CONSTRAINT DF_NYCTaxiModel_CreatedOn DEFAULT (GETDATE()), 
+   [IsRealTimeScoring] BIT NOT NULL  
+         CONSTRAINT DF_NYCTaxiModel_IsRealTimeScoring DEFAULT (0) 
+) ON [PRIMARY] </strong> </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Step 1 – Train and save a model using T-SQL</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="344B20-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">步骤1–使用T-SQL训练并保存模型</h1>
+                
+            
+            
+                
+<p class="calibre2">在这一步中，您可以通过存储过程在表中创建一个预测模型(以及可选的分数)。这背后的动机是，我们希望保存模型以供重用，而不是每次智能应用程序需要进行预测时都创建一个新模型:</p>
+<div><img src="img/00109.jpeg" class="calibre74"/></div>
+<p>图7.2:创建预测模型并将其存储在SQL Server中</p>
+<p class="calibre2">在<em class="calibre12">图7.2 </em>中，我们假设数据管理部分已经完成，输入数据集已准备好供R计算使用，以便对模型进行训练和评分。</p>
+<p class="calibre2">下面是一个存储过程的示例，该存储过程基于纽约市出租车样本数据集生成预测模型，并将其保存在一个表中。该模型预测倾倒的可能性。模型和模型的AUC都保存在<kbd class="calibre11">dbo.nyc_taxi_models_v2</kbd>表中:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE PROCEDURE [dbo].[uspTrainTipPredictionModel] 
+AS 
+BEGIN 
+   DECLARE @auc FLOAT; 
+   DECLARE @model VARBINARY(MAX); 
+ 
+   -- The data to be used for training 
+   DECLARE @inquery NVARCHAR(MAX) = N' 
+         SELECT  
+               tipped,  
+               fare_amount,  
+               passenger_count, 
+               trip_time_in_secs, 
+               trip_distance, 
+               pickup_datetime,  
+               dropoff_datetime, 
+               dbo.fnCalculateDistance(pickup_latitude,  
+                     pickup_longitude,   
+                     dropoff_latitude,  
+                     dropoff_longitude) as direct_distance 
+         FROM dbo.nyctaxi_sample 
+         TABLESAMPLE (10 PERCENT) REPEATABLE (98052)' 
+ 
+  -- Calculate the model based on the trained data and the AUC. 
+  EXEC sp_execute_external_script @language = N'R', 
+                                  @script = N' 
+         ## Create model 
+         logitObj &lt;- rxLogit(tipped ~ passenger_count +  
+                           trip_distance +  
+                           trip_time_in_secs +  
+                           direct_distance,  
+                           data = InputDataSet); 
+         summary(logitObj) 
+ 
+         ## Serialize model             
+         model &lt;- serialize(logitObj, NULL); 
+         predOutput &lt;- rxPredict(modelObject = logitObj,  
+                     data = InputDataSet, outData = NULL,  
+                     predVarNames = "Score", type = "response",  
+                     writeModelVars = FALSE, overwrite = TRUE); 
+                                        
+         library(''ROCR''); 
+         predOutput &lt;- cbind(InputDataSet, predOutput); 
+           
+         auc &lt;- rxAuc(rxRoc("tipped", "Score", predOutput)); 
+         print(paste0("AUC of Logistic Regression Model:", auc)); 
+         ', 
+     @input_data_1 = @inquery,      
+     @output_data_1_name = N'trained_model', 
+     @params = N'@auc FLOAT OUTPUT, @model VARBINARY(MAX) OUTPUT', 
+     @auc = @auc OUTPUT, 
+     @model = @model OUTPUT; 
+   
+  -- Store the train model output and its AUC  
+  INSERT INTO [dbo].[NYCTaxiModel] (Model, AUC) 
+  SELECT @model, @auc; 
+ 
+END 
+GO</strong> </pre>
+<p class="calibre2">一旦定义了这个存储过程，就可以执行它来生成模型和AUC。例如:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC [dbo].[uspTrainTipPredictionModel]</strong> </pre>
+<p class="calibre2">然后，通过执行以下语句查看<kbd class="calibre11">NYCTaxiModel</kbd>表的内容:</p>
+<pre class="calibre19"><strong class="calibre1">SELECT [Model], [AUC], [CreatedOn], [IsRealTimeScoring] 
+FROM [dbo].[NYCTaxiModel]</strong> </pre>
+<p class="calibre2">如果存储过程正确执行，您应该会看到类似如下的记录:</p>
+<div><img src="img/00110.jpeg" class="calibre75"/></div>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Step 2 – Operationalize the model</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="352RK0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">第2步–操作模型</h1>
+                
+            
+            
+                
+<p class="calibre2">作为上一步的一部分，一旦创建了模型并将其存储在表中，我们现在就可以创建一个存储过程，智能应用程序可以调用它来预测倾翻:</p>
+<div><img src="img/00111.jpeg" class="calibre76"/></div>
+<p>图7.3:在SQL Server中获取预测</p>
+<p class="calibre2">图7.3展示了实现预测模型的存储过程的工作流程。</p>
+<p class="calibre2">这是一个存储过程的例子，其中我们使用了一个保存的模型，以及我们想要预测的数据集。我们使用的是最新的模型:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE PROCEDURE [dbo].[uspPredictTipSingleMode]  
+   @passenger_count int = 0, 
+   @trip_distance float = 0, 
+   @trip_time_in_secs int = 0, 
+   @pickup_latitude float = 0, 
+   @pickup_longitude float = 0, 
+   @dropoff_latitude float = 0, 
+   @dropoff_longitude float = 0 
+AS 
+BEGIN 
+ 
+  DECLARE @inquery nvarchar(max) = N' 
+   SELECT  
+         @passenger_count as passenger_count, 
+         @trip_distance as trip_distance, 
+         @trip_time_in_secs as trip_time_in_secs, 
+         [dbo].[fnCalculateDistance] ( 
+               @pickup_latitude, 
+               @pickup_longitude, 
+               @dropoff_latitude, 
+               @dropoff_longitude) as direct_distance'; 
+ 
+  DECLARE @lmodel2 varbinary(max); 
+   
+  -- Get the latest non-real-time scoring model 
+  SET @lmodel2 = (SELECT TOP 1 
+               [Model] 
+               FROM [dbo].[NYCTaxiModel] 
+               WHERE IsRealTimeScoring = 0 
+               ORDER BY [CreatedOn] DESC); 
+ 
+  EXEC sp_execute_external_script @language = N'R', 
+   @script = N' 
+         mod &lt;- unserialize(as.raw(model)); 
+         print(summary(mod)) 
+         OutputDataSet&lt;-rxPredict(modelObject = mod,  
+data = InputDataSet,  
+                           outData = NULL, predVarNames = "Score",  
+                           type = "response",  
+writeModelVars = FALSE,  
+overwrite = TRUE); 
+               str(OutputDataSet) 
+               print(OutputDataSet)', 
+         @input_data_1 = @inquery, 
+         @params = N'@model varbinary(max), 
+@passenger_count int, 
+@trip_distance float, 
+                           @trip_time_in_secs INT , 
+                           @pickup_latitude FLOAT , 
+                           @pickup_longitude FLOAT , 
+                           @dropoff_latitude FLOAT , 
+                           @dropoff_longitude FLOAT',</strong></pre>
+<pre class="calibre19"><strong class="calibre1">        @model = @lmodel2, 
+         @passenger_count =@passenger_count , 
+         @trip_distance=@trip_distance, 
+         @trip_time_in_secs=@trip_time_in_secs, 
+         @pickup_latitude=@pickup_latitude, 
+         @pickup_longitude=@pickup_longitude, 
+         @dropoff_latitude=@dropoff_latitude, 
+         @dropoff_longitude=@dropoff_longitude 
+  WITH RESULT SETS ((Score FLOAT)); 
+ 
+END 
+GO</strong> </pre>
+<p class="calibre2">一旦创建了<kbd class="calibre11">[dbo].[uspPredictTipSingleMode]</kbd>，您的应用程序现在就可以使用这个存储过程来获得分数(翻倒的概率)；例如:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC [dbo].[uspPredictTipSingleMode]  
+    @passenger_count = 2 
+   ,@trip_distance   = 10 
+   ,@trip_time_in_secs     = 1950 
+   ,@pickup_latitude = 47.643272 
+   ,@pickup_longitude      = -122.127235 
+   ,@dropoff_latitude      = 47.620529 
+   ,@dropoff_longitude     = -122.349297  </strong></pre>
+<p class="calibre2">输出应该类似于以下内容。在这种情况下，值0.64表示被倾倒的概率，即64%:</p>
+<pre class="calibre19"><strong class="calibre1">Score 
+---------------------- 
+0.640058591034195 </strong></pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Fast batch prediction</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="361C60-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">快速批量预测</h1>
+                
+            
+            
+                
+<p class="calibre2">正如上一节所看到的，模型训练步骤和预测步骤都调用了<kbd class="calibre11">sp_execute_external_script</kbd>，它调用了R过程。实时评分和本地评分允许您在不调用R流程的情况下进行预测。因此，这些评分方法提高了预测操作的性能。</p>
+<p class="calibre2">此外，实时评分和原生评分允许您使用机器学习模型，而不必安装r。只要您获得兼容格式的预训练模型并将其保存在SQL Server数据库中，您就可以轻松调用预测操作。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Prerequisites</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="36VSO0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">先决条件</h1>
+                
+            
+            
+                
+<ul class="calibre7">
+<li class="calibre8">在SQL Server 2017中使用<kbd class="calibre11">PREDICT</kbd>函数时没有先决条件。关于<kbd class="calibre11">PREDICT</kbd>的更多信息将在后面的<em class="calibre12">原生计分</em>部分介绍。</li>
+<li class="calibre8"><kbd class="calibre11">sp_rxPredict</kbd>需要一些额外的步骤，如<em class="calibre12">启用实时评分模型</em>中所述，网址为<a href="https://docs.microsoft.com/en-us/sql/advanced-analytics/r/how-to-do-realtime-scoring#bkmk_enableRtScoring" target="_blank" class="calibre10">https://docs . Microsoft . com/en-us/SQL/advanced-analytics/r/how-to-do-real-scoring # bkmk _ enableRtScoring</a>。</li>
+</ul>
+<ul class="calibre7">
+<li class="calibre8">目前，SQL Server 2016和SQL Server 2017中的实时评分和原生评分都只支持RevoScaleR和MicrosoftML兼容的模型。有关支持的算法的最新列表，请参见<a href="https://docs.microsoft.com/en-us/sql/advanced-analytics/real-time-scoring" class="calibre10">https://docs . Microsoft . com/en-us/SQL/advanced-analytics/Real-time-scoring</a>上的<em class="calibre12">实时评分</em>。</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Real-time scoring</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="37UDA0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">实时评分</h1>
+                
+            
+            
+                
+<p class="calibre2">SQL Server 2016和SQL Server 2017都支持使用<kbd class="calibre11">sp_rxPredict</kbd>进行实时评分。</p>
+<p>这个存储过程是一个使用<kbd class="calibre31">UNSAFE</kbd>程序集的CLR存储过程，需要您将数据库设置为<kbd class="calibre31">TRUSTWORTHY</kbd>。</p>
+<p class="calibre2">下面是一个调用<kbd class="calibre11">PREDICT</kbd>函数作为<kbd class="calibre11">SELECT</kbd>语句的一部分的例子:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC dbo.sp_rxPredict @model, 
+@inputData = @query;</strong> </pre>
+<p class="calibre2">在这种情况下:</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">@model</kbd>:由之前准备好的实时评分模型组成</li>
+<li class="calibre8"><kbd class="calibre11">@query</kbd>:待评分数据的查询定义</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Native scoring</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="38STS0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">本地评分</h1>
+                
+            
+            
+                
+<p class="calibre2">SQL Server 2017引入了一个新的函数，<kbd class="calibre11">PREDICT</kbd>，允许您使用原生评分获得预测值。您可以将它作为<kbd class="calibre11">SELECT</kbd>语句的<kbd class="calibre11">FROM</kbd>子句的一部分来调用，而不是将<kbd class="calibre11">sp_execute_external_script</kbd>与R script一起使用来进行预测，这使得预测分析的操作更加容易。此外，使用<kbd class="calibre11">PREDICT</kbd>意味着您不再需要在每次想要进行预测时调用额外的R进程。</p>
+<p>这个<kbd class="calibre31">PREDICT</kbd>函数是T-SQL的新功能，不要与现有的DMX的<kbd class="calibre31">PREDICT</kbd>函数相混淆。</p>
+<p class="calibre2">下面是一个调用<kbd class="calibre11">PREDICT</kbd>函数作为<kbd class="calibre11">SELECT</kbd>语句一部分的例子:</p>
+<pre class="calibre19"><strong class="calibre1">SELECT  d.Input1, d.Input2, p.Output_Pred 
+FROM PREDICT( MODEL = @model,  DATA = d)  
+     WITH (Output_Pred FLOAT) p;</strong> </pre>
+<p class="calibre2">在这种情况下:</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">d</kbd>:数据源，如表、视图或常用表表达式。</li>
+<li class="calibre8"><kbd class="calibre11">Input1, Input2</kbd>:来自数据源的列。</li>
+<li class="calibre8"><kbd class="calibre11">@model</kbd>:由之前准备好的实时评分模型组成。</li>
+<li class="calibre8"><kbd class="calibre11">Output_Pred</kbd>:正在预测的输出值。通常，列名由预测值的列名后跟一个<kbd class="calibre11">_Pred</kbd>后缀构成；例如，<kbd class="calibre11">Tipped_Pred</kbd>，其中<kbd class="calibre11">Tipped</kbd>是被预测的列的名称。</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating the R model for fast batch prediction</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="39REE0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">集成R模型进行快速批量预测</h1>
+                
+            
+            
+                
+<p class="calibre2">在继续下一步之前，请遵循<em class="calibre12">先决条件-准备数据</em>部分。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Step 1 – Train and save a real-time scoring model using T-SQL</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3APV00-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">步骤1–使用T-SQL训练并保存实时评分模型</h1>
+                
+            
+            
+                
+<p class="calibre2">在这一步中，您可以通过存储过程为实时评分和本地评分以及可选的AUC创建一个预测模型，并放入一个表中。目标是构建一个可重用的模型。如果已经在SQL Server的表中创建并存储了一个现有的兼容模型，则可以跳过此步骤。</p>
+<p class="calibre2">下面的存储过程使用了<kbd class="calibre11">rxSerializeModel</kbd>，它允许您以原始格式序列化R模型。这就允许您将模型保存为<kbd class="calibre11">VARBINARY</kbd>格式，可以加载到SQL Server中进行实时评分。要在R中反转序列化，可以使用<kbd class="calibre11">rxUnserializeModel</kbd>:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE PROCEDURE [dbo].[uspTrainTipPredictionModelWithRealTimeScoring] 
+AS 
+BEGIN 
+   DECLARE @auc FLOAT; 
+   DECLARE @model VARBINARY(MAX); 
+ 
+   -- The data to be used for training 
+   DECLARE @inquery NVARCHAR(MAX) = N' 
+         SELECT  
+               tipped,  
+               fare_amount,  
+               passenger_count, 
+               trip_time_in_secs, 
+               trip_distance, 
+               pickup_datetime,  
+               dropoff_datetime, 
+               dbo.fnCalculateDistance(pickup_latitude,  
+                     pickup_longitude,   
+                     dropoff_latitude,  
+                     dropoff_longitude) as direct_distance 
+         FROM dbo.nyctaxi_sample 
+         TABLESAMPLE (10 PERCENT) REPEATABLE (98052)' 
+ 
+  -- Calculate the model based on the trained data and the AUC. 
+  EXEC sp_execute_external_script @language = N'R', 
+                                   @script = N' 
+         ## Create model 
+         logitObj &lt;- rxLogit(tipped ~ passenger_count +  
+                           trip_distance +  
+                           trip_time_in_secs +  
+                           direct_distance,  
+                           data = InputDataSet); 
+         summary(logitObj) 
+ 
+         ## Serialize model             
+         ## model &lt;- serialize(logitObj, NULL); 
+         model &lt;- rxSerializeModel(logitObj,  
+realtimeScoringOnly = TRUE); 
+         predOutput &lt;- rxPredict(modelObject = logitObj,  
+                     data = InputDataSet, outData = NULL,  
+                     predVarNames = "Score", type = "response",  
+                     writeModelVars = FALSE, overwrite = TRUE); 
+                                        
+         library(''ROCR''); 
+         predOutput &lt;- cbind(InputDataSet, predOutput); 
+           
+         auc &lt;- rxAuc(rxRoc("tipped", "Score", predOutput)); 
+         print(paste0("AUC of Logistic Regression Model:", auc)); 
+         ', 
+     @input_data_1 = @inquery,      
+     @output_data_1_name = N'trained_model', 
+     @params = N'@auc FLOAT OUTPUT, @model VARBINARY(MAX) OUTPUT', 
+     @auc = @auc OUTPUT, 
+     @model = @model OUTPUT; 
+   
+  -- Store the train model output and its AUC  
+  INSERT INTO [dbo].[NYCTaxiModel] (Model, AUC, IsRealTimeScoring) 
+  SELECT @model, @auc, 1; 
+ 
+END 
+GO</strong> </pre>
+<p>要将在R中创建的模型存储在SQL Server表中，必须先将其序列化。在R中，一个序列化的模型在我们可以使用它进行预测之前必须是未序列化的。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Step 2a – Operationalize the model using real-time scoring</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3BOFI0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">步骤2a–使用实时评分操作模型</h1>
+                
+            
+            
+                
+<p class="calibre2">以下是一个示例脚本，我们使用<kbd class="calibre11">sp_rxPredict</kbd>和实时评分模型来预测倾翻的可能性:</p>
+<pre class="calibre19"><strong class="calibre1">DECLARE @logit_model VARBINARY(MAX) =  
+   (SELECT TOP 1 [Model]  
+   FROM [dbo].[NYCTaxiModel] 
+   WHERE [IsRealTimeScoring] = 1 
+   ORDER BY [CreatedOn] DESC); 
+ 
+ 
+EXEC dbo.sp_rxPredict @model = @logit_model, 
+@inputData = N'SELECT 
+                     2 AS passenger_count,  
+                     10 AS trip_distance,  
+                     1950 AS trip_time_in_secs,  
+                     dbo.fnCalculateDistance(47.643272,  
+                           -122.127235,   
+                           47.620529,  
+                           -122.349297) AS direct_distance';</strong> </pre>
+<p class="calibre2">输出应该只为您提供被推进的行的预测值:</p>
+<pre class="calibre19"><strong class="calibre1">tipped_Pred</strong>
+<strong class="calibre1">----------------------</strong>
+<strong class="calibre1">0.640058591034195</strong>
+    
+<strong class="calibre1">(1 row affected)</strong>
+  </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Step 2b – Operationalize the model using native scoring</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3CN040-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">步骤2b–使用本地评分操作模型</h1>
+                
+            
+            
+                
+<p class="calibre2">下面是一个示例脚本，其中我们使用带有R实时评分模型的<kbd class="calibre11">PREDICT</kbd>函数来预测翻倒的可能性。SQL Server 2017中的<kbd class="calibre11">PREDICT</kbd>函数可以从上一步读取存储的序列化模型进行预测分析:</p>
+<pre class="calibre19"><strong class="calibre1">DECLARE @logit_model VARBINARY(MAX) =  
+   (SELECT TOP 1 [Model]  
+   FROM [dbo].[NYCTaxiModel] 
+   WHERE [IsRealTimeScoring] = 1 
+   ORDER BY [CreatedOn] DESC); 
+ 
+WITH d AS ( 
+   SELECT      2 AS passenger_count,  
+               10 AS trip_distance,  
+               1950 AS trip_time_in_secs,  
+               dbo.fnCalculateDistance(47.643272,  
+                     -122.127235,   
+                     47.620529,  
+                     -122.349297) AS direct_distance) 
+SELECT  * 
+FROM PREDICT( MODEL = @logit_model, DATA = d)  
+WITH (tipped_Pred FLOAT) p;</strong> </pre>
+<p class="calibre2">输出应该包括您在<kbd class="calibre11">SELECT</kbd>语句中指定的任何列，应该如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">tipped_Pred passenger_count trip_distance trip_time_in_secs direct_distance</strong>
+<strong class="calibre1">----------- --------------- ------------- ----------------- ---------------</strong>
+<strong class="calibre1">0.640058591 2               10            1950              10.4581575644</strong>
+    
+<strong class="calibre1">(1 row affected)</strong>
+  </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Managing roles and permissions for workloads</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3DLGM0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">管理工作负载的角色和权限</h1>
+                
+            
+            
+                
+<p class="calibre2">将R脚本作为可扩展性框架工作负载的一部分来操作，以及使用实时评分和本地评分的预测操作，需要首先设置一些角色和权限。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Extensibility framework workloads</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3EK180-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">可扩展性框架工作负载</h1>
+                
+            
+            
+                
+<p class="calibre2">本节概述了使用<kbd class="calibre11">sp_execute_external_script</kbd>从SQL Server操作R的典型安全需求。SQL Server登录名或Windows用户帐户可用于使用存储过程直接从SQL Server运行R脚本。以下是设置此帐户的步骤，以便它拥有足够的权限:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">允许访问运行R脚本的数据库。</li>
+<li value="2" class="calibre8">允许从安全对象(如表)读取数据的权限。这包括(但不限于)可能存储模型的表，以及用于定型模型或预测输入的表/视图。</li>
+<li value="3" class="calibre8">如果R脚本需要向一个表中写入新数据，比如一个模型或者一个评分结果，允许写入新数据的权限。</li>
+<li value="4" class="calibre8">如果R脚本需要在运行时安装R包，允许安装新包的权限。</li>
+</ol>
+<p class="calibre2">通常，创建角色来管理权限集，然后将用户分配给这些角色比单独设置用户权限更容易。</p>
+<p class="calibre2">以下是如何根据步骤1、2和3创建角色并将其分配给名为<kbd class="calibre11">JulieGuest2</kbd>的登录名的示例:</p>
+<pre class="calibre19"><strong class="calibre1">-- Create a new role  
+CREATE ROLE TutorialDBRUser AUTHORIZATION dbo 
+GO 
+ 
+-- Assign the role to a new member JulieGuest2 so that the login 
+-- can connect to the database Tutorial DB. 
+ALTER ROLE TutorialDBRUser ADD MEMBER JulieGuest2 
+GO 
+ 
+-- Allow members of TutorialDBRUser to read and write.  
+ALTER ROLE db_datareader ADD MEMBER TutorialDBRUser 
+GO 
+ 
+ALTER ROLE db_datareader ADD MEMBER TutorialDBRUser 
+GO 
+ 
+-- Allow members of TutorialDBRUser to run external script 
+GRANT EXECUTE ANY EXTERNAL SCRIPT TO [TutorialDBRUser] 
+GO 
+ 
+-- Allow members of TutorialDBRUser to run a specific  
+-- stored procedure. 
+GRANT EXECUTE ON [dbo].[predict_rentals] TO [TutorialDBRUser] 
+GO </strong></pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Fast batch prediction workloads</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3FIHQ0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">快速批量预测工作负载</h1>
+                
+            
+            
+                
+<p class="calibre2">仅当您使用实时评分或本地评分时，请遵循以下步骤:</p>
+<ul class="calibre7">
+<li class="calibre8">对于使用<kbd class="calibre11">sp_rxPredict</kbd>的实时评分，您需要将执行这个存储过程的用户添加到<kbd class="calibre11">rxpredict_users</kbd></li>
+<li class="calibre8">对于使用SQL Server 2017中新的<kbd class="calibre11">PREDICT</kbd>语法的原生评分，您需要授予数据库上的<kbd class="calibre11">EXECUTE</kbd>权限</li>
+</ul>
+<p class="calibre2">前面的步骤假设用户对实时评分模型和预测操作的输入数据集具有读取权限。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>External packages</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3GH2C0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">外部包装</h1>
+                
+            
+            
+                
+<p class="calibre2">从SQL Server 2017还可以通过<kbd class="calibre11">CREATE EXTERNAL LIBRARY</kbd>添加外部库，只要有<kbd class="calibre11">ALTER ANY EXTERNAL LIBRARY</kbd>权限:</p>
+<pre class="calibre19"><strong class="calibre1">GRANT ALTER ANY EXTERNAL LIBRARY TO [TutorialDBRUser] 
+GO</strong> </pre>
+<p class="calibre2">您必须首先从源代码中下载软件包；例如，<kbd class="calibre11">ggplot2</kbd>从克兰(<a href="https://cran.r-project.org/web/packages/ggplot2/index.html" class="calibre10">https://cran.r-project.org/web/packages/ggplot2/index.html</a>)到SQL Server可以访问的路径:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE EXTERNAL LIBRARY ggplot2pkg  
+FROM  
+  (CONTENT = 'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\ggplot2.zip')  
+WITH (LANGUAGE = 'R');</strong> </pre>
+<p class="calibre2">如果您使用的是SQL Server 2016，要安装新的R包，您需要在机器上拥有管理权限。安装步骤在SQL Server之外，直接在与SQL Server R服务关联的R上进行。详细步骤在<a target="_blank" href="part0039.html#1565U0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第3章</a>、<em class="calibre12">管理SQL Server 2017和R的机器学习服务</em>中有概述。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Tools</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3HFIU0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">工具</h1>
+                
+            
+            
+                
+<p class="calibre2">有三个主要选项可以操作嵌入在T-SQL中的R代码。所有这些工具都是免费的:</p>
+<ul class="calibre7">
+<li class="calibre8"><strong class="calibre1"> SQL Server管理工作室</strong> ( <strong class="calibre1"> SSMS </strong>)</li>
+<li class="calibre8"><strong class="calibre1">Visual Studio的R工具</strong> ( <strong class="calibre1"> RTVS </strong>)</li>
+<li class="calibre8"><strong class="calibre1"> SQL Server数据工具</strong> ( <strong class="calibre1"> SSDT </strong>)</li>
+</ul>
+<p class="calibre2">本节概述了这些工具如何帮助您在工作流中操作SQL Server中的R代码。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using SSMS as part of operationalizing R script</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3IE3G0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用SSMS作为操作化R脚本的一部分</h1>
+                
+            
+            
+                
+<p class="calibre2">SSMS是一个强大的工具，可以让你操作上一节的预测分析。SSMS还使您能够管理与在SQL Server中操作和维护R代码相关的各种管理任务，例如:</p>
+<ul class="calibre7">
+<li class="calibre8">管理权限，如本章前面所述。</li>
+<li class="calibre8">管理R包(在SQL Server 2017中)，如本章前面所述。</li>
+<li class="calibre8">管理集成R代码的存储过程，如前一节所述。</li>
+<li class="calibre8">管理SQL Server R服务的资源，如<a target="_blank" href="part0039.html#1565U0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第3章</a>、<em class="calibre12">管理SQL Server 2017和R的机器学习服务</em>中所述</li>
+<li class="calibre8">使用内置自定义报告并通过dmv监控SQL Server R服务，如<em class="calibre12">使用SQL Server R服务的自定义报告中所述。</em></li>
+<li class="calibre8">创建和管理执行R脚本的作业。参见本章后面的<em class="calibre12">安排训练和预测操作</em>。</li>
+</ul>
+<p>要获得最新版本的SSMS来帮助您使用SQL Server R services开发和管理工作流，请访问<a href="https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms" class="calibre40">https://docs . Microsoft . com/en-us/SQL/ssms/download-SQL-Server-management-studio-ssms</a>。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Using custom reports for SQL Server R Services</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3JCK20-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">为SQL Server R服务使用自定义报表</h1>
+                
+            
+            
+                
+<p class="calibre2">GitHub上有针对SQL Server R服务的自定义报告:<a href="https://github.com/Microsoft/sql-server-samples/tree/master/samples/features/r-services/ssms-custom-reports" class="calibre10">https://GitHub . com/Microsoft/SQL-Server-samples/tree/master/samples/features/R-Services/ssms-custom-reports</a></p>
+<p class="calibre2">以下是自定义报告的列表以及它们可以帮助您实现的目标:</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">报告</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">目的</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">R Services - Configuration.rdl</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">查看R服务的安装设置和R运行时的属性。</p>
+<p class="calibre2">安装后配置R服务。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">R Services - Packages.rdl</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">查看安装在SQL Server实例上的R包及其属性，如名称和版本。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">R Services - Resource Usage.rdl</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">查看SQL Server和R脚本执行的资源消耗。</p>
+<p class="calibre2">查看外部资源池的内存设置。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">R Services - Extended Events.rdl</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">查看扩展事件以了解有关R脚本执行的更多信息。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">R Services - Execution Statistics.rdl</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">查看R服务的执行统计，包括但不限于R脚本执行数、并行执行数、<kbd class="calibre11">RevoScaleR</kbd>函数。</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Adding the custom reports for the first time</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3KB4K0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">首次添加自定义报告</h1>
+                
+            
+            
+                
+<p class="calibre2">一旦您从前面的GitHub位置下载了定制报告，请按照以下步骤首次添加定制报告:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">转到SSMS |对象资源管理器。</li>
+<li value="2" class="calibre8">在对象资源管理器中右键单击SQL Server实例的名称，然后选择“报告”|“自定义报告”...</li>
+<li value="3" class="calibre8">从下载位置添加RDL文件。</li>
+</ol>
+<p class="calibre34">添加后，您可能会看到以下警告对话框:</p>
+<div><img class="aligncenter58" src="img/00112.jpeg"/></div>
+<p>图7.4:从SSMS运行自定义报告警告</p>
+<p class="calibre34">单击运行意味着您确认希望运行这些报告。</p>
+<p class="calibre34"><em class="calibre12">图7.5 </em>展示了一个成功导入的R服务-执行统计报告。上面说38次执行有24次R脚本执行错误，最流行的<kbd class="calibre11">RevoScaleR</kbd>函数是<kbd class="calibre11">rxPredict_rxLogit</kbd>:</p>
+<div><img src="img/00113.jpeg" class="calibre27"/></div>
+<p>图7.5:SSMS的SQL Server R服务执行统计报告</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Viewing an R Services custom report</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3L9L60-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">查看R服务自定义报告</h1>
+                
+            
+            
+                
+<p class="calibre2">一旦您第一次添加了一个R Services定制报告，您就可以再次访问它。以下是步骤:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">转到SSMS |对象资源管理器。</li>
+<li value="2" class="calibre8">右键单击SQL Server实例的名称。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">选择报告|自定义报告。如果您已经添加了所有的自定义报告，您应该会看到如下内容:</li>
+</ol>
+<div><img class="aligncenter59" src="img/00114.jpeg"/></div>
+<p>图7.6:在SSMS查看定制报告</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Managing SQL Server Machine Learning Services with DMVs</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3M85O0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用dmv管理SQL Server机器学习服务</h1>
+                
+            
+            
+                
+<p class="calibre2">有各种各样的dmv可以帮助你监控你已经操作化的R脚本。本节根据指定将SQL Server机器学习服务的dmv分为以下两类。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>System configuration and system resources</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3N6MA0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">系统配置和系统资源</h1>
+                
+            
+            
+                
+<p class="calibre2">您可能熟悉<kbd class="calibre11">sys.dm_exec_sessions</kbd>和<kbd class="calibre11">sys.dm_os_performance_counter</kbd>来分别理解活动会话和系统性能计数器。下面是您应该了解的dmv列表，以便跟踪和监视SQL Server中R脚本执行的性能和使用情况:</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">sys.dm_exec_sessions</kbd>:查看用户会话和系统会话的详细信息，分别标识为<kbd class="calibre11">with session_id &gt;= 51</kbd>和<kbd class="calibre11">&lt; 51</kbd>。</li>
+<li class="calibre8"><kbd class="calibre11">sys.dm_os_performance_counters</kbd>:查看每个系统性能计数器的详细信息，包括与R脚本相关的信息。下面是一个专门与SQL Server R服务相关的脚本示例:</li>
+</ul>
+<pre class="calibre33"><strong class="calibre1">SELECT *  
+FROM sys.dm_os_performance_counters  
+WHERE object_name LIKE '%External Scripts%'</strong> </pre>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">sys.dm_external_script_requests</kbd>:查看当前实例上活动的外部脚本:</li>
+</ul>
+<pre class="calibre33"><strong class="calibre1">SELECT  
+   [external_script_request_id]  
+  , [language] 
+  , [degree_of_parallelism] 
+  , [external_user_name] 
+FROM sys.dm_external_script_requests;</strong> </pre>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">sys.dm_external_script_execution_stats</kbd>:通过计数器查看新外部脚本的整体使用情况。</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Resource governor</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3O56S0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">资源调控器</h1>
+                
+            
+            
+                
+<p class="calibre2">在SQL Server 2016中，添加了两个新的dmv来帮助监控外部资源池:<kbd class="calibre11">sys.resource_governor_external_resource_pools</kbd>和<kbd class="calibre11">sys.dm_resource_governor_external_resource_pool_affinity</kbd>。如果您熟悉跟踪和管理资源调控器，您可能知道下面列出的另外两个dmv:</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">sys.resource_governor_resource_pools</kbd>:查看当前资源池状态、资源池当前配置及其统计。</li>
+<li class="calibre8"><kbd class="calibre11">sys.resource_governor_workload_groups</kbd>:查看工作负载组统计数据和工作负载组的当前配置。这个DMV得到了增强，增加了一个新列来显示与工作负载组相关联的外部池的ID。</li>
+<li class="calibre8"><kbd class="calibre11">sys.resource_governor_external_resource_pools</kbd>:查看外部资源池的当前配置值。在撰写本文时，SQL Server 2016/2017企业版允许您配置额外的资源池，以便在SQL Server中运行的R作业的资源将与来自远程客户端的资源隔离。</li>
+<li class="calibre8">这个DMV允许您查看与特定资源池相关联的处理器和资源。</li>
+</ul>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Operationalizing R code with Visual Studio</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3P3NE0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">用Visual Studio操作化R代码</h1>
+                
+            
+            
+                
+<p class="calibre2">使用<strong class="calibre1">Visual Studio的R工具</strong> ( <strong class="calibre1"> RTVS </strong>)开发R脚本，或者使用R脚本的T-SQL，现在变得很容易。如果已经使用SQL Server数据工具作为SQL Server数据库项目的IDE，只需在解决方案中添加一个新的R项目。这种集成在Visual Studio 2017中有所改进。</p>
+<p>如果您没有安装Visual Studio，请转到<a href="https://www.visualstudio.com/downloads/" class="calibre40">https://www.visualstudio.com/downloads/</a>。<br class="calibre30"/> <br class="calibre30"/> RTVS作为数据科学和分析应用程序工作负载的一部分进行安装。</p>
+<p class="calibre2">从Visual Studio安装程序中，您可以将数据科学和分析应用程序工作负载添加到您的Visual Studio 2017安装中，如<em class="calibre12">图7.7 </em>所示:</p>
+<div><img src="img/00115.jpeg" class="calibre27"/></div>
+<p>图7.7:在Visual Studio 2017的Visual Studio安装程序中选择数据科学和分析应用程序选项</p>
+<p class="calibre2">以下是开始使用RTVS的附加提示:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">通过选择File | New | Project在RTVS创建一个新的R项目。提供的项目名称和文件路径类似于以下内容:</li>
+</ol>
+<div><img class="aligncenter60" src="img/00116.jpeg"/></div>
+<p>图7.8:创建一个新的R项目</p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">在RTVS，您可以选择运行R脚本的工作区。如果您已经安装了第4章、<em xmlns:epub="http://www.idpf.org/2007/ops" class="calibre12">数据浏览和数据可视化</em>中提到的带有R服务的SQL Server，您将看到如下内容:</li>
+</ol>
+<div><img src="img/00117.jpeg" class="calibre77"/></div>
+<p>图7.9:显示可供RTVS连接的所有工作区</p>
+<p class="calibre34">转到R Tools | Windows | Workspaces或按下<em class="calibre12"> Ctrl </em> + <em class="calibre12"> 9 </em>显示Workspaces窗口。</p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">您可以从R交互式窗口运行R代码，或者在R项目中保存R文件。你可以参考https://docs.microsoft.com/en-us/visualstudio/rtvs/来了解更多关于RTVS的特色。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">您还可以在项目中添加SQL查询文件，方法是右键单击项目并选择“添加新项”，然后选择“SQL查询”，如下所示:</li>
+</ol>
+<div><img class="aligncenter61" src="img/00118.jpeg"/></div>
+<p>图7.10:选择一个新的条目/文件来添加到R项目中</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">RTVS还允许您通过模板开发集成到SQL Server存储过程的R代码。要访问它，只需单击Add New Item，类似于上一步，然后选择SQL Stored Procedure。有关这方面的更多信息，请访问<a href="https://docs.microsoft.com/en-us/visualstudio/rtvs/sql-server" class="calibre10">https://docs . Microsoft . com/en-us/visual studio/rtvs/SQL-server</a>。</li>
+</ol>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating R workloads and prediction operations beyond SQL Server</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3Q2800-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">在SQL Server之外集成R工作负载和预测操作</h1>
+                
+            
+            
+                
+<p class="calibre2">在本节中，您将学习如何在SQL Server之外包含您在前面几节中创建的R工作负荷和预测操作。我们将讨论如何在PowerShell、SQL代理作业和<strong class="calibre1"> SQL Server集成服务</strong> ( <strong class="calibre1"> SSIS </strong>)中运行工作负载和操作。</p>
+<p>请注意，您也可以在SSIS、Azure和Linux上的Bash中使用SQLCMD、C#来执行这些工作负载/预测操作。这个讨论超出了本章的范围。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Executing SQL Server prediction operations via PowerShell</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3R0OI0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">通过PowerShell执行SQL Server预测操作</h1>
+                
+            
+            
+                
+<p class="calibre2">假设您已经创建了从SQL Server执行R脚本的存储过程，例如前面示例中的<kbd class="calibre11">[dbo].[uspTrainTipPredictionModel]</kbd>,您可以轻松地将该命令作为PowerShell工作流的一部分来执行。</p>
+<p class="calibre2">下面是一个从PowerShell调用存储过程的简单示例:</p>
+<pre class="calibre19"><strong class="calibre1">$SqlConnection = New-Object System.Data.SqlClient.SqlConnection</strong>
+<strong class="calibre1">$SqlConnection.ConnectionString = "Server=.;Database=Taxi;Integrated Security=True"</strong>
+<strong class="calibre1">$SqlCmd = New-Object System.Data.SqlClient.SqlCommand</strong>
+<strong class="calibre1">$SqlCmd.CommandText = "EXEC [dbo].[uspPredictTipSingleMode] </strong>
+<strong class="calibre1">    @passenger_count    = 2</strong>
+<strong class="calibre1">      ,@trip_distance   = 10</strong>
+<strong class="calibre1">      ,@trip_time_in_secs     = 35</strong>
+<strong class="calibre1">      ,@pickup_latitude = 47.643272</strong>
+<strong class="calibre1">      ,@pickup_longitude      = -122.127235</strong>
+<strong class="calibre1">      ,@dropoff_latitude      = 47.620529</strong>
+<strong class="calibre1">      ,@dropoff_longitude     = -122.349297</strong>
+<strong class="calibre1">      "</strong>
+<strong class="calibre1">$SqlCmd.Connection = $SqlConnection</strong>
+<strong class="calibre1">$SqlAdapter = New-Object System.Data.SqlClient.SqlDataAdapter</strong>
+<strong class="calibre1">$SqlAdapter.SelectCommand = $SqlCmd</strong>
+<strong class="calibre1">$DataSet = New-Object System.Data.DataSet</strong>
+<strong class="calibre1">$SqlAdapter.Fill($DataSet)</strong>
+<strong class="calibre1">$SqlConnection.Close()</strong>
+<strong class="calibre1">$DataSet.Tables[0] </strong>
+  </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Scheduling training and prediction operations</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3RV940-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">安排训练和预测操作</h1>
+                
+            
+            
+                
+<p class="calibre2">在SSMS，您可以创建一个新的SQL Server作业，该作业允许您一次性或按特定计划运行R代码。</p>
+<p class="calibre2">例如，您可以执行计划的离线预测分析工作负载。为此，只需通过SSMS创建一个职位:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">若要创建作业，您需要是SQL Server代理固定数据库角色之一或sysadmin固定服务器角色的成员。只有作业所有者或sysadmin角色的成员才能更新作业的定义。</li>
+<li value="2" class="calibre8">在SSMS的对象资源管理器中，展开要在其中创建SQL Server代理作业的SQL Server实例。</li>
+<li value="3" class="calibre8">展开SQL Server代理，右键单击<kbd class="calibre11">Jobs</kbd>文件夹，然后选择新建作业...：</li>
+</ol>
+<div><img src="img/00119.jpeg" class="calibre78"/></div>
+<p>图7.11:使用SSMS创建新的SQL Server代理作业</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">在“常规”页面上提供详细信息:</li>
+</ol>
+<div><img class="aligncenter62" src="img/00120.jpeg"/></div>
+<p>图7.12:在新作业窗口中添加更多详细信息</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">在“新建工单”窗口的左侧菜单中点击“步骤”,然后点击“新建”...在新工作窗口的底部。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="6" class="calibre14">
+<li value="6" class="calibre8">在要执行的新作业步骤中提供详细信息。在本例中，我们希望更新纽约市出租车培训模型。然后单击确定:</li>
+</ol>
+<div><img class="aligncenter63" src="img/00121.jpeg"/></div>
+<p>图7.13:作为SQL Server代理作业中的一个步骤调用R集成存储过程</p>
+<ol start="7" class="calibre14">
+<li value="7" class="calibre8">在“新建作业”窗口中，从左侧菜单中选择“计划”。</li>
+<li value="8" class="calibre8">点击新建...在新工作窗口的底部。</li>
+<li value="9" class="calibre8">提供你希望这项工作遵守的时间表的细节。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="10" class="calibre14">
+<li value="10" class="calibre8">在“New Schedule”窗口中单击“OK ”,然后在“New Job”窗口中单击以保存更改。</li>
+</ol>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Operationalizing R script as part of SSIS</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3STPM0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将R script作为SSIS的一部分进行操作</h1>
+                
+            
+            
+                
+<p class="calibre2">R Script可以很容易地集成为SSIS工作流的一部分。两种主要方式是作为执行流程任务的一部分运行和作为执行SQL任务的一部分运行:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">在执行进程任务中运行R代码(不是作为SQL Server R服务的一部分)可以简单地通过调用<kbd class="calibre11">Rscript.exe</kbd>来完成。如果您已经有一个准备执行的R文件，那么只需在SSIS包中添加执行流程任务。您还可以将SSIS包中执行流程任务的输入/输出编织到R文件中:</li>
+</ol>
+<div><img class="aligncenter64" src="img/00122.jpeg"/></div>
+<p>图7.14:在SSIS执行流程任务中外部执行R脚本</p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">在SSIS使用执行SQL任务在SQL Server中运行预测操作:如果您已经有一个执行预测的存储过程(或训练模型)，那么只需从SSIS的执行SQL任务中调用此存储过程。还可以将执行SQL任务中的输入/输出与SSIS包结合起来:</li>
+</ol>
+<div><img src="img/00123.jpeg" class="calibre79"/></div>
+<p>图7.15:在SSIS中将R集成存储过程作为执行SQL任务步骤执行</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Summary</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="3TSA80-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">摘要</h1>
+                
+            
+            
+                
+<p class="calibre2">在本章中，您学习了将现有预测分析R代码集成到SQL Server R外部的可扩展性框架中所需的步骤。您还看到了SQL Server 2017中新的<kbd class="calibre11">PREDICT</kbd>函数的简单性和强大功能，它允许在不安装r的情况下进行本机评分。管理运行预测分析工作负载所需的安全性在预测操作中也很重要。您已经学习了如何使用RTVS向R项目添加SQL查询。最后，您发现了将R代码和预测操作集成到现有工作流中的不同可能性，如SQL Server存储过程、SQL Server代理作业、PowerShell脚本和SSIS项目。</p>
+<p class="calibre2">有了这些新技能，我们就为在数据库生命周期中管理数据科学解决方案的下一个构件做好了准备:管理实践。在下一章中，您将了解如何在<strong class="calibre1">持续集成/持续交付</strong> ( <strong class="calibre1"> CI/CD </strong>)和持续模型性能监控中管理数据科学解决方案。</p>
+
+
+            
+
+            
+        
+    </body></html>
+</body></html>

@@ -1,0 +1,1410 @@
+<html><head/><body>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Data Exploration and Data Visualization</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1MBG20-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">数据探索和数据可视化</h1>
+                
+            
+            
+                
+<div><p class="calibre2">在实现预测建模之前，数据探索和数据可视化技术对于理解数据至关重要。有了现有的用于统计和数学算法的开源R包，数据专业人员可以轻松地研究他们的数据，发现在关系数据库中很难做到的模式/趋势。将SQL Server <strong class="calibre1">机器学习服务</strong> ( <strong class="calibre1"> ML服务</strong>)与R一起使用意味着数据探索和数据可视化不再是孤立的工作，从而更快更容易地实现预测建模。</p>
+<p class="calibre2">本章概述了开发人员必须知道的使用R进行数据探索和数据可视化的基本技巧和诀窍。您将学习如何在T-SQL中集成R进行数据探索和数据可视化，然后在SSRS和Power BI中整合这些技术。如果你已经熟悉了数据探索和数据可视化的R语言，可以直接跳到本章的最后一节。</p>
+</div>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Understanding SQL and R data types</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1NA0K0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">了解SQL和R数据类型</h1>
+                
+            
+            
+                
+<p class="calibre2">在我们深入研究在T-SQL中使用R的数据之前，让我们先了解在R中存储数据的数据类型。在T-SQL中使用R时，要熟悉的第一个也是最重要的数据类型是数据帧。从R收发的SQL Server中的<kbd class="calibre11">sp_execute_external_script</kbd>的输入输出参数是数据帧。对于数据管理来说，了解与数据框非常相似的其他数据类型是矩阵和数据表，这超出了本章的范围。</p>
+<p class="calibre2">除了数据帧，R还支持有限数量的标量数据类型，如字符、复数、日期/时间、整数、逻辑、数字和原始数据。因此，当您在R脚本中提供来自SQL Server的数据时，必要时数据将被隐式转换为R中兼容的数据类型。下表提供了数据类型转换的简短示例。有关隐式数据类型转换的更多信息，请访问<a href="https://docs.microsoft.com/en-us/sql/advanced-analytics/r/r-libraries-and-data-types#changes-in-data-types-between-sql-server-2016-and-earlier-versions" class="calibre10">https://docs . Microsoft . com/en-us/SQL/advanced-analytics/R/R-Libraries-and-Data-Types # changes-in-Data-Types-between-SQL-server-2016-及更早版本</a>上的<em class="calibre12"> R库和R数据类型</em>:</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1"> SQL Server数据类型(sp_execute_external_script的输入参数)</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1"> R级</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">结果集数据类型(输出参数到sp _ execute _ external _ script)</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">datetime</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">POSIXct</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">Datetime</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">numeric(p,s)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">numeric</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">float</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">int</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">integer</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">int</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">varbinary(n)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">raw</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">varbinary(max)</kbd></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">varchar(n)</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">character</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">varchar(max)</kbd></p>
+</td>
+</tr>
+</tbody>
+</table>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Data frames in R</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1O8H60-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">R中的数据帧</h1>
+                
+            
+            
+                
+<p class="calibre2">数据框包含行和列，就像SQL Server中的表一样，其中每一列都可以有不同的基本数据类型，例如整数、字符等。</p>
+<div><br class="calibre30"/>
+Use <kbd class="calibre31">?</kbd> to learn more about a function:<br class="calibre30"/>
+<kbd class="calibre31">? [function]</kbd></div>
+<p class="calibre2">有关数据框的更多信息，您可以在Visual Studio的工具中键入以下命令:</p>
+<pre class="calibre19"><strong class="calibre1">&gt; ? data.frame</strong>  </pre>
+<p class="calibre2">默认情况下，R使用内存。所以一旦输入数据帧从<kbd class="calibre11">sp_execute_external_script</kbd>传递过来，R会将输入数据存储在内存中。机器学习服务(数据库内)由SQL Server中的资源调控器管理，如<a target="_blank" href="part0039.html#1565U0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第3章</a>、<em class="calibre12">为SQL Server 2017和R </em> <em class="calibre12">管理机器学习服务中所述。</em></p>
+<p class="calibre2">一般的指导方针是努力在SQL Server和R中应该完成的计算类型之间取得平衡，这包括是否在R和SQL Server中进行数据管理/操作。</p>
+<p class="calibre2">R中有一些内置的数据帧可用，比如<kbd class="calibre11">mtcars</kbd>或者<kbd class="calibre11">iris</kbd>。</p>
+<p class="calibre2">让我们来看看r中的一个数据帧。在RTVS运行以下代码:</p>
+<pre class="calibre19"><strong class="calibre1">&gt; mtcars;</strong>
+  </pre>
+<p class="calibre2">输出应该是这样的:</p>
+<div><img class="aligncenter26" src="img/00039.gif"/></div>
+<p>图4.1 - mtcars数据</p>
+<p class="calibre2">要检查数据类型，可以对变量调用函数<kbd class="calibre11">call</kbd>:</p>
+<pre class="calibre19"><strong class="calibre1">&gt; class(mtcars); 
+[1] "data.frame" </strong></pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Data exploration and data munging</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1P71O0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">数据探索和数据管理</h1>
+                
+            
+            
+                
+<p class="calibre2">R中的数据管理可以在不使用SQL Server的情况下独立完成。下图说明了开发人员在使用SQL Server和R时可以遵循的一个建议的高级过程。如果您以前使用过R，您可能熟悉直接在R中执行的步骤2、3和5。</p>
+<p class="calibre2">请注意，步骤3和4是可选的，将在<a target="_blank" href="part0096.html#2RHM00-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第6章</a>、<em class="calibre12">预测建模</em>和<a target="_blank" href="part0102.html#318PC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第7章</a>、<em class="calibre12">操作R代码</em>中详细讨论:</p>
+<div><img src="img/00040.jpeg" class="calibre32"/></div>
+<p>图4.2-SQL Server机器学习服务的高级开发过程</p>
+<p class="calibre2">让我们从R 中的<em xmlns:epub="http://www.idpf.org/2007/ops" class="calibre12">数据管理开始。具体来说，在这一节中，我们将使用R环境，以便在将它与T-SQL结合起来之前，我们知道它在R中是如何工作的。如果你熟悉R，你可以跳过这一节。以下是本节的先决条件:</em></p>
+<ol class="calibre14">
+<li value="1" class="calibre8">一个IDE，例如作为Visual Studio 2015或2017的一部分的RTVS。想了解更多关于RTVS的信息，请访问http://aka.ms/rtvs。</li>
+<li value="2" class="calibre8">将<kbd class="calibre11">WideWorldImporters</kbd>数据库恢复到SQL Server 2016或更高版本。请参考<a href="http://aka.ms/wwi" target="_blank" class="calibre10">http://aka.ms/wwi</a>下载可以在您的环境中恢复的完整SQL备份文件。</li>
+</ol>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Importing SQL Server data into R</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1Q5IA0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将SQL Server数据导入R</h1>
+                
+            
+            
+                
+<p class="calibre2">从R连接到SQL Server最常见的方式是使用RODBC包。请注意，在SQL Server 2016之前，这是您可能需要处理的步骤。</p>
+<p class="calibre2">在下面的示例中，我们希望从SQL Server实例<kbd class="calibre11">MsSQLGirl</kbd>中检索与2015年销售人员月订单相关的数据集；和数据库，<kbd class="calibre11">WideWorldImporters</kbd>使用可信连接(Windows身份验证)。</p>
+<p class="calibre2">使用RTVS，执行以下步骤:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">创建一个名为<kbd class="calibre11">Chapter04_01.R</kbd>的新脚本。通过键入以下命令，确保加载了<kbd class="calibre11">RODBC</kbd>库:</li>
+</ol>
+<pre class="calibre33">library(RODBC); </pre>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">定义连接字符串并获取连接句柄:</li>
+</ol>
+<pre class="calibre33">connStr &lt;- "Driver=SQL Server;Server=MsSQLGirl; 
+  Database=WideWorldImporters;trusted_connection=true"; 
+dbHandle &lt;- odbcDriverConnect(connStr); </pre>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">定义要在SQL Server中运行的查询。这也可以是调用存储过程、函数、视图等的查询。在此特定示例中，查询将按销售人员获取2015年的每月订单:</li>
+</ol>
+<pre class="calibre33"># Define the query to be run 
+order_query =  
+"SELECT DATEFROMPARTS(YEAR(o.[OrderDate]),  
+      MONTH(o.[OrderDate]), 1) AS OrderMonth, 
+    sp.[PreferredName] AS SalesPerson, 
+    COUNT(DISTINCT o.[OrderID]) AS OrderCount, 
+    SUM(ol.[Quantity] * ol.[UnitPrice]) AS TotalAmount 
+FROM [Sales].[Orders] o 
+    INNER JOIN[Sales] .[OrderLines] ol 
+        ON ol.[OrderID] = o.[OrderID] 
+    INNER JOIN[Application] .[People] sp 
+        ON sp.[PersonID] = o.[SalespersonPersonID] 
+WHERE sp.[ValidTo] &gt;= GETDATE() 
+    AND o.[OrderDate] BETWEEN '20150101' AND '20151231' 
+GROUP BY 
+DATEFROMPARTS(YEAR(o.[OrderDate]),  
+MONTH(o.[OrderDate]), 1), 
+    sp.[PreferredName];" 
+ </pre>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">执行查询并将输出存储到<kbd class="calibre11">orders</kbd>变量中:</li>
+</ol>
+<pre class="calibre33"># Get the data set from SQL into the orders variable in R 
+orders &lt;- sqlQuery(dbHandle, order_query); </pre>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">键入以下内容以查看<kbd class="calibre11">orders</kbd>中的数据集:</li>
+</ol>
+<pre class="calibre33">orders;  </pre>
+<p class="calibre34">或者在RTVS进入变量浏览器窗口，如图<em class="calibre12">图4 - 2 </em>所示，展开订单查看变量的详细信息。使用放大镜工具(<img src="img/00041.jpeg" class="calibre27"/>)查看输出，如图<em class="calibre12">图4 - 3 </em>所示:</p>
+<div><img src="img/00042.jpeg" class="calibre35"/></div>
+<p>图4-3 RTVS变量浏览器</p>
+<div><img class="aligncenter27" src="img/00043.jpeg"/></div>
+<p>图4 - 4在变量浏览器中查看订单</p>
+<p class="calibre2">这里是<kbd class="calibre11">orders</kbd>变量的数据字典。熟悉以下各列非常有用，因为我们将在本章中使用订单数据框及其派生变量:</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">列名</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">描述</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">OrderMonth</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">订单发生的月份</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">OrderCount</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">销售人员当月的订单数量。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">TotalAmount</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">订单金额</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">SalesPerson</kbd></p>
+</td>
+<td class="calibre22">
+<p class="calibre2">销售人员的姓名</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Exploring data in R</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1R42S0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">探索R中的数据</h1>
+                
+            
+            
+                
+<p class="calibre2">在R中有很多方法可以探索数据:下面是一些有用的函数。<kbd class="calibre11">df</kbd>表示数据帧变量，<kbd class="calibre11">col</kbd>表示<kbd class="calibre11">df</kbd>中的列；</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">head(df)</kbd>返回数据帧<kbd class="calibre11">df</kbd>的前几行，默认为6。</li>
+<li class="calibre8"><kbd class="calibre11">tail(df)</kbd>返回数据帧<kbd class="calibre11">df</kbd>的最后几行，默认为6。</li>
+<li class="calibre8"><kbd class="calibre11">summary(df)</kbd>提供数据框<kbd class="calibre11">df</kbd>中各列的基本汇总统计。</li>
+<li class="calibre8"><kbd class="calibre11">names(df)</kbd>返回数据帧<kbd class="calibre11">df</kbd>的列名。</li>
+<li class="calibre8"><kbd class="calibre11">str(df)</kbd>返回数据帧<kbd class="calibre11">df</kbd>的基本信息。</li>
+<li class="calibre8"><kbd class="calibre11">describe(df$col)</kbd>描述<kbd class="calibre11">df</kbd>数据帧中一组<kbd class="calibre11">col</kbd>值的分布/偏斜度。这对于构建量表和项目分析非常有用。这需要首先安装<kbd class="calibre11">psych</kbd>包。</li>
+<li class="calibre8">以下是对数据帧<kbd class="calibre11">orders</kbd>使用函数<kbd class="calibre11">str</kbd>的示例:</li>
+</ul>
+<pre class="calibre33">&gt; str(orders) </pre>
+<p class="calibre2">输出如下所示:</p>
+<div><img class="aligncenter28" src="img/00044.jpeg"/></div>
+<p>图4-5 str的输出(订单)</p>
+<p>与SQL Server不同，R对函数和变量都区分大小写。请确保输入正确。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Data munging in R</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1S2JE0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">R中的数据管理</h1>
+                
+            
+            
+                
+<p class="calibre2">数据管理是将一种<em class="calibre12">原始</em>格式转换为另一种格式的手动过程，以便它更容易被人或后续过程(如报告、数据可视化、统计分析、预测分析等)使用。</p>
+<p class="calibre2">有许多R包可用于数据管理。r预装了用于简单数据转换和可视化的包。在本节中，您将学习两个常用于数据管理的超级强大的软件包:<kbd class="calibre11">dplyr</kbd>、<kbd class="calibre11">reshape</kbd>和<kbd class="calibre11">lubridate</kbd>。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Adding/removing rows/columns in data frames</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1T1400-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">在数据框中添加/移除行/列</h1>
+                
+            
+            
+                
+<p class="calibre2">添加或删除行或列很容易实现。下面是一个例子列表，展示了如何使用R和<kbd class="calibre11">dplyr</kbd>来实现它:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8"><strong class="calibre1">添加新行</strong>:让我们创建一个新的数据帧<kbd class="calibre11">orders_newrows</kbd>，它包含2个我们想要添加到<kbd class="calibre11">orders</kbd>末尾的新行。然后我们想使用<kbd class="calibre11">tail</kbd>函数查看<kbd class="calibre11">orders</kbd>的最后几行:</li>
+</ol>
+<pre class="calibre33">&gt; orders_newrows &lt;- data.frame( 
+    OrderMonth = c("2015-12-01", "2015-12-01"), 
+    SalesPerson = c("Julie", "Tomaz"), 
+    OrderCount = c(201, 2017), 
+    TotalAmount = c(340000, 370000)); 
+ 
+&gt; orders &lt;- rbind(orders, orders_newrows); 
+&gt; tail(orders); 
+ </pre>
+<p class="calibre34">这将触发以下输出:</p>
+<pre class="calibre33">    OrderMonth SalesPerson OrderCount TotalAmount 
+105 2015-12-01        Lily        194    442645.5 
+106 2015-03-01      Hudson        389   1020488.6 
+107 2015-10-01         Taj        195    437388.4 
+108 2015-08-01        Lily        182    517126.3 
+109 2015-12-01       Julie        201    340000.0 
+110 2015-12-01       Tomaz       2017    370000.0 </pre>
+<p class="calibre34">使用<kbd class="calibre11">dplyr</kbd>，可以调用<kbd class="calibre11">bind_rows</kbd>追加多个数据帧。例如，下面显示追加两次的<kbd class="calibre11">orders</kbd>和<kbd class="calibre11">orders_newrows</kbd>:</p>
+<pre class="calibre33">&gt; bind_rows(orders, orders_newrows, orders_newrows);</pre>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8"><strong class="calibre1">添加新列</strong>:为了进行说明，我们创建一个新的数据帧<kbd class="calibre11">orders_tax</kbd>，其中包含每行的序列id和总额的10%销售税。我们使用<kbd class="calibre11">cbind</kbd>函数将订单变量与<kbd class="calibre11">orders_tax</kbd>变量绑定在一起:</li>
+</ol>
+<pre class="calibre33">&gt; orders_discount &lt;- data.frame( 
+    Discount = orders$TotalAmount * 0.25) 
+&gt; orders &lt;- cbind(orders, orders_ discount); 
+&gt; names(orders) </pre>
+<p class="calibre34">这将为我们提供以下输出:</p>
+<pre class="calibre33">[1] "OrderMonth"  "SalesPerson" "OrderCount"  "TotalAmount" 
+[5] "Discount"  </pre>
+<p class="calibre34">使用<kbd class="calibre11">dplyr</kbd>，您可以调用<kbd class="calibre11">bind_cols</kbd>来添加新列:</p>
+<pre class="calibre33">&gt; orders_tax &lt;- data.frame( 
+    RowID = seq(1:nrow(orders)), 
+    SalesTax = orders$TotalAmount * 0.1 
+    ) 
+&gt; orders &lt;- bind_cols(orders,data.frame(orders_tax)); 
+&gt; names(orders) </pre>
+<p class="calibre34">输出如下所示:</p>
+<pre class="calibre33">[1] "OrderMonth"  "SalesPerson" "OrderCount"  "TotalAmount"  
+[5] "Discount"   "RowID"       "SalesTax"    </pre>
+<p class="calibre34">或者您可以添加一个名为<kbd class="calibre11">TotalPlusTax</kbd>的新列:</p>
+<pre class="calibre33">&gt; mutate(orders, TotalPlusTax = TotalAmount * 0.125); </pre>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8"><strong class="calibre1">删除列</strong>:现在让我们从<kbd class="calibre11">orders</kbd>中删除<kbd class="calibre11">RowID</kbd>:</li>
+</ol>
+<pre class="calibre33">&gt; orders &lt;- orders[, !names(orders) == "RowID"] </pre>
+<p class="calibre34">命令<kbd class="calibre11">names(orders)</kbd>按顺序列出列名。所以，<kbd class="calibre11">!names(orders) == "RowID"</kbd>排除了列名<kbd class="calibre11">RowID</kbd>。</p>
+<p class="calibre34">使用<kbd class="calibre11">dplyr</kbd>，可以调用<kbd class="calibre11">select</kbd>来选择一组列。例如，以下从<kbd class="calibre11">orders</kbd>中排除了<kbd class="calibre11">RowID</kbd>:</p>
+<pre class="calibre33">&gt; select(orders, -RowID); </pre>
+<p class="calibre34">您还可以轻松地按顺序选择列名以<kbd class="calibre11">Order</kbd>开头的列:</p>
+<pre class="calibre33">&gt; select(orders, matches("Order"));  </pre>
+<p class="calibre34">让我们用从<kbd class="calibre11">J</kbd>开始的<kbd class="calibre11">SalesPerson</kbd>来展示<kbd class="calibre11">orders</kbd>。首先，要获得那些以<kbd class="calibre11">J</kbd>开头的索引，我们可以使用<kbd class="calibre11">grep</kbd>函数:</p>
+<pre class="calibre33">&gt; grep("^J.*", orders$SalesPerson); 
+[1]   2  17  21  25  28  37  43  45  52  71  78 102 109 
+&gt; orders[grep("^J.*", orders$SalesPerson),]; 
+    OrderMonth SalesPerson OrderCount TotalAmount SalesTax 
+2   2015-06-01        Jack        206    502828.7 50282.87 
+17  2015-05-01        Jack        203    493282.0 49328.21 
+21  2015-11-01        Jack        210    473676.4 47367.64 
+25  2015-02-01        Jack        176    454979.3 45497.93 
+28  2015-10-01        Jack        205    522954.2 52295.42 
+37  2015-07-01        Jack        205    466244.0 46624.40 
+43  2015-04-01        Jack        188    520575.8 52057.58 
+45  2015-01-01        Jack        182    413761.0 41376.10 
+52  2015-12-01        Jack        209    474157.7 47415.77 
+71  2015-03-01        Jack        181    469591.0 46959.10 
+78  2015-08-01        Jack        171    359710.5 35971.06 
+102 2015-09-01        Jack        249    552961.4 55296.14 
+109 2015-12-01       Julie        201    340000.0 34000.00 
+ </pre>
+<p class="calibre34">使用<kbd class="calibre11">dplyr</kbd>，可以调用<kbd class="calibre11">select</kbd>来选择一组列。例如，以下内容将<kbd class="calibre11">RowID</kbd>从<kbd class="calibre11">orders</kbd>中排除:</p>
+<pre class="calibre33">&gt; filter(orders, grepl("^J.*", SalesPerson)); </pre>
+<p>您可能已经注意到在最近的几个<kbd class="calibre31">dplyr</kbd>例子中，<kbd class="calibre31">dplyr</kbd>有一个更友好的语法。例如，在<kbd class="calibre31">filter</kbd>函数中，不需要指定列所属的变量。<br class="calibre30"/> <br class="calibre30"/> <kbd class="calibre31">  &gt; orders[grep("^J.*", orders$SalesPerson),]; # base</kbd> <br class="calibre30"/> <br class="calibre30"/> <kbd class="calibre31">  &gt; filter(orders, grepl("^J.*", SalesPerson)); # dplyr <br class="calibre30"/> <br class="calibre30"/></kbd>同样，选择功能也友好得多。<br class="calibre30"/><br class="calibre30"/><kbd class="calibre31">  &gt; orders &lt;- orders[, !names(orders) == "RowID"] # base</kbd><br class="calibre30"/><br class="calibre30"/>T16】</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>More data munging with dplyr</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1TVKI0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用dplyr实现更多数据管理</h1>
+                
+            
+            
+                
+<p class="calibre2">以下是有用的数据管理活动、功能和示例的快速列表。<kbd class="calibre11">df</kbd>表示数据帧变量。</p>
+<table class="table">
+<tbody class="calibre20">
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">目的</strong></p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><strong class="calibre1">功能</strong></p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">重命名列</p>
+</td>
+<td class="calibre22"><kbd class="calibre37">rename(df, new_column_name = old_column_name)</kbd></td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">分类/排序数据</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">arrange(df, col1)</kbd></p>
+<p class="calibre2">通过<kbd class="calibre11">col1</kbd>命令数据帧<kbd class="calibre11">df</kbd>。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">消除重复数据</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><kbd class="calibre11">distinct(df)</kbd></p>
+<p class="calibre2"><kbd class="calibre11">distinct(df, [column names])</kbd></p>
+<p class="calibre2">为<kbd class="calibre11">[column names]</kbd>删除重复数据<kbd class="calibre11">df</kbd>(如果提供)。</p>
+</td>
+</tr>
+<tr class="calibre21">
+<td class="calibre22">
+<p class="calibre2">平静的</p>
+</td>
+<td class="calibre22">
+<p class="calibre2"><em class="calibre12"> x % &gt; % f(y) </em></p>
+<p class="calibre2">执行<em class="calibre12"> f(x，y) </em>。您可以嵌套语法。例如:</p>
+<p class="calibre2"><em class="calibre12">x %&gt;% f(y)</em><em class="calibre12">%&gt;% g(z)</em>等价于<em class="calibre12"> x % &gt; % g(f(x，y)，z) </em>。</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Finding missing values</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1UU540-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">查找缺失值</h1>
+                
+            
+            
+                
+<p class="calibre2">r有一个很短很简单的寻找缺失值的方法，就是<kbd class="calibre11">is.na(df)</kbd>。它返回<kbd class="calibre11">df</kbd>中带有缺失值的行索引。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Transpose data</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="1VSLM0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">转置数据</h1>
+                
+            
+            
+                
+<p class="calibre2">在SQL Server中，转置数据集不是一件简单的事情。使用R中的<kbd class="calibre11">t(df)</kbd>交换一个数据帧的行和列，<kbd class="calibre11">df</kbd>。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Pivot / Unpivot data</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="20R680-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">透视/取消透视数据</h1>
+                
+            
+            
+                
+<p class="calibre2"><kbd class="calibre11">reshape</kbd>包对于透视和反透视数据非常有用。</p>
+<p class="calibre2">使用<kbd class="calibre11">cast</kbd>按如下方式旋转数据:</p>
+<pre class="calibre19">library(reshape) 
+x &lt;- data.frame(OrderMonth = orders$OrderMonth, 
+                SalesPerson = orders$SalesPerson, 
+                TotalAmount = orders$TotalAmount) 
+x1 &lt;- cast(x, OrderMonth ~ SalesPerson) 
+names(x1) </pre>
+<p class="calibre2">使用<kbd class="calibre11">melt</kbd>按如下方式取消数据透视:</p>
+<pre class="calibre19">melt(x1,id=c(OrderMonth)) </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Example - data exploration and munging using R in T-SQL</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="21PMQ0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">示例-在T-SQL中使用R进行数据探索和管理</h1>
+                
+            
+            
+                
+<p class="calibre2">如前所述，r中有非常好的数据管理和数据探索技术，现在让我们把它们用T-SQL连接起来。在下面的示例中，我们希望获得2015年每月销售人员订单计数和总金额的统计摘要，具体来说是Min，Max，1 <sup class="calibre38"> st </sup> Quartile，Median，3 <sup class="calibre38"> rd </sup> Quartile，以了解每个销售人员每月订单的数据范围和分布情况:</p>
+<pre class="calibre19"> 
+USE WideWorldImporters 
+GO 
+ 
+-- Part 1: Get Monthly Order count and Order amount  
+-- per Sales Person in Year 2015. 
+DECLARE @SQLScript NVARCHAR(MAX) 
+SET @SQLScript = N'SELECT DATEFROMPARTS(YEAR(o.[OrderDate]),  
+MONTH(o.[OrderDate]), 1) AS OrderMonth, 
+    sp.[PreferredName] AS SalesPerson, 
+    COUNT(DISTINCT o.[OrderID]) AS OrderCount, 
+    SUM(ol.[Quantity] * ol.[UnitPrice]) AS TotalAmount 
+FROM [Sales].[Orders] o 
+    INNER JOIN [Sales].[OrderLines] ol 
+        ON ol.[OrderID] = o.[OrderID] 
+    INNER JOIN [Application].[People] sp 
+        ON sp.[PersonID] = o.[SalespersonPersonID] 
+WHERE sp.[ValidTo] &gt;= GETDATE() 
+    AND YEAR(o.[OrderDate]) = 2015 
+GROUP BY 
+DATEFROMPARTS(YEAR(o.[OrderDate]),  
+MONTH(o.[OrderDate]), 1), 
+    sp.[PreferredName];' 
+ 
+-- Part 2: Prepare the R-script that will summarize the dataset. 
+DECLARE @RScript NVARCHAR(MAX) 
+SET @RScript = N'OutputDataSet &lt;- as.data.frame(t(sapply(InputDataSet[, c("OrderCount", "TotalAmount")], summary))); 
+OutputDataSet &lt;- cbind(Column = row.names(OutputDataSet), OutputDataSet);' 
+ 
+-- Part 3: Execute R in TSQL to get the monthly sales person's  
+-- order count and total amount. 
+EXECUTE sp_execute_external_script 
+     @language = N'R' 
+    ,@script = @RScript 
+    ,@input_data_1 = @SQLScript 
+WITH RESULT SETS (( 
+            [Columns] NVARCHAR(30), [Min] FLOAT, 
+            [Q1] FLOAT, [Median] FLOAT, 
+            [Mean] FLOAT,  [Q3] FLOAT, 
+            [Max] FLOAT)); 
+GO 
+ </pre>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Data visualization in R</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="22O7C0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">R中的数据可视化</h1>
+                
+            
+            
+                
+<p class="calibre2">良好的数据可视化从大量数据中获得洞察力，并作为与受众交流的媒介。幸运的是，R有强大的内置函数和包，可以帮助您创建良好的数据可视化。在这一节中，我们将通过一些内置的图形函数和R库来展示它们的能力。然后我们将通过一个例子演示如何用T-SQL将它缝合在一起。您还将学习如何在SQL Operations Studio中显示来自R的图形。与上一节类似，我们将使用<kbd class="calibre11">orders</kbd>数据集，并创建一个数据框<strong class="calibre1"> d </strong>来缩小销售人员Amy、Jack和Hudson的分析范围。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Plot</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="23MNU0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">情节</h1>
+                
+            
+            
+                
+<p class="calibre2">R中的<kbd class="calibre11">plot()</kbd>函数绘制了一个简单的散点图，显示了两个变量和分布趋势/异常值之间的关系。</p>
+<p class="calibre2">以下是一个脚本示例，它可视化了2015年<kbd class="calibre11">Amy</kbd>、<kbd class="calibre11">Jack</kbd>和<kbd class="calibre11">Hudson</kbd>的订单数量和月销售额之间的关系:</p>
+<pre class="calibre19">&gt; d &lt;- orders[orders$SalesPerson %in% c("Amy", "Jack", "Hudson"), ]; 
+&gt; plot(x = d$TotalAmount, y = d$OrderCount,  
+main = "Monthly Orders", xlab = "Total Amount ($)",  
+ylab = "Number of Orders", col = d$SalesPerson, pch = 19,  
+xaxt = "n"); 
+&gt; axis(side = 1, at = x &lt;- signif(seq(from = 0,  
+to =  max(orders$TotalAmount), length.out = 6), 2), 
+labels = paste(x / 1000, "k", sep = "")); </pre>
+<p class="calibre2">下图显示了2015年每个销售人员的月金额和订单数量。使用这样的图，我们可以很容易地看出，有一个强大的销售人员用蓝点表示:</p>
+<div><img class="aligncenter29" src="img/00045.gif"/></div>
+<p>图4-5使用基本绘图功能的散点图</p>
+<p class="calibre2">显然，前面的图表需要几个步骤来绘制，您还需要添加一个<kbd class="calibre11">legend()</kbd>调用来将颜色映射到销售人员。下面是一个简单的方法来绘制一个一次调用的曲线图。</p>
+<p class="calibre2"><kbd class="calibre11">ggplot2</kbd>库提供了一种使用<kbd class="calibre11">qplot</kbd>函数创建类似图表的简单方法。以下脚本相当于前面的调用:</p>
+<pre class="calibre19">&gt; library(ggplot2)  
+&gt;  qplot(x = TotalAmount, y = OrderCount, data = d,  
+  color = SalesPerson, main = "Monthly Orders"); </pre>
+<p class="calibre2">下图附有图例，有助于显示Hudson是表现最佳的销售人员:</p>
+<div><img class="aligncenter30" src="img/00046.gif"/></div>
+<p>图4-6使用ggplot函数的散点图</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Histogram</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="24L8G0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">柱状图</h1>
+                
+            
+            
+                
+<p class="calibre2">R中的<kbd class="calibre11">hist()</kbd>函数绘制了一个直方图，表示数据集的频率分布。</p>
+<p class="calibre2">下面的脚本绘制了2015年每月销售人员总数的频率分布:</p>
+<pre class="calibre19">&gt; hist(orders$TotalAmount, main = "Monthly Orders",  
+  xlab = "Total Amount ($)") </pre>
+<p class="calibre2">使用下面的直方图，我们可以很容易地看到，最常见的每月总金额(每个销售人员)在每月40万美元到50万美元之间:</p>
+<div><img class="aligncenter31" src="img/00047.gif"/></div>
+<p>图4-7使用基本历史功能的直方图</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Boxplot</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="25JP20-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">箱线图</h1>
+                
+            
+            
+                
+<p class="calibre2">箱线图允许我们显示每个销售人员的异常值。这可以在R中使用<kbd class="calibre11">boxplot()</kbd>函数轻松实现。然而，<kbd class="calibre11">ggplot</kbd>功能非常易于使用和定制。这里有一个用<kbd class="calibre11">ggplot()</kbd>写箱线图的例子:</p>
+<pre class="calibre19">ggplot(orders,  
+       aes( x = SalesPerson, 
+            y = TotalAmount)) + 
+      geom_boxplot(outlier.color = "red", outlier.size = 3) + 
+      ggtitle(label = "Monthly Orders") + 
+      xlab("Sales Person") + ylab("Total Amount ($)"); </pre>
+<p class="calibre2">下图显示了每个销售人员在2015年的月订单分布情况:</p>
+<div><img class="aligncenter32" src="img/00048.gif"/></div>
+<p>图4-8使用ggplot函数的箱线图</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Scatter plot</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="26I9K0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">散点图</h1>
+                
+            
+            
+                
+<p class="calibre2">在R中，<kbd class="calibre11">scatterplot()</kbd>可以用来理解变量之间的关系/趋势。</p>
+<p class="calibre2">以下是一个使用散点图来了解Amy、Hudson和Jack在2015年每月总额趋势的示例:</p>
+<pre class="calibre19">library(car) # For the scatterplot function 
+library(RColorBrewer) # For choosing color palette more easily 
+ 
+# Prepare d  
+d$SalesPerson &lt;- factor(d$SalesPerson); 
+d$OrderMonth &lt;- as.Date(d$OrderMonth); 
+ 
+# Configure the palette to use 
+my_colors &lt;- brewer.pal(nlevels(as.factor(d$SalesPerson)), "Set2") 
+ 
+# Map the monthly orders 
+scatterplot(TotalAmount ~ OrderMonth | SalesPerson, data = d, 
+    xlab = "Month", ylab = "Total Amount",  
+    main = "Monthly Orders", col = my_colors, 
+    cex = 1.5, lwd = 3) </pre>
+<p class="calibre2">根据下面的图表，我们可以得出结论，Hudson的每月总额略有下降，尽管总体上高于Amy和Jack。我们还可以看到，艾米的每月总额下降得相当快:</p>
+<div><img src="img/00049.gif" class="calibre39"/></div>
+<p>图4-9使用散点图功能的散点图</p>
+<p class="calibre2">ggplot函数也可用于创建散点图，并用平滑线覆盖散点图，显示销售人员的每月模式:</p>
+<pre class="calibre19"># Use the ggplot version 
+ggplot(data = d, 
+       aes(x = OrderMonth, y = TotalAmount, color = SalesPerson)) + 
+    geom_point() + geom_smooth(method = "loess") + 
+    scale_y_continuous(label = scales::dollar) + 
+    scale_color_brewer(palette = "Set2") + 
+    ggtitle(label = "Monthly Orders"); </pre>
+<div><img class="aligncenter33" src="img/00050.gif"/></div>
+<p>图4-10使用ggplot函数的散点图</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Tree diagram</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="27GQ60-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">树形图</h1>
+                
+            
+            
+                
+<p class="calibre2">预测建模的数据准备包括探索数据结构和可视化预测值的决策规则。这些值可以是分类的，也可以是连续的，分别表示为分类树和回归树。</p>
+<p class="calibre2">下面是创建树形图的脚本示例，描述了预测给定销售人员和<kbd class="calibre11">OrderCount</kbd>的每月总金额的决策规则:</p>
+<pre class="calibre19">library(rpart) 
+library(rpart) 
+library(rattle) 
+library(rpart.plot) 
+fit &lt;- rpart(TotalAmount ~ OrderCount + SalesPerson , data = d, method="anova"); 
+fancyRpartPlot(fit, sub = "Monthly Sales Person") 
+ </pre>
+<p class="calibre2">运行前面的脚本将给出一个整洁的树形图，节点上的第一行是月平均总金额(即，<em class="calibre12"> 619e+3 </em>在科学表示法中实际上是$619，000)，后面是n作为观察次数和构成节点的百分比:</p>
+<div><img class="aligncenter34" src="img/00051.gif"/></div>
+<p>图4-11使用rpart函数的树形图</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Example – R data visualization in T-SQL</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="28FAO0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">示例–T-SQL中的R数据可视化</h1>
+                
+            
+            
+                
+<p class="calibre2">现在我们已经学习了一些使用R进行数据可视化的例子，让我们在SQL Operations Studio中将它们与T-SQL结合起来。请注意，SSMS不会在T-SQL中呈现R生成的图像。</p>
+<p>从<a href="https://docs.microsoft.com/en-us/sql/sql-operations-studio/download" target="_blank" class="calibre40">https://docs . Microsoft . com/en-us/SQL/SQL-Operations-Studio/download</a>下载SQL Operations Studio。</p>
+<p class="calibre2">执行以下步骤，在T-SQL中运行R，以生成可以在SQL Operations Studio中可视化的图像。</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">打开SQL Operations Studio。</li>
+<li value="2" class="calibre8">在SQL Operations Studio中连接到服务器中的<kbd class="calibre11">WideWorldImporters</kbd>数据库。</li>
+<li value="3" class="calibre8">从示例中复制<kbd class="calibre11">Part 1</kbd>: T-SQL中的数据可视化，因为我们想要重用<kbd class="calibre11">@SQLScript</kbd>变量定义:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">-- Part 2: Prepare the R-script that will produce the visualization. 
+DECLARE @RScript NVARCHAR(MAX) 
+SET @RScript = N'library(ggplot2);  
+    image_file = tempfile();  
+    jpeg(filename = image_file, width=1000, height=400);  
+    d &lt;- InputDataSet[InputDataSet$SalesPerson %in% c("Amy", "Jack", "Hudson"), ]; 
+    print(qplot(x = TotalAmount, y = OrderCount, data = d, color = SalesPerson, main = "Monthly Orders")); 
+    dev.off() 
+    OutputDataSet &lt;- data.frame( 
+            data=readBin(file(image_file,"rb"), 
+            what=raw(),n=1e6));' 
+ 
+-- Part 3: Execute R in TSQL to get the binary representation of the image. 
+EXECUTE sp_execute_external_script 
+     @language = N'R' 
+    ,@script = @RScript 
+    ,@input_data_1 = @SQLScript 
+WITH RESULT SETS ((plot VARBINARY(MAX)));</strong> </pre>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">在SQL Operations Studio中，执行前面的脚本，您将获得一个包含名为<kbd class="calibre11">plot</kbd>的列的结果集。</li>
+<li value="5" class="calibre8">点击图表查看器，然后从图表类型中选择图像:</li>
+</ol>
+<div><img class="aligncenter35" src="img/00052.jpeg"/></div>
+<p>图4-12 SQL Operations Studio中R的数据可视化输出</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating R code in reports and visualizations</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="29DRA0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">在报告和可视化中集成R代码</h1>
+                
+            
+            
+                
+<p class="calibre2">在本节中，我们将深入探讨微软BI堆栈中提供的常见报告和可视化工具，如<strong class="calibre1">SQL Server Reporting Services</strong>(<strong class="calibre1">SSRS</strong>)、Power BI和移动报告。</p>
+<p class="calibre2">将R graphics与SQL Server集成有三个主要的用例。</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">获取表示数据/统计分析、训练模型或预测模型的数据集输出:</li>
+</ol>
+<div><img class="aligncenter36" src="img/00053.jpeg"/></div>
+<p>图4-13用于R中数据分析的SQL Server机器学习服务过程</p>
+<p class="calibre34">执行<kbd class="calibre11">sp_execute_external_script</kbd>来运行R以产生数据集输出，如(1) + (2) + (3)所示。数据集输出(3)可以来自数据/统计分析、训练模型、预测输出等等。在SQL Server中，我们可以有选择地进一步处理输出(4)，例如，将它保存到一个表中，或者将它传递给另一个存储过程。</p>
+<ol start="2" class="calibre14">
+<li value="2" class="calibre8">获取包含r的图形输出的varbinary表示的数据集输出。</li>
+</ol>
+<div><img class="aligncenter37" src="img/00054.jpeg"/></div>
+<p>图4-14数据可视化的SQL Server R服务过程</p>
+<p class="calibre34">执行<kbd class="calibre11">sp_execute_external_script</kbd>运行R以产生数据集输出，如(1) + (2) + (3)所示。在这种情况下，数据集输出(3)将具有图形输出的varbinary (max)表示。在SQL Server中，我们可以进一步插入输出(4)，例如，将图像作为varbinary (max)保存到表中。</p>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">将R图形输出保存到文件中，并将文件路径存储在数据集输出中。当首选脱机渲染时，这是理想的:</li>
+</ol>
+<div><img class="aligncenter38" src="img/00055.jpeg"/></div>
+<p>图4-17将数据可视化到文件的SQL Server机器学习服务过程</p>
+<div><p class="calibre34">执行<kbd class="calibre11">sp_execute_external_script</kbd>运行R以产生数据集输出，如(1) + (2) + (3)所示。在这种情况下，数据集输出(3)包含图形输出需要驻留的文件路径。在SQL Server中，我们可以选择进一步处理输出(4)。您还可以为该解决方案集成Filestream，如<em class="calibre12">tomakatrun的</em>博客中所述，此处:<br class="title-page-name"/><a href="https://tomaztsql.wordpress.com/2016/09/25/filetable-and-storing-graphs-from-microsoft-r-server/" target="_blank" class="calibre10">https://tomaztsql . WordPress . com/2016/09/25/file table-and-storing-graphs-from-Microsoft-r-server/</a></p>
+</div>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating R in SSRS reports</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2ACBS0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">将R纳入SSRS报告</h1>
+                
+            
+            
+                
+<p class="calibre2">SSRS报表可以从查询或存储过程中读取数据集。从本质上说，这为我们提供了足够的灵活性，可以选择如何将R输出合并为SSRS的临时或操作报告的一部分。</p>
+<p class="calibre2">现在，让我们来看几个在SSRS报告中整合R的例子。假设一名数据分析师想要进行快速统计分析，以了解销售人员和总金额之间的关系强度。使用SSRS很容易做到这一点。这里有一个例子来说明如何实现这一点。</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">使用<strong class="calibre1"> Visual Studio 2017 </strong>或<strong class="calibre1">SQL Server Management Studio</strong>，连接到<kbd class="calibre11">WideWorldImporters</kbd>。</li>
+<li value="2" class="calibre8">创建一个名为<kbd class="calibre11">dbo.usp_AnalyzeOrdersUsingAnova</kbd>的新存储过程:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">CREATE PROCEDURE dbo.usp_AnalyzeOrdersUsingAnova 
+( 
+  @StartDate DATE = '20150101', 
+  @EndDate DATE = '20151231' 
+) 
+/********************************************************** 
+ * Purpose: Determine if Monthly Orders (Total Amount in $)  
+ *      has no dependency on Sales Person. 
+ * Parameters:   
+ *  @StartDate  - The start date of the Orders table 
+ *  @EndDate  - The end date of Orders table 
+ * Example on how to execute: 
+ *  EXEC dbo.usp_AnalyzeOrdersUsingAnova 
+ *     @StartDate = '20150101' 
+ *    ,@EndDate = '20151231' 
+ *****************************************************************/ 
+AS 
+BEGIN  
+   
+  DECLARE @input_query NVARCHAR(MAX);  
+  DECLARE @RAOV NVARCHAR(MAX); 
+ 
+  -- The SQL query representing Input data set. 
+  -- Get the monthly orders from each Sales between  
+  -- specific date and time. 
+  SET @input_query = N' 
+  SELECT 
+    DATEFROMPARTS(YEAR(o.[OrderDate]),  
+       MONTH(o.[OrderDate]), 1) AS OrderMonth, 
+    sp.[PreferredName] AS SalesPerson, 
+    COUNT(DISTINCT o.[OrderID]) AS OrderCount, 
+    SUM(ol.[Quantity] * ol.[UnitPrice]) AS TotalAmount 
+  FROM [Sales].[Orders] o 
+    INNER JOIN[Sales] .[OrderLines] ol 
+      ON ol.[OrderID] = o.[OrderID] 
+    INNER JOIN[Application] .[People] sp 
+      ON sp.[PersonID] = o.[SalespersonPersonID] 
+  WHERE sp.[ValidTo] &gt;= GETDATE() 
+    AND o.[OrderDate] BETWEEN ''' +  
+CAST(@StartDate AS VARCHAR(30)) + ''' AND ''' + 
+CAST(@EndDate AS VARCHAR(30)) + ''' 
+  GROUP BY 
+    DATEFROMPARTS(YEAR(o.[OrderDate]),  
+      MONTH(o.[OrderDate]), 1), 
+    sp.[PreferredName];' 
+ 
+  -- The R code that tests if Total Amount has no strong  
+  -- dependency to Sales Person 
+  -- Note: Null Hypothesis (H0) in this case is Total Amount  
+  --    has no strong dependency to Sales Person. 
+  --    The closer p-value to 0 we can reject the H0. 
+  SET @RAOV = N'a = aov(TotalAmount ~ SalesPerson, </strong><br class="title-page-name"/><strong class="calibre1">   data = InputDataSet); 
+    m &lt;- summary(a); 
+    library(plyr); 
+    x &lt;- data.frame(RowID = 1:nrow(m[[1]]),  
+      Attribute = rownames(m[[1]])); 
+    OutputDataSet &lt;- cbind(x, ldply(m, data.frame));' 
+ 
+  -- Using R Services produce the output as a table 
+  EXEC sp_execute_external_script @language = N'R' 
+    ,@script = @RAOV  
+    ,@input_data_1 = @input_query 
+    ,@input_data_1_name = N'InputDataSet' 
+    ,@output_data_1_name = N'OutputDataSet'  
+    WITH RESULT SETS (([RowID]  INT, 
+          [Attribute]  NVARCHAR(50),  
+          [DF]    NUMERIC(20,10), 
+          [SumSq]  NUMERIC(20,10), 
+          [MeanSq]  NUMERIC(20,10), 
+          [FValue]  FLOAT, 
+          [Pr(&gt;F)]  FLOAT 
+          )); 
+ 
+END</strong> </pre>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">使用Visual Studio 2017或报表生成器创建新报表。</li>
+<li value="4" class="calibre8">通过按下<em class="calibre12"> Ctrl </em> + <em class="calibre12"> S </em>将该文件保存为<kbd class="calibre11">SQL+R_Chapter04_SSRS_Anova_01.rdl</kbd>，或者转到文件菜单点击保存。</li>
+<li value="5" class="calibre8">创建一个新的数据源，并将这个连接到服务器上的<kbd class="calibre11">WideWorldImporters</kbd>数据库的<kbd class="calibre11">WideWorldImporters</kbd>保存下来。</li>
+<li value="6" class="calibre8">然后使用以下查询定义创建一个新的数据集，然后单击刷新字段:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">EXEC dbo.usp_AnalyzeOrdersUsingAnova</strong> </pre>
+<div><img src="img/00056.jpeg" class="calibre41"/></div>
+<p>图4-16指定要执行的存储过程</p>
+<ol start="7" class="calibre14">
+<li value="7" class="calibre8">创建一个<strong class="calibre1"> Tablix </strong>来代表<kbd class="calibre11">AOV_SalesPerson</kbd>列:</li>
+</ol>
+<div><img class="aligncenter39" src="img/00057.gif"/></div>
+<p>图4-17添加包含AOV _销售人员中所有列的Tablix</p>
+<ol start="8" class="calibre14">
+<li value="8" class="calibre8">可选地添加另一个<strong class="calibre1"> Tablix </strong>，其中它的<kbd class="calibre11">DataSetName</kbd>映射到<kbd class="calibre11">AOV_SalesPerson</kbd>。在<strong class="calibre1"> Tablix </strong>主体的第一个单元格上，用以下表达式描述如何解释分析:</li>
+</ol>
+<pre class="calibre33">="Since the p-value of " &amp; Fields!Pr__F_.Value &amp; " is " &amp; IIf(Fields!Pr__F_.Value &lt; 0.05, "less", "greater") &amp; " than the .05 significance level, we " &amp; IIf(Fields!Pr__F_.Value &lt; 0.05, "reject", "accept") &amp; " the null hypothesis that the mean of monthly Total Amount of " &amp; Fields!Attribute.Value &amp; " are all equal. This means that there is " &amp;  IIf(Fields!Pr__F_.Value &lt; 0.05, "", "no") &amp; " dependency between " &amp; First(Fields!Attribute.Value, "AOV_SalesPerson") &amp; " and Monthly Orders Total Amount"</pre>
+<ol start="9" class="calibre14">
+<li value="9" class="calibre8">单击运行查看报告预览:</li>
+</ol>
+<div><img class="aligncenter40" src="img/00058.jpeg"/></div>
+<p>图4-18预览报告</p>
+<p class="calibre2">使用R的另一个常见场景是绘制数据可视化。在以下示例中，我们将比较销售人员在2015年的表现。从这里，我们可以看到销售人员每月订单的趋势以及他们在12个月中的表现。</p>
+<ol start="1" class="calibre14">
+<li value="1" class="calibre8">使用<strong class="calibre1"> Visual Studio 2017 </strong>或<strong class="calibre1">SQL Server Management Studio</strong>，连接到<kbd class="calibre11">WideWorldImporters</kbd>。</li>
+<li value="2" class="calibre8">创建一个名为<kbd class="calibre11">dbo.usp_CreateMonthlySalesPlot</kbd>的新存储过程:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1"> 
+CREATE PROCEDURE dbo.usp_CreateMonthlySalesPlot 
+( 
+  @StartDate DATE = '20150101', 
+  @EndDate DATE = '20151231' 
+) 
+/********************************************************** 
+ * Purpose: Determine if Monthly Orders (Total Amount in $)  
+ *      has no dependency on Sales Person. 
+ * Parameter:   
+ *  @StartDate  - Observation start date in the Orders table 
+ *  @EndDate  - Observation end date in the Orders table 
+ * Example on how to execute: 
+ *  EXEC dbo.usp_AnalyzeOrdersUsingAnova 
+ *     @StartDate = '20150101' 
+ *    ,@EndDate = '20151231' 
+ **********************************************************/ 
+AS 
+BEGIN  
+   
+  DECLARE @input_query NVARCHAR(MAX);  
+  DECLARE @RPlot NVARCHAR(MAX); 
+ 
+  -- The SQL query representing Input data set. 
+  -- Get the monthly orders from each Sales between  
+    specfic date and time. 
+  SET @input_query = N' 
+  SELECT 
+    DATEFROMPARTS(YEAR(o.[OrderDate]),  
+      MONTH(o.[OrderDate]), 1) AS OrderMonth, 
+    sp.[PreferredName] AS SalesPerson, 
+    COUNT(DISTINCT o.[OrderID]) AS OrderCount, 
+    SUM(ol.[Quantity] * ol.[UnitPrice]) AS TotalAmount 
+  FROM [Sales].[Orders] o 
+    INNER JOIN [Sales] .[OrderLines] ol 
+      ON ol.[OrderID] = o.[OrderID] 
+    INNER JOIN [Application] .[People] sp 
+      ON sp.[PersonID] = o.[SalespersonPersonID] 
+  WHERE sp.[ValidTo] &gt;= GETDATE() 
+    AND o.[OrderDate] BETWEEN ''' +  
+      CAST(@StartDate AS VARCHAR(30)) +  
+      ''' AND ''' +  
+      CAST(@EndDate AS VARCHAR(30)) + ''' 
+  GROUP BY 
+    DATEFROMPARTS(YEAR(o.[OrderDate]), MONTH(o.[OrderDate]), 1), 
+    sp.[PreferredName];' 
+ 
+   
+  -- The R code that produces the plot. 
+  SET @RPlot = N'library(ggplot2);  
+  image_file = tempfile();  
+  jpeg(filename = image_file, width=600, height=800);  
+  a &lt;- qplot(y = TotalAmount, x = OrderMonth,  
+        data = InputDataSet, 
+        color = SalesPerson,  
+        facets = ~SalesPerson, 
+        main = "Monthly Orders"); 
+  a + scale_x_date(date_labels = "%b");     
+  plot(a); 
+  dev.off();  
+  OutputDataSet &lt;-  data.frame( 
+    data=readBin(file(image_file,"rb"), 
+    what=raw(),n=1e6));   
+' 
+  EXEC sp_execute_external_script @language = N'R' 
+    ,@script = @RPlot  
+    ,@input_data_1 = @input_query 
+    ,@input_data_1_name = N'InputDataSet' 
+    ,@output_data_1_name = N'OutputDataSet'  
+    WITH RESULT SETS (( [plot] VARBINARY(MAX))); 
+ 
+END</strong> </pre>
+<ol start="3" class="calibre14">
+<li value="3" class="calibre8">在Report Builder中，打开之前的<kbd class="calibre11">SQL+R_Chapter04_SSRS_Anova_01.rdl</kbd>，使用以下查询定义创建一个新的数据集，然后单击Refresh Fields。创建的字段称为<kbd class="calibre11">Plot</kbd>，应该有一行:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">EXEC dbo.usp_CreateMonthlySalesPlot</strong></pre>
+<div><img class="aligncenter41" src="img/00059.jpeg"/></div>
+<p>图4-19指定了要执行的存储过程</p>
+<ol start="4" class="calibre14">
+<li value="4" class="calibre8">插入具有以下常规属性的新图像:</li>
+</ol>
+<p class="calibre42">选择图像源:数据库</p>
+<p class="calibre42">使用该字段:<kbd class="calibre11">=First(Fields!plot.Value, "MonthlyPlot")</kbd></p>
+<p class="calibre42">使用此MIME类型:<kbd class="calibre11">image/jpeg</kbd></p>
+<div><img src="img/00060.gif" class="calibre43"/></div>
+<p>图4-20配置图像以渲染绘图</p>
+<div/>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">或者，转到左侧窗格上的“大小”项目，将显示更改为原始大小。</li>
+</ol>
+<p class="calibre2"> </p>
+<ol start="6" class="calibre14">
+<li value="6" class="calibre8">单击运行查看报告预览:</li>
+</ol>
+<div><img src="img/00061.jpeg" class="calibre44"/></div>
+<p>图4-21预览带有绘图的报告</p>
+<p class="calibre2">这个RDL文件现在可以发布到一个<strong class="calibre1"> SSRS报告服务器</strong>。</p>
+<p class="calibre2">有关SSRS的更多信息，下面的Microsoft Docs网站非常有用:</p>
+<p class="calibre2"><a href="https://docs.microsoft.com/sql/reporting-services/create-deploy-and-manage-mobile-and-paginated-reports" target="_blank" class="calibre10">https://docs . Microsoft . com/SQL/reporting-services/create-deploy-and-manage-mobile-and-paginated-reports</a></p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Integrating R in Power BI</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2BASE0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">在功率BI中集成R</h1>
+                
+            
+            
+                
+<p class="calibre2">Power BI是可视化数据的强大工具。与R一起，Power BI可以呈现具有不折不扣的动态交互性的美丽图像。在本例中，您将了解如何创建类似于上一节我们在SSRS创建的数据可视化:</p>
+<div><img class="aligncenter42" src="img/00062.jpeg"/></div>
+<p>图4-22使用R脚本编辑器的Power BI可视化</p>
+<div/>
+<p class="calibre2">为简单起见，我们将使用Power BI desktop，但您也可以从在线<a href="https://powerbi.microsoft.com/en-us/" target="_blank" class="calibre10">PowerBI.com</a>版本创建一个:</p>
+<ol class="calibre14">
+<li value="1" class="calibre8">启动<strong class="calibre1"> Power BI Desktop </strong>并创建一个新文件。</li>
+<li value="2" class="calibre8">从主页菜单中，单击获取数据| SQL Server。</li>
+<li value="3" class="calibre8">连接到拥有<kbd class="calibre11">WideWorldImporters</kbd>数据库的SQL Server实例。</li>
+<li value="4" class="calibre8">然后单击高级选项，在SQL语句字段中提供以下查询:</li>
+</ol>
+<pre class="calibre33"><strong class="calibre1">SELECT 
+    DATEFROMPARTS(YEAR(o.[OrderDate]), 
+    MONTH(o.[OrderDate]), 1) AS OrderMonth, 
+    sp.[PreferredName] AS SalesPerson, 
+    COUNT(DISTINCT o.[OrderID]) AS OrderCount, 
+    SUM(ol.[Quantity] * ol.[UnitPrice]) AS TotalAmount 
+FROM [Sales].[Orders] o 
+    INNER JOIN[Sales] .[OrderLines] ol 
+        ON ol.[OrderID] = o.[OrderID] 
+    INNER JOIN[Application] .[People] sp 
+        ON sp.[PersonID] = o.[SalespersonPersonID] 
+WHERE sp.[ValidTo] &gt;= GETDATE() 
+GROUP BY 
+    DATEFROMPARTS(YEAR(o.[OrderDate]), MONTH(o.[OrderDate]), 1), 
+    sp.[PreferredName];</strong> </pre>
+<p class="calibre34">该对话框现在应该如下所示:</p>
+<div><img src="img/00063.jpeg" class="calibre45"/></div>
+<p>图4-23 SQL Server数据库数据源详细信息</p>
+<ol start="5" class="calibre14">
+<li value="5" class="calibre8">单击“确定”查看查询预览。</li>
+<li value="6" class="calibre8">然后在预览窗口中单击加载:</li>
+</ol>
+<div><img src="img/00064.jpeg" class="calibre46"/></div>
+<p>图4-24查询预览</p>
+<ol start="7" class="calibre14">
+<li value="7" class="calibre8">在可视化窗格中，单击R Script图标。</li>
+<li value="8" class="calibre8">将字段窗格中的<kbd class="calibre11">OrderMonth</kbd>、<kbd class="calibre11">SalesPerson</kbd>和<kbd class="calibre11">TotalAmount</kbd>列拖放到值框中。</li>
+</ol>
+<p class="calibre34">请注意，您的表可能被命名为<kbd class="calibre11">Query1</kbd>，您可以将其重命名为更有意义的名称，如MonthlyOrders，如下所示:</p>
+<div><img class="aligncenter43" src="img/00065.jpeg"/></div>
+<p>图4-25选择字段作为R的输入</p>
+<ol start="9" class="calibre14">
+<li value="9" class="calibre8">使用OrderMonth，而不是默认的日期层次结构，从值字段的下拉列表中选择OrderMonth:</li>
+</ol>
+<div><img class="aligncenter44" src="img/00066.jpeg"/></div>
+<p>图4-26选择订单月份而不是数据层次结构来显示</p>
+<ol start="10" class="calibre14">
+<li value="10" class="calibre8">确保R脚本图形框仍处于焦点上。或者，您可以调整它的大小，使其更宽或更高:</li>
+</ol>
+<p class="calibre2"/>
+<div><img src="img/00067.jpeg" class="calibre47"/></div>
+<p>图4-27r Power BI桌面中的可视化框</p>
+<ol start="11" class="calibre14">
+<li value="11" class="calibre8">然后，在Power BI屏幕下半部的<strong class="calibre1"> R脚本编辑器</strong>中，输入以下R代码:</li>
+</ol>
+<pre class="calibre33">dataset$OrderMonth &lt;- as.Date(dataset$OrderMonth); 
+ 
+library(ggplot2); 
+a &lt;- qplot(y = TotalAmount, x = OrderMonth, data = dataset, 
+        color = SalesPerson, facets = ~SalesPerson, 
+        main = "Monthly Orders"); 
+a + scale_x_date(date_labels = "%b"); 
+a + scale_y_continuous(label = scales::dollar);</pre>
+<ol start="12" class="calibre14">
+<li value="12" class="calibre8">单击位于R脚本编辑器栏右侧的Run Script按钮。</li>
+<li value="13" class="calibre8">添加切片器，然后拖放OrderMonth。</li>
+<li value="14" class="calibre8">通过在<strong class="calibre1">值</strong>字段中点击OrderMonth列表中的X，取消选择除Year之外的所有OrderMonth层次结构:</li>
+</ol>
+<div><img src="img/00068.jpeg" class="calibre48"/></div>
+<p>图4-28年度切片器</p>
+<ol start="15" class="calibre14">
+<li value="15" class="calibre8">现在，您的Power BI报告应该如下所示:</li>
+</ol>
+<div><img src="img/00069.jpeg" class="calibre49"/></div>
+<p>图4-29功率BI报告</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Summary</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2C9D00-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">摘要</h1>
+                
+            
+            
+                
+<p class="calibre2">在本章中，您已经学习了数据准备在预测建模中的重要性，预测建模包括数据探索和数据可视化练习。r有许多对数据管理有用的开源包，例如<kbd class="calibre11">dplyr</kbd>、<kbd class="calibre11">reshape</kbd>等等。挑战在于在SQL Server和r中实现数据管理活动之间的平衡，SQL Server机器学习服务的优点在于它允许与SQL Server Reporting Services轻松集成。此外，Power BI还支持R可视化的交互式数据探索。在下一章，你将会学到更多关于可移植的、可伸缩的和可分发的R函数的<kbd class="calibre11">RevoScaleR</kbd>库。</p>
+
+
+            
+
+            
+        
+    </body></html>
+</body></html>

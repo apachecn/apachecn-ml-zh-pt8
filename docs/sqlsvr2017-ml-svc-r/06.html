@@ -1,0 +1,805 @@
+<html><head/><body>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Predictive Modeling</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2RHM00-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">预测建模</h1>
+                
+            
+            
+                
+<p class="calibre2">预测建模是一个基于预先训练和构建的模型或函数，使用高级统计和概率算法来预测结果的过程。基于预测变量的结果，这些算法可以被分组到一个算法家族中。结果通常是解释未来行为的预测值。几个变量或输入数据组成一个数学函数，也称为模型(因此也称为数据建模)，这些输入数据试图解释或预测结果。为了更好地理解预测建模，本章将包括以下主题:</p>
+<ul class="calibre7">
+<li class="calibre8">数据建模</li>
+<li class="calibre8">高级预测算法</li>
+<li class="calibre8">预测分析</li>
+<li class="calibre8">部署和使用预测解决方案</li>
+<li class="calibre8">使用SQL Server数据库中的R服务执行预测</li>
+</ul>
+<p class="calibre2">本章的重点将是通过使用R解决您的典型业务问题，深入了解如何在SQL Server 2016/2017中使用预测建模。在企业环境中，业务问题可以从非常广泛的方面来定义。例如，在医学中，预测建模可以帮助理解和解决的一个典型问题是，药物C的成分A和B的变化是否有助于治愈疾病？此外，在冶金行业，我们能否模拟防腐涂料如何随着时间的推移而老化，或者在零售行业，客户如何根据自己的需求或行为在商店中选择更好的产品？可以说，我们的日常生活与预测和预报交织在一起。通常，我们所有人面临的每一个后勤问题都是一个潜在的非常相关的主题的简单问题:如果我晚5分钟离开家去工作，如果我走捷径等等，这会影响我的驾驶时间吗？从字面上看，我们可以说，我们的日常决策是我们在给定产出下采取的所有行动的总和。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Data modeling</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2SG6I0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">数据建模</h1>
+                
+            
+            
+                
+<p class="calibre2">数据建模是我们试图用一组独立变量或输入数据找到一个函数(或所谓的模型)的过程。就像在数据仓库中，建模指的是建立基于物理数据结构的概念框架，并借助ORM或UML(甚至CRC)图来探索数据中的结构，在进行预测分析时探索结构也是如此。对于后者，数据建模是探索两个或更多变量之间的结构(或关系)。这些关系可以表示为函数，并且本质上存储为模型。</p>
+<p class="calibre2">为了开始建模，我们将使用以下GitHub存储库中的一些微软数据:</p>
+<p class="calibre2"><a href="https://github.com/Microsoft/sql-server-samples/tree/master/samples/features/machine-learning-services/python/getting-started/rental-prediction" class="calibre10">https://github . com/Microsoft/SQL-server-samples/tree/master/samples/features/machine-learning-services/python/getting-started/rental-prediction</a></p>
+<p class="calibre2">不要对这个Python示例感到困惑:</p>
+<div><img class="aligncenter53" src="img/00087.jpeg"/></div>
+<p class="calibre2">下载该数据库将会下载<kbd class="calibre11">TutorialDB.bak</kbd>文件，您只需将该文件恢复到SQL Server实例，其中安装了R in-database。该数据库是本章附带代码的一部分。</p>
+<p class="calibre2">数据建模的一部分是建立对后期阶段预测如何工作的理解。因此，在这一阶段，我们将了解变量及其相互关系。从下载的文件创建restore，并从backup T-SQL命令运行以下restore:</p>
+<pre class="calibre19"><strong class="calibre1">USE [master]</strong><br class="title-page-name"/><strong class="calibre1">BACKUP LOG [TutorialDB] TO DISK = N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\Backup\TutorialDB_LogBackup_2018-01-01_23-59-09.bak'</strong></pre>
+<pre class="calibre19"><strong class="calibre1">WITH NOFORMAT, NOINIT, NAME = N'TutorialDB_LogBackup_2018-01-01_23-59-09', NOSKIP, NOREWIND, NOUNLOAD, NORECOVERY , STATS = 5</strong><br class="title-page-name"/><br class="title-page-name"/><strong class="calibre1">RESTORE DATABASE [TutorialDB] FROM DISK = N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\Backup\TutorialDB.bak' </strong><br class="title-page-name"/><strong class="calibre1">WITH FILE = 2, MOVE N'TutorialDB' TO N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\TutorialDB.mdf', </strong><br class="title-page-name"/><strong class="calibre1">MOVE N'TutorialDB_log' TO N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\TutorialDB_log.ldf', NOUNLOAD, STATS = 5</strong><br class="title-page-name"/><br class="title-page-name"/><strong class="calibre1">GO
+  </strong></pre>
+<p class="calibre2">或者，您可以简单地在SSMS使用<kbd class="calibre11">RESTORE</kbd>命令:</p>
+<div><img src="img/00088.gif" class="calibre57"/></div>
+<p class="calibre2">现在，您已经恢复了数据库，并且可以使用<kbd class="calibre11">dbo.rental_data</kbd>表。目前，这就足够了。</p>
+<p class="calibre2">准备好数据集后，我们现在可以开始通过探索和理解变量以及它们之间的关系来对数据进行建模。这个快速探索可以在SQL Operation Studio中执行(下载链接:<a href="https://docs.microsoft.com/en-us/sql/sql-operations-studio/download" class="calibre10">https://docs . Microsoft . com/en-us/SQL/SQL-operations-Studio/download</a>)，在这里我们将使用一个简单的查询:</p>
+<pre class="calibre19"><strong class="calibre1">SELECT RentalCount,Day,Month, Holiday, Snow FROM rental_data</strong>  </pre>
+<p class="calibre2">除了结果的标准表视图，这还将提供一个不错的图表查看器，其中变量的简单图形表示将使您更好地了解数据:</p>
+<div><img src="img/00089.jpeg" class="calibre58"/></div>
+<p class="calibre2">但是没有对描述性统计的一般理解，我们就不继续了。因此，使用<kbd class="calibre11">RevoScaleR</kbd>包中的<kbd class="calibre11">rxSummary</kbd>函数将会得到想要的结果:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_execute_external_Script</strong>
+<strong class="calibre1">@LANGUAGE = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+<strong class="calibre1">    dr_rent &lt;- InputDataSet</strong>
+<strong class="calibre1">    dr_rent &lt;- data.frame(dr_rent)</strong>
+ <strong class="calibre1">   summary &lt;- rxSummary(~ RentalCount  + Year + Month + Day  + WeekDay + Snow + Holiday , data = dr_rent)</strong>
+   <strong class="calibre1"> OutputDataSet &lt;- summary$sDataFrame'</strong>
+<strong class="calibre1">,@input_data_1 = N'SELECT  RentalCount, Year, Month, Day, WeekDay, Snow, Holiday FROM rental_data'</strong>
+<strong class="calibre1">WITH RESULT SETS ((</strong>
+<strong class="calibre1">    [Name]   NVARCHAR(100)</strong>
+<strong class="calibre1">    ,Mean   NUMERIC(16,3)</strong>
+<strong class="calibre1">    ,StdDev  NUMERIC(16,3)</strong>
+<strong class="calibre1">    ,[Min]   INT</strong>
+<strong class="calibre1">    ,[Max]  INT</strong>
+<strong class="calibre1">    ,ValidObs  INT</strong>
+<strong class="calibre1">    ,MissingObs INT</strong>
+<strong class="calibre1">));</strong>
+<strong class="calibre1">GO</strong>
+  </pre>
+<p class="calibre2">以下是作为简单描述性统计表的结果:</p>
+<div><img src="img/00090.gif" class="calibre59"/></div>
+<p class="calibre2">探索单变量和双变量统计是上一篇<a target="_blank" href="part0081.html#2D7TI0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第5章</a>、<em class="calibre12"> RevoScaleR包、</em>的一部分，但这里我们将更多地关注双变量和多变量统计。在我们开始之前，让我们进一步探索一下这种相关性。根据对变量名和描述性统计数据的研究，常识会告诉我们，在节假日期间，租赁计数应该更高。可以使用相关系数来检查这一点。下面是一个简单的例子:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_execute_external_Script</strong>
+<strong class="calibre1">@LANGUAGE = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+    <strong class="calibre1">  dr_rent &lt;- InputDataSet</strong>
+    <strong class="calibre1">  OutputDataSet &lt;- data.frame(cor(dr_rent$Holiday, dr_rent$RentalCount))</strong>
+<strong class="calibre1">'</strong>
+<strong class="calibre1">,@input_data_1 = N'SELECT  Holiday, RentalCount FROM rental_data'</strong>
+<strong class="calibre1">WITH RESULT SETS ((</strong>
+<strong class="calibre1">    cor NUMERIC(10,3)</strong>
+<strong class="calibre1">    ));</strong>
+<strong class="calibre1">GO</strong>
+  </pre>
+<p class="calibre2">这会让你了解<kbd class="calibre11">0.332</kbd>的双变量关系。这是一个弱相关，但却是一个正相关:</p>
+<div><img src="img/00091.gif" class="calibre60"/></div>
+<p class="calibre2">这仅仅意味着，如果变量<kbd class="calibre11">RentalCount</kbd>变得更高，假期的数量也会增加。这确实是有道理的，因为如果更多的假期到来，预计会有更多的租金。</p>
+<p class="calibre2">现在，我们可以通过组合每个变量来继续探索和寻找相关性。这类似于交叉连接，但是有更简单的方法来实现。当然，一种方法是运用常识，选择有意义的相关性:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_execute_external_Script</strong>
+<strong class="calibre1">@LANGUAGE = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+  <strong class="calibre1">  dr_rent &lt;- InputDataSet</strong>
+    <strong class="calibre1">dr_rent &lt;- data.frame(dr_rent)</strong>
+    <strong class="calibre1">cor_HR &lt;- cor(dr_rent$Holiday, dr_rent$RentalCount)</strong>
+    <strong class="calibre1">cor_FR &lt;- cor(as.numeric(dr_rent$FWeekDay), dr_rent$RentalCount)</strong>
+    <strong class="calibre1">cor_MR &lt;- cor(dr_rent$Month, dr_rent$RentalCount)</strong>
+    <strong class="calibre1">cor_YR &lt;- cor(dr_rent$Year,dr_rent$RentalCount)</strong>
+    <strong class="calibre1">d &lt;- data.frame(cbind(cor_HR, cor_FR, cor_MR, cor_YR))</strong>
+    <strong class="calibre1">OutputDataSet &lt;- d'</strong>
+    <strong class="calibre1">,@input_data_1 = N'SELECT  Holiday, RentalCount,Month,FWeekDay, Year FROM rental_data'</strong>
+<strong class="calibre1">WITH RESULT SETS ((</strong>
+<strong class="calibre1">    cor_HR NUMERIC(10,3)</strong>
+<strong class="calibre1">,cor_FR NUMERIC(10,3)</strong>
+<strong class="calibre1">,cor_MR NUMERIC(10,3)</strong>
+<strong class="calibre1">,cor_YR NUMERIC(10,3)</strong>
+<strong class="calibre1">));</strong>
+<strong class="calibre1">GO</strong>
+  </pre>
+<p class="calibre2">并且我们得到如下图所示的结果。解释和理解结果是非常重要的。因此，到目前为止，假期时间是与租赁数量变量最相关的变量。无论是星期几，还是年份，都不起任何重要作用。<kbd class="calibre11">Month</kbd>和<kbd class="calibre11">RentalCount</kbd>之间的<kbd class="calibre11">-0.110</kbd>有一个非常微小的负相关性，这可以理解为较高的月份可能有较低的租赁数量，反之亦然。既然这种相关性如此微弱，那么对这种特定的相关性大惊小怪就毫无意义(即使它有意义或者没有任何意义):</p>
+<div><img src="img/00092.gif" class="calibre61"/></div>
+<p class="calibre2">类似地，我们可以通过绘制箱线图来研究每个变量中的值的分布:</p>
+<div><img src="img/00093.gif" class="calibre62"/></div>
+<p class="calibre2">第二种方法是绘制变量之间的相关图。一种方法是调用<kbd class="calibre11">corrplot</kbd> R库，它为您提供了一个非常强大和有用的可视化关联。我倾向于创建以下代码:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_execute_external_Script</strong>
+<strong class="calibre1">@LANGUAGE = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+<strong class="calibre1">    library(corrplot)  # * footnote</strong>
+<strong class="calibre1">    dr_rent &lt;- InputDataSet</strong>
+    
+<strong class="calibre1">            dr_rent$FWeekDay &lt;- as.numeric(dr_rent$FWeekDay)</strong>
+<strong class="calibre1">            dr_rent$FHoliday &lt;- as.numeric(dr_rent$FHoliday)</strong>
+            <strong class="calibre1">dr_rent$FSnow &lt;- as.numeric(dr_rent$FSnow)</strong>
+    
+    <strong class="calibre1">cor.mtest &lt;- function(mat, ...) {</strong>
+    <strong class="calibre1">     mat &lt;- as.matrix(mat)</strong>
+    <strong class="calibre1">     n &lt;- ncol(mat)</strong>
+    <strong class="calibre1">     p.mat&lt;- matrix(NA, n, n)</strong>
+    <strong class="calibre1">     diag(p.mat) &lt;- 0</strong>
+    <strong class="calibre1">     for (i in 1:(n - 1)) {</strong>
+    <strong class="calibre1">         for (j in (i + 1):n) {</strong>
+    <strong class="calibre1">         tmp &lt;- cor.test(mat[, i], mat[, j], ...)</strong>
+    <strong class="calibre1">         p.mat[i, j] &lt;- p.mat[j, i] &lt;- tmp$p.value</strong>
+    <strong class="calibre1">         }</strong>
+    <strong class="calibre1">     }</strong>
+    <strong class="calibre1">     colnames(p.mat) &lt;- rownames(p.mat) &lt;- colnames(mat)</strong>
+    <strong class="calibre1">     p.mat</strong>
+    <strong class="calibre1">     }</strong>
+    <strong class="calibre1">p.mat &lt;- cor.mtest(dr_rent)</strong>
+    
+    <strong class="calibre1">R&lt;-cor(dr_rent)</strong>
+    
+    <strong class="calibre1">col &lt;- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))</strong>
+    
+    <strong class="calibre1">image_file = tempfile();  </strong>
+    <strong class="calibre1">jpeg(filename = image_file);  </strong>
+    
+<strong class="calibre1">plot_corr &lt;- corrplot(R, method="color", col=col(200),  </strong>
+<strong class="calibre1">                type="upper", order="hclust", </strong>
+<strong class="calibre1">                addCoef.col = "black", # Add coefficient of correlation</strong>
+<strong class="calibre1">                tl.col="black", tl.srt=45, #Text label color and rotation</strong>
+<strong class="calibre1">                # Combine with significance</strong>
+<strong class="calibre1">                p.mat = p.mat, sig.level = 0.01, insig = "blank", </strong>
+<strong class="calibre1">                # hide correlation coefficient on the principal diagonal</strong>
+<strong class="calibre1">                diag=FALSE)</strong>
+<strong class="calibre1">    dev.off(); </strong>
+<strong class="calibre1">OutputDataSet &lt;- data.frame(data=readBin(file(image_file, "rb"), what=raw(), n=1e6));  '</strong>
+    
+<strong class="calibre1">,@input_data_1 = N'SELECT  *  FROM rental_data'</strong>
+<strong class="calibre1">WITH RESULT SETS ((</strong>
+<strong class="calibre1">  correlation_plot varbinary(max)</strong></pre>
+<pre class="calibre19"><strong class="calibre1">));</strong>
+<strong class="calibre1">GO</strong>
+  </pre>
+<p>代码从corrplot lattice文档中复制并稍作修改。</p>
+<p class="calibre2">此程序可在SSRS或Power BI suit或Excel中直接实施和使用；视觉效果如下:</p>
+<div><img src="img/00094.jpeg" class="calibre63"/></div>
+<p class="calibre2">在一张图中，训练有素的眼睛会立即看到相关性及其统计意义。所以，<kbd class="calibre11">0.33 RentalCount</kbd>和<kbd class="calibre11">Holiday</kbd>在这里可见，而且<kbd class="calibre11">RentalCount</kbd>和<kbd class="calibre11">Snow</kbd>与<kbd class="calibre11">0.19</kbd>正相关。但是，如果我们想探究价值分散(方差)的行为，我们也可以包括方差分析。</p>
+<p class="calibre2">如果您正在处理大型数据集或XDF数据格式，<kbd class="calibre11">RevoScaleR</kbd>软件包还配备了计算和计算相关矩阵的功能。下面是使用<kbd class="calibre11">rxCovCor</kbd>的R代码(或者，也可以使用<kbd class="calibre11">rxCor</kbd>或<kbd class="calibre11">rxCov</kbd>):</p>
+<pre class="calibre19"><strong class="calibre1">Formula_correlation =  ~ RentalCount + Year + Month + Day  + WeekDay + Snow + Holiday </strong>
+<strong class="calibre1">allCor &lt;- rxCovCor(Formula_correlation, data = dr_rent, type = "Cor")</strong>
+<strong class="calibre1">allCor</strong>
+  </pre>
+<p class="calibre2">这给出了与所有先前相关性计算相同的结果:</p>
+<div><img src="img/00095.gif" class="calibre64"/></div>
+<p class="calibre2">该输出还具有查看标准偏差、平均值和权重总和的能力，但最好的部分是它将结果存储在数据框中，该数据框可以轻松导入或与其他T-SQL表一起使用。可以使用<kbd class="calibre11">allCov$CovCor</kbd>调用结果(R语言将结果存储为列表的对象，可以通过使用美元符号<kbd class="calibre11">$</kbd>并引用列表的名称来检索每个列表——在本例中为<kbd class="calibre11">CovCor</kbd>)。</p>
+<p class="calibre2">当我们想要进一步调查我们迄今为止在<kbd class="calibre11">RentalCount</kbd>和<kbd class="calibre11">Holiday</kbd>之间的最高相关性时，<strong class="calibre1">方差分析</strong> ( <strong class="calibre1"> ANOVA </strong>)将是合适的方法。我们将比较两组(或水平)变量<kbd class="calibre11">Holiday</kbd> ( <kbd class="calibre11">0</kbd>不是假日，而<kbd class="calibre11">1 </kbd>是假日)，以及租赁计数之间是否存在差异。通过这样做，计算F统计量及其显著性将告诉我们组间方差与组内方差的比率:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_execute_external_Script</strong>
+<strong class="calibre1">@LANGUAGE = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+    <strong class="calibre1">        #ANOVA</strong>
+    <strong class="calibre1">        ANOVA &lt;- aov(RentalCount ~ Holiday, data = InputDataSet) </strong>
+    <strong class="calibre1">        F_Stat&lt;- unlist(summary(ANOVA))[7]</strong>
+    <strong class="calibre1">        F_Stat_Sig &lt;- unlist(summary(ANOVA))[9]</strong>
+    <strong class="calibre1">        df &lt;- cbind(F_Stat, F_Stat_Sig)</strong>
+<strong class="calibre1">OutputDataSet &lt;- data.frame(df)'</strong>
+    
+<strong class="calibre1">,@input_data_1 = N'SELECT  RentalCount,Holiday FROM rental_data'</strong>
+<strong class="calibre1">WITH RESULT SETS ((</strong>
+<strong class="calibre1">    F_Statistic NVARCHAR(200)</strong>
+<strong class="calibre1">,Statistical_Significance NUMERIC(16,5)</strong>
+<strong class="calibre1">));</strong>
+<strong class="calibre1">GO</strong>
+  </pre>
+<p class="calibre2">运行带有R代码的T-SQL代码进行ANOVA的统计计算后，输出结果以返回F统计量和统计显著性的方式创建。下图显示了返回的结果:</p>
+<div><img class="aligncenter54" src="img/00096.gif"/></div>
+<p class="calibre2">结果告诉我们，F统计量在统计上是显著的，尽管它很小，这意味着平均值很可能不相等(在这种情况下，我们将拒绝零假设)。为了找到差异所在，测试会给我们更多的信息。</p>
+<p class="calibre2">为了说明这种差异，由于我们不会深入细节，我们可以使用<kbd class="calibre11">stripchart</kbd>直观显示租赁的假期分布之间的差异:</p>
+<div><img src="img/00097.gif" class="calibre65"/></div>
+<p class="calibre2">使用R代码:</p>
+<pre class="calibre19"><strong class="calibre1">stripchart(RentalCount ~ Holiday, vertical=TRUE, pch=9, </strong>
+    <strong class="calibre1">           data=dr_rent_ANOVA, xlab="Holiday day (Yes/No)", ylab="Rental count", method="jitter", jitter=0.09)</strong>
+  </pre>
+<p class="calibre2">案例的分布可以告诉我们，在节假日，平均有<kbd class="calibre11">400</kbd>或更高的租赁计数，而在正常日子，<kbd class="calibre11">10</kbd>和<kbd class="calibre11">50</kbd>之间的计数密度非常大。</p>
+<p class="calibre2">在确定哪些特征(变量)有利于进一步分析和预测算法时，我们可以使用降低基尼系数均值计算。<kbd class="calibre11">randomForest</kbd>包中提供了一个基尼均值函数，因此，让我们调用该函数，看看要使用哪些变量:</p>
+<pre class="calibre19"><strong class="calibre1">EXEC sp_execute_external_Script</strong>
+<strong class="calibre1">@LANGUAGE = N'R'</strong>
+<strong class="calibre1">,@script = N'</strong>
+<strong class="calibre1">   library(randomForest)</strong>
+<strong class="calibre1">    dr_rent  &lt;- InputDataSet</strong>
+<strong class="calibre1">    fit_RF &lt;- randomForest(factor(dr_rent$RentalCount)~., data=dr_rent)</strong>
+<strong class="calibre1">     vp_rf &lt;- importance(fit_RF)</strong>
+    
+    <strong class="calibre1">  vp_rf&lt;- data.frame(vp_rf)</strong>
+    <strong class="calibre1">  imena &lt;- row.names(vp_rf)</strong>
+    <strong class="calibre1">  vp_rf &lt;- data.frame(cbind(imena, vp_rf))</strong>
+    <strong class="calibre1">OutputDataSet &lt;- vp_rf'</strong>
+    
+<strong class="calibre1">,@input_data_1 = N'SELECT  *  FROM rental_data'</strong>
+<strong class="calibre1">WITH RESULT SETS ((</strong>
+ <strong class="calibre1">   Variable NVARCHAR(200)</strong>
+<strong class="calibre1">,MeanDecreaseGini NUMERIC(16,5)</strong>
+<strong class="calibre1">));</strong>
+<strong class="calibre1">GO</strong>    </pre>
+<p class="calibre2">使用T-SQL代码，我们返回减少的基尼系数:</p>
+<div><img src="img/00098.gif" class="calibre66"/></div>
+<p class="calibre2"><kbd class="calibre11">Gini</kbd>系数也可以直观地表示为散点图，以便用户可以立即确定哪些变量对模型贡献最大。为了简洁起见，该图的代码包含在代码中，但没有包含在书中。</p>
+<div><img src="img/00099.gif" class="calibre67"/></div>
+<p class="calibre2">人们现在可以确定，下列变量中的哪一个在模型中起作用或贡献增益。<strong class="calibre1">meanderecasegini</strong>被绘制为<kbd class="calibre11">varImpPlot(fit_RF)</kbd>。从技术上来说，这是确定哪些变量或输入参数影响最小或最大的方法，但每种技术都会为您提供一些方面-模型中哪些可能是好的，哪些可能不是。对比相关矩阵和均值下降图中的<kbd class="calibre11">Holiday</kbd>变量，可以看到它给出了不同的方法和不同的结果。最重要的是通过几种不同的方法，特定的变量没有任何重要性。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Advanced predictive algorithms and analytics</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2TEN40-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">高级预测算法和分析</h1>
+                
+            
+            
+                
+<p class="calibre2">到目前为止，我们已经检查了<kbd class="calibre11">RevoScaleR</kbd>包中可用的数据准备和数据探索功能。除了这些功能，还可以预测分类或回归问题，尤其是在处理大型数据集时。</p>
+<p class="calibre2">我将仅提及其中的几个。完整的列表可在网上获得(<a href="https://docs.microsoft.com/en-us/machine-learning-server/r-reference/revoscaler/revoscaler" class="calibre10">https://docs . Microsoft . com/en-us/machine-learning-server/r-reference/revo scaler/revo scaler</a>)，其中一些要点如下:</p>
+<ul class="calibre7">
+<li class="calibre8"><kbd class="calibre11">rxLinMod</kbd>:用于建立和预测线性模型</li>
+<li class="calibre8"><kbd class="calibre11">rxLogit</kbd>:用于建立和预测逻辑回归模型</li>
+<li class="calibre8"><kbd class="calibre11">rxGlm</kbd>:用于创建广义线性模型</li>
+<li class="calibre8"><kbd class="calibre11">rxDTree</kbd>:用于创建分类或回归树</li>
+<li class="calibre8"><kbd class="calibre11">rxBTrees</kbd>:用于构建分类或回归决策森林，即使用随机梯度推进算法</li>
+<li class="calibre8"><kbd class="calibre11">rxDForest</kbd>:用于建立分类或回归决策森林模型</li>
+<li class="calibre8"><kbd class="calibre11">rxNaiveBayes</kbd>:用于建立朴素贝叶斯分类模型</li>
+</ul>
+<p class="calibre2">所有这些算法都是监督算法家族的一部分，其中<kbd class="calibre11">RevoScaleR</kbd>包中唯一可用的非监督(或无方向)算法是<kbd class="calibre11">rxKMeans</kbd>，用于处理聚类。</p>
+<p class="calibre2">使用与前面相同的数据集，我们插入并开始使用<kbd class="calibre11">rxLinMod</kbd>和<kbd class="calibre11">rxGlm</kbd>来演示如何在T-SQL中使用它:</p>
+<pre class="calibre19"><strong class="calibre1">USE RentalDB;
+GO
+
+-- rxLinMod
+
+EXEC sp_execute_external_Script
+@LANGUAGE = N'R'
+,@script = N'
+            library(RevoScaleR)
+            dr_rent &lt;- InputDataSet
+            Formula_supervised =  RentalCount ~ Year + Month + Day  + WeekDay + Snow + Holiday             
+            #Create Linear Model 
+            rent_lm &lt;- rxLinMod(formula=Formula_supervised, data = dr_rent)
+
+            #PREDICT   
+            rent_Pred &lt;- rxPredict(modelObject = rent_lm, data = dr_rent, extraVarsToWrite = c("RentalCount","Year","Month","Day"), writeModelVars = TRUE)
+            OutputDataSet &lt;- data.frame(rent_Pred)
+'
+,@input_data_1 = N'SELECT RentalCount,Year, Month, Day, WeekDay,Snow,Holiday  FROM rental_data'
+WITH RESULT SETS ((
+ RentalCount_Pred    NUMERIC(16,3)
+,RentalCount  NUMERIC(16,3)
+,YearINT
+,MonthINT
+,DayINT
+,WeekDayINT
+,Snow  INT
+,Holiday INT
+));
+GO
+
+
+
+-- rxGlm
+
+EXEC sp_execute_external_Script
+@LANGUAGE = N'R'
+,@script = N'
+            library(RevoScaleR)
+            dr_rent &lt;- InputDataSet
+            Formula_supervised =  RentalCount ~ Year + Month + Day  + WeekDay + Snow + Holiday             
+
+            #PREDICT   
+                rent_glm &lt;- rxGlm(formula = Formula_supervised, family = Gamma, dropFirst = TRUE, data = dr_rent)
+                rent_Pred &lt;- rxPredict(modelObject = rent_glm, data = dr_rent, extraVarsToWrite=c("RentalCount","Year","Month","Day"), writeModelVars = TRUE)
+            OutputDataSet &lt;- data.frame(rent_Pred)'
+,@input_data_1 = N'SELECT RentalCount,Year, Month, Day, WeekDay,Snow,Holiday  FROM rental_data'
+WITH RESULT SETS ((
+ RentalCount_Pred    NUMERIC(16,3)
+,RentalCount  NUMERIC(16,3)
+,YearINT
+,MonthINT
+,DayINT
+,WeekDayINT
+,Snow  INT
+,Holiday INT
+));
+GO
+
+-- rxDTree
+
+EXEC sp_execute_external_Script
+@LANGUAGE = N'R'
+,@script = N'
+            library(RevoScaleR)
+            dr_rent &lt;- InputDataSet
+            Formula_supervised =  RentalCount ~ Year + Month + Day  + WeekDay + Snow + Holiday             
+
+            #PREDICT   
+                        rent_dt &lt;- rxDTree(formula = Formula_supervised, data = dr_rent)
+                        rent_Pred &lt;- rxPredict(modelObject = rent_dt, data = dr_rent, extraVarsToWrite=c("RentalCount","Year","Month","Day"), writeModelVars = TRUE)
+            OutputDataSet &lt;- data.frame(rent_Pred)
+                        
+                '
+,@input_data_1 = N'SELECT RentalCount,Year, Month, Day, WeekDay,Snow,Holiday  FROM rental_data'
+WITH RESULT SETS ((</strong></pre>
+<pre class="calibre19"><strong class="calibre1"> RentalCount_Pred    NUMERIC(16,3)
+,RentalCount  NUMERIC(16,3)
+,YearINT
+,MonthINT
+,DayINT
+,WeekDayINT
+,Snow  INT
+,Holiday INT
+));
+GO</strong>  </pre>
+<p class="calibre2">两者都将提供基于输入数据集的预测值以及新的预测值:</p>
+<div><img class="aligncenter55" src="img/00100.gif"/></div>
+<p class="calibre2">好奇的眼睛会告诉你，预测值与原始值相差甚远。因此，两种情况下的预测公式都试图根据变量:<kbd class="calibre11">Year</kbd>、<kbd class="calibre11">Month</kbd>、<kbd class="calibre11">Day</kbd>、<kbd class="calibre11">WeekDay</kbd>、<kbd class="calibre11">Snow</kbd>和<kbd class="calibre11">Holiday</kbd>来预测变量<kbd class="calibre11">RentalCount</kbd>。公式设置如下:</p>
+<pre class="calibre19"><strong class="calibre1">Formula_supervised =  RentalCount ~ Year + Month + Day  + WeekDay + Snow + Holiday      </strong>
+  </pre>
+<p class="calibre2">比较变量<kbd class="calibre11">RentalCount_Pred</kbd>和<kbd class="calibre11">RentalCount</kbd>将显示实际值和预测值的差异/偏差。</p>
+<p class="calibre2">在前面的示例中，您还可以比较所有三种算法的结果。如果您对所有三个数据集进行逐个观察的比较，您可以立即看到哪些算法执行得最好:</p>
+<div><img src="img/00101.jpeg" class="calibre68"/></div>
+<p class="calibre2">因此，黄色条代表原始值，到目前为止，最成功的是决策树算法，给出了上面的公式并理解了数据的洞察力。这张图只是代表了一个随机的观察。这也可以通过计算准确度或度量来实现，所述准确度或度量计算从原始值产生了多少偏差。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Deploying and using predictive solutions</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2UD7M0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">部署和使用预测解决方案</h1>
+                
+            
+            
+                
+<p class="calibre2">当开发数据库内解决方案并为持续开发(以及部署)而创建它时，应该考虑几个方面。首先，数据科学家将工作的环境。你可以给他们一个强大的独立服务器，甚至在云中分配适当的席位。他们会需要它，尤其是在训练模型的时候。这是非常重要的，因为你不想让你的高薪统计学家和数学家等待模型计算和生成。因此，启用高度可扩展的CPU和RAM强大的计算能力是必须的。其次，你必须从那里得到数据。无论是在云上还是在本地，都不应该忽视在那里获取数据(以及稍后返回)，因为这也可能是您会失去宝贵时间的地方。最后，为环境设置适当的设置、环境变量、包和所有通向专有软件的路径也很重要。</p>
+<p class="calibre2"><kbd class="calibre11">RevoScaleR</kbd>软件包配有轻松切换计算环境的功能。我们现在将调用R中的一个简单命令:</p>
+<pre class="calibre19"><strong class="calibre1">rxSetComputeContext(local)</strong>
+<strong class="calibre1">rxSetComputeContext(sql)</strong>  </pre>
+<p class="calibre2">通过这样做，您可以设置本地计算环境(即客户端的机器)或服务器端，在这种情况下，一个独立的R服务器将驻留在服务器端。当然，通过一个简单的函数调用，计算上下文(或简单环境)被切换，记住所有的数据都驻留在两端(这样可以避免不必要的数据传输)，并且所有的服务器环境变量都被正确设置。</p>
+<p class="calibre2">为了训练模型，可以选择几个好的实践。分割数据用于训练、测试或训练，以及测试和验证是几种实践。此外，一个非常好的实践是测试训练/测试/验证数据集的百分比。你可能得到50/50或60/40或70/30的百分比，但通常你在挖掘数据时执行并决定这一点。之后，您还应该考虑数据的验证；几个方面是可用的，从<strong class="calibre1">留一个</strong> ( <strong class="calibre1"> LOO </strong>)或10倍或5倍，用于选择验证结果的验证数据。</p>
+<p class="calibre2">不要太深入这个话题，为了让这个演示更简单，我们可以当场决定做一个70/30的百分比。因为我们在这里享受到了T-SQL数据库的乐趣，所以我们可以在一个表中选择和存储训练子集，或者创建一个视图，或者决定我们想要取哪70%。</p>
+<pre class="calibre19"><strong class="calibre1">-- We can set 70% of the original data</strong>
+<strong class="calibre1">-- IN SQL Server</strong>
+<strong class="calibre1">SELECT</strong>
+<strong class="calibre1">TOP (70)PERCENT</strong>
+<strong class="calibre1">*</strong>
+<strong class="calibre1">INTO dbo.Train_rental_data</strong>
+<strong class="calibre1">FROM rental_data</strong>
+<strong class="calibre1">ORDER BY ABS (CAST(BINARY_CHECKSUM(RentalCount,NEWID())asint))ASC</strong>
+<strong class="calibre1">-- (318 rows affected) </strong>
+    
+<strong class="calibre1">-- Or we can set by the year; year 2013 and 2014 for training and 2015 for testing? making it cca 70% for training as well</strong>
+<strong class="calibre1">SELECT COUNT(*),YEAR FROM rental_data GROUP BY YEAR</strong>
+  </pre>
+<p class="calibre2">这也很大程度上取决于你的商业模式。第一种方法只是从原始数据集中提取70%的数据，而第二个select语句提取大约70%的原始数据，但是根据租赁年份进行拆分。这可能会对模型的行为方式以及您希望决策受到的影响产生至关重要的影响，尤其是业务模型。</p>
+<p class="calibre2">一旦清除并覆盖了这一点，最佳实践是将训练好的模型存储在表中，以便更快地进行预测。我们现在将创建一个表格，如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">-- or in R
+EXEC sp_execute_external_Script
+        @language = N'R'
+        ,@script = N'
+                        library(caTools)
+                        
+                        set.seed(2910) 
+                        dr_rent &lt;- InputDataSet
+                        Split &lt;- .70
+                        sample = sample.split(dr_rent$RentalCount, SplitRatio = Split)
+                        train_dr_rent &lt;- subset(dr_rent, sample == TRUE)
+                        test_dr_rent  &lt;- subset(dr_rent, sample == FALSE)
+            OutputDataSet &lt;- data.frame(train_dr_rent)
+                        
+                '
+,@input_data_1 = N'SELECT * FROM rental_data'
+WITH RESULT SETS ((
+         [Year] INT
+        ,[Month] INT
+        ,[Day] INT
+        ,[RentalCount] INT
+        ,[WeekDay] INT
+        ,[Holiday] INT
+        ,[Snow] INT
+        ,[FHoliday] INT
+        ,[FSnow] INT
+        ,[FWeekDay] INT
+));
+GO  </strong></pre>
+<p class="calibre2">由于定义了<kbd class="calibre11">set.seed</kbd>,无论在哪里运行这段代码，您都将得到相同的子集。如果你想得到不同的结果，你应该把它注释掉。</p>
+<p class="calibre2">一旦采样再次完成，基于您预测的问题，您需要定义您的预测公式。在这种情况下，我使用公式转换器来创建一个正确的公式:</p>
+<pre class="calibre19"><strong class="calibre1">-- Variables to keep
+-- and creating formula
+EXEC sp_execute_external_Script
+        @language = N'R'
+        ,@script = N'
+        dr_rent &lt;- InputDataSet
+            variables_all &lt;- rxGetVarNames(dr_rent)
+            variables_to_remove &lt;- c("FSnow", "FWeekDay", "FHoliday")
+            traning_variables &lt;- variables_all[!(variables_all %in% c("RentalCount", variables_to_remove))]
+            #use as.formula to create an object
+        formula &lt;- as.formula(paste("RentalCount ~", paste(traning_variables, collapse = "+")))
+                #formula &lt;- paste("RentalCount ~", paste(traning_variables, collapse = "+"))
+            OutputDataSet &lt;- data.frame(formula)'
+,@input_data_1 = N'SELECT * FROM dbo.Train_rental_data'
+WITH RESULT SETS ((
+         [Formula_supervised] NVARCHAR(1000)
+));
+GO </strong></pre>
+<p class="calibre2">通过过程创建公式，使其不被硬编码，也是一种非常有用的方法，特别是在企业环境中，数据科学家将建立自变量池，然后数据工程师将选择包括哪些变量，然后推动数据来计算模型并部署它。</p>
+<p class="calibre2">双变量和多变量统计的过程还可以让数据工程师和管理者更好地洞察和理解数据是如何操作和关联的，并且不存在不必要的相关性或不起作用的变量。</p>
+<p class="calibre2">弄清楚这一点后，我们可以设置和构建运行模型训练的过程，并将模型存储在数据库中。由于本章篇幅有限，我将只展示一个过程的创建；其余程序可在随附的章节材料中找到:</p>
+<p class="calibre2">T-SQL中随机森林的过程如下所示:</p>
+<pre class="calibre19"><strong class="calibre1">-- Random forest
+
+DROP PROCEDURE IF EXISTS dbo.forest_model;
+GO
+
+
+CREATE OR ALTER PROCEDURE dbo.forest_model(
+         @trained_model VARBINARY(MAX)OUTPUT
+        ,@accuracy FLOATOUTPUT
+        )
+AS
+BEGIN
+EXEC sp_execute_external_script
+@language = N'R'
+,@script = N'
+                        library(RevoScaleR)
+                        library(caTools)
+            library(MLmetrics)
+
+                
+                        dr_rent &lt;- InputDataSet
+                        set.seed(2910) 
+                        Split &lt;- .70
+                        sample = sample.split(dr_rent$RentalCount, SplitRatio = Split)
+                        train_dr_rent &lt;- subset(dr_rent, sample == TRUE)
+                        test_dr_rent  &lt;- subset(dr_rent, sample == FALSE)
+                        
+                        y_train &lt;- train_dr_rent$RentalCount
+                        y_test &lt;- test_dr_rent$RentalCount
+
+
+            variables_all &lt;- rxGetVarNames(dr_rent)
+            variables_to_remove &lt;- c("FSnow", "FWeekDay", "FHoliday")
+            traning_variables &lt;- variables_all[!(variables_all %in% c("RentalCount", variables_to_remove))]
+            formula &lt;- as.formula(paste("RentalCount ~", paste(traning_variables, collapse = "+")))
+
+                        forest_model &lt;- rxDForest(formula = formula,
+                          data = train_dr_rent,
+                          nTree = 40,
+                          minSplit = 10,
+                          minBucket = 5,
+                          cp = 0.00005,
+                          seed = 5)
+
+                        trained_model &lt;- as.raw(serialize(forest_model, connection=NULL))
+                
+                        #calculating accuracy
+            y_predicted&lt;- rxPredict(forest_model,test_dr_rent)
+
+            predict_forest &lt;-data.frame(actual=y_test,pred=y_predicted)
+            #ConfMat &lt;- confusionMatrix(table(predict_forest$actual,predict_forest$RentalCount_Pred))
+            #accuracy &lt;- ConfMat$overall[1]
+            accu &lt;- LogLoss(y_pred = predict_forest$RentalCount_Pred , y_true =predict_forest$actual)
+            accuracy &lt;- accu'
+
+
+        ,@input_data_1 = N'SELECT * FROM dbo.rental_data'
+        ,@params = N'@trained_model VARBINARY(MAX) OUTPUT, @accuracy FLOAT OUTPUT'
+        ,@trained_model = @trained_model OUTPUT
+        ,@accuracy = @accuracy OUTPUT;
+END;
+GO
+</strong></pre>
+<p class="calibre2">我在程序中添加了一些额外的东西，这样每次模型被训练时，都会添加一个额外的东西。这就是准确性，这也将在后面的阶段中给数据工程师和管理者一个很好的洞察力来决定哪个模型优于其他模型。</p>
+<p class="calibre2">您可以简单地运行以下过程:</p>
+<pre class="calibre19"><strong class="calibre1">DECLARE @model VARBINARY(MAX);</strong>
+<strong class="calibre1">DECLARE @accur FLOAT;</strong>
+<strong class="calibre1">EXEC dbo.forest_model@model OUTPUT, @accur OUTPUT;</strong>
+<strong class="calibre1">INSERT INTO [dbo].[Rental_data_models](model_name, model, accuracy) VALUES ('Random_forest_V1', @model, @accur);</strong>
+<strong class="calibre1">GO</strong>  </pre>
+<p class="calibre2">这将填充保存模型的目标表。结果应存储在表<kbd class="calibre11">[dbo].[Rental_data_models]</kbd>中:</p>
+<div><img class="aligncenter56" src="img/00102.gif"/></div>
+<p class="calibre2">一旦完成，您还需要设置评估程序，这将有助于确定哪个模型功能最好。然而，这一部分可以使用Power BI或reporting services来完成，或者只使用r。</p>
+<p class="calibre2">这是R代码的一部分，可以包含在您的可视化工具中，以便于理解:</p>
+<pre class="calibre19">library(RevoScaleR) 
+library(caTools) 
+library(MLmetrics) 
+ 
+#evaluate_model function; Source: Microsoft 
+evaluate_model &lt;- function(observed, predicted_probability, threshold, model_name) {  
+ 
+  # Given the observed labels and the predicted probability, plot the ROC curve and determine the AUC. 
+  data &lt;- data.frame(observed, predicted_probability) 
+  data$observed &lt;- as.numeric(as.character(data$observed)) 
+  if(model_name =="RF"){ 
+    rxRocCurve(actualVarName = "observed", predVarNames = "predicted_probability", data = data, numBreaks = 1000, title = "RF" ) 
+  }else{ 
+    rxRocCurve(actualVarName = "observed", predVarNames = "predicted_probability", data = data, numBreaks = 1000, title = "GBT" ) 
+  } 
+  ROC &lt;- rxRoc(actualVarName = "observed", predVarNames = "predicted_probability", data = data, numBreaks = 1000) 
+  auc &lt;- rxAuc(ROC) 
+ 
+  # Given the predicted probability and the threshold, determine the binary prediction. 
+  predicted &lt;- ifelse(predicted_probability &gt; threshold, 1, 0)  
+  predicted &lt;- factor(predicted, levels = c(0, 1))  
+ 
+  # Build the corresponding Confusion Matrix, then compute the Accuracy, Precision, Recall, and F-Score. 
+  confusion &lt;- table(observed, predicted) 
+  print(model_name) 
+  print(confusion)  
+  tp &lt;- confusion[1, 1]  
+  fn &lt;- confusion[1, 2]  
+  fp &lt;- confusion[2, 1]  
+  tn &lt;- confusion[2, 2]  
+  accuracy &lt;- (tp + tn) / (tp + fn + fp + tn)  
+  precision &lt;- tp / (tp + fp)  
+  recall &lt;- tp / (tp + fn)  
+  fscore &lt;- 2 * (precision * recall) / (precision + recall)  
+ 
+  # Return the computed metrics. 
+  metrics &lt;- list("Accuracy" = accuracy,  
+"Precision" = precision,  
+"Recall" = recall,  
+"F-Score" = fscore, 
+"AUC" = auc)  
+  return(metrics)  
+}  
+ 
+ 
+RF_Scoring &lt;- rxPredict(forest_model, data = train_dr_rent, overwrite = T, type = "response",extraVarsToWrite = c("RentalCount")) 
+ 
+Prediction_RF &lt;- rxImport(inData = RF_Scoring, stringsAsFactors = T, outFile = NULL) 
+observed &lt;- Prediction_RF$RentalCount 
+ 
+# Compute the performance metrics of the model. 
+Metrics_RF &lt;- evaluate_model(observed = observed, predicted_probability = Prediction_RF$RentalCount_Pred , model_name = "RF", threshold=50) 
+ 
+# Make Predictions, then import them into R. The observed Conversion_Flag is kept through the argument extraVarsToWrite. 
+GBT_Scoring &lt;- rxPredict(btree_model,data = train_dr_rent, overwrite = T, type="prob",extraVarsToWrite = c("RentalCount")) 
+ 
+Prediction_GBT &lt;- rxImport(inData = GBT_Scoring, stringsAsFactors = T, outFile = NULL) 
+observed &lt;- Prediction_GBT$RentalCount </pre>
+<p class="calibre2">观察值应该会告诉您哪个模型的性能最好。一旦你做到了这一点，你就可以选择模型，看看如何进行预测。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Performing predictions with R Services in the SQL Server database</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="2VBO80-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">使用SQL Server数据库中的R服务执行预测</h1>
+                
+            
+            
+                
+<p class="calibre2">调用存储过程是组织代码并立即开始预测的最简单方法。</p>
+<p class="calibre2">同样，这里只显示一个示例，说明如何创建一个存储过程来预测新数据集:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE OR ALTER PROCEDURE [dbo].[Predicting_rentalCount] 
+(
+                 @model VARCHAR(30)
+                ,@query NVARCHAR(MAX)
+)
+AS
+BEGIN
+        DECLARE @nar_model VARBINARY(MAX) = (SELECT model FROM [dbo].[Rental_data_models] WHERE model_name = @model);
+
+        EXEC sp_execute_external_script
+                 @language = N'R'
+                ,@script = N'
+
+                                #input from query
+                                new_data &lt;- InputDataSet
+                                
+                                #model from query
+                                model &lt;- unserialize(nar_model)                      
+
+                                #prediction
+                                prediction &lt;- rxPredict(model,data = new_data, overwrite = TRUE, type="response",extraVarsToWrite = c("RentalCount"))
+                                Prediction_New &lt;- rxImport(inData = prediction, stringsAsFactors = T, outFile = NULL)
+
+                                OutputDataSet &lt;- data.frame(Prediction_New)
+
+                                '
+                ,@input_data_1 =  @query
+                ,@params = N'@nar_model VARBINARY(MAX)'
+                ,@nar_model = @nar_model
+        WITH RESULT SETS((               
+                  Prediction_new NVARCHAR(1000)
+                 , OrigPredictecCount NVARCHAR(1000)
+        ))
+END;
+</strong></pre>
+<p class="calibre2">完成后，您可以使用以下代码开始预测:</p>
+<pre class="calibre19"><strong class="calibre1">-- Example of running predictions against selected model
+EXEC [dbo].[Predicting_rentalCount]  
+         @model = N'Random_forest_V1'
+        ,@query = N'SELECT 
+                                        2014 AS Year
+                                        ,5 AS Month
+                                        ,12 AS Day
+                                        ,1 AS WeekDay
+                                        ,0 AS Holiday
+                                        ,0 AS Snow
+                                        ,0 AS RentalCount'</strong></pre>
+<p class="calibre2">并且，作为结果，你将得到<kbd class="calibre11">Year</kbd>、<kbd class="calibre11">Month</kbd>、<kbd class="calibre11">Day</kbd>、<kbd class="calibre11">WeekDay</kbd>、<kbd class="calibre11">Holiday</kbd>和<kbd class="calibre11">Snow</kbd>变量的预测值:</p>
+<div><img src="img/00103.gif" class="calibre69"/></div>
+<p class="calibre2">有意地，字段<kbd class="calibre11">OrigPredictedCount</kbd>被设置为<kbd class="calibre11">0</kbd>，但是新的预测值是<kbd class="calibre11">278.996</kbd>的值，并且基于输入变量。在检查模型如何学习的同时，最好也检查原始值:</p>
+<pre class="calibre19"><strong class="calibre1">SELECT</strong>
+<strong class="calibre1">*</strong>
+<strong class="calibre1">FROM Rental_data</strong>
+<strong class="calibre1">WHERE [year] = 2014</strong>
+<strong class="calibre1">AND [day] = 12</strong>  </pre>
+<p class="calibre2">我们看到月份<kbd class="calibre11">= 5</kbd>中没有值，因此模型必须从其他值中学习:</p>
+<div><img src="img/00104.gif" class="calibre70"/></div>
+<p class="calibre2">现在我们已经介绍了监督预测算法，让我们快速进入集群——这是<kbd class="calibre11">RevoScaleR</kbd>包作为唯一的无向算法支持的功能的一部分。</p>
+<p class="calibre2">以下是如何创建简单聚类的示例:</p>
+<pre class="calibre19">library("cluster") 
+# and remove the Fholidays and Fsnow variables 
+DF &lt;- DF[c(1,2,3,4,5,6,7)] 
+XDF &lt;- paste(tempfile(), "xdf", sep=".") 
+if (file.exists(XDF)) file.remove(XDF) 
+rxDataStep(inData = DF, outFile = XDF) 
+ 
+# grab 3 random rows for starting  
+centers &lt;- DF[sample.int(NROW(DF), 3, replace = TRUE),]  
+ 
+Formula =  ~ Year + Month + Day + RentalCount + WeekDay + Holiday + Snow  
+ 
+# Example using an XDF file as a data source 
+z &lt;- rxKmeans(formula=Formula, data = DF, centers = centers) 
+clusplot(DF, z$cluster, color=TRUE, shade=TRUE, labels=4, lines=0, plotchar = TRUE) </pre>
+<p class="calibre2">以下是输出，它是集群的表示形式:</p>
+<div><img src="img/00105.gif" class="calibre71"/></div>
+<p class="calibre2">要研究集群并使用不同数量的集群，可以肯定的是直接使用R代码，或者使用Power BI、Excel或SSRS创建一个报告来研究集群的特征。</p>
+<p class="calibre2">添加一些关于集群中心的附加信息，如<kbd class="calibre11">withinSS</kbd>、<kbd class="calibre11">betweenSS</kbd>、<kbd class="calibre11">totSS</kbd>等统计数据也将有助于我们理解集群。</p>
+<p class="calibre2">Scree plot也是选择正确集群数量的一个额外的非常好的演示。将这样的图形添加到报告中还将帮助用户选择正确的集群数量，并帮助他们理解集群是如何形成的。</p>
+<p class="calibre2">Scree plot R代码用于确定肘发生的位置，以及是否具有正确的聚类数；如果是这样，三个集群将是最佳数量:</p>
+<pre class="calibre19">wss &lt;- (nrow(DF) - 1) * sum(apply(DF, 2, var)) 
+for (i in 2:20) 
+  wss[i] &lt;- sum(kmeans(DF, centers = i)$withinss) 
+plot(1:20, wss, type = "b", xlab = "Number of Clusters", ylab = "Within groups sum of squares") </pre>
+<p class="calibre2">在此图中，我们可以看到创建弯头的位置，我们可以确定最佳解决方案是三个集群:</p>
+<div><img src="img/00106.gif" class="calibre72"/></div>
+<p class="calibre2">将所有内容整合成一份报告(SSRS报告)会让探索变得更好:</p>
+<div><img class="aligncenter57" src="img/00107.jpeg"/></div>
+<p class="calibre2">用户可以通过选择所需的数量来更改集群的数量，报告也会相应地更改。该报告基于三个附加过程，这些过程根据输入的聚类数导出图形:</p>
+<pre class="calibre19"><strong class="calibre1">CREATE OR ALTER  PROCEDURE [dbo].[Clustering_rentalCount] 
+(
+                 @nof_clusters VARCHAR(2)
+)
+AS
+BEGIN
+
+DECLARE @SQLStat NVARCHAR(4000)
+SET @SQLStat = 'SELECT  * FROM rental_data'
+DECLARE @RStat NVARCHAR(4000)
+SET @RStat = 'library(ggplot2)
+                library(RevoScaleR)
+library(cluster)
+              image_file &lt;- tempfile()
+              jpeg(filename = image_file, width = 400, height = 400)
+ DF &lt;- data.frame(dr_rent)
+               DF &lt;- DF[c(1,2,3,4,5,6,7)]
+XDF &lt;- paste(tempfile(), "xdf", sep=".")
+               if (file.exists(XDF)) file.remove(XDF)
+                rxDataStep(inData = DF, outFile = XDF)
+
+                centers &lt;- DF[sample.int(NROW(DF), 3, replace = TRUE),] 
+Formula =  ~ Year + Month + Day + RentalCount + WeekDay + Holiday + Snow 
+                rxKmeans(formula = Formula, data = XDF, numClusters='+@nof_clusters+')
+                z &lt;- rxKmeans(formula=Formula, data = DF, numClusters='+@nof_clusters+')
+                clusplot(DF, z$cluster, color=TRUE, shade=TRUE, labels=4, lines=0, plotchar = TRUE)
+dev.off()
+                    OutputDataSet &lt;- data.frame(data=readBin(file(image_file, "rb"), what=raw(), n=1e6))'
+
+EXECUTE sp_execute_external_script
+        @language = N'R'
+       ,@script = @RStat
+       ,@input_data_1 = @SQLStat
+       ,@input_data_1_name = N'dr_rent'
+WITH RESULT SETS ((plot varbinary(max)))
+END;
+GO
+</strong></pre>
+<p class="calibre2">在SSMS运行这个程序会得到一个var二进制字符串，但是在SSRS或Power BI/Excel中添加这个程序的结果作为图像会得到一个从r</p>
+<p class="calibre2">在构建预测分析系统的基础上，为您的探索性项目添加一个漂亮的可视化效果，对于企业和最终用户，以及数据辩论者和工程师来说，无疑是一个非常好的总结。</p>
+
+
+            
+
+            
+        
+    </body></html>
+
+
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+  <head>
+    <title>Summary</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  
+
+</head>
+  <body id="30A8Q0-e3f81285367248f4bbc6431bcd4f926d" class="calibre">
+        
+
+                            
+                    <h1 class="header-title" id="calibre_pb_0">摘要</h1>
+                
+            
+            
+                
+<p class="calibre2">在这一章中，我们已经介绍了<kbd class="calibre11">RevoScaleR</kbd>包的可扩展功能，以根据探索的数据集提供快速而准确的预测。在前一章<em class="calibre12">使用RevoScaleR包进行统计学习</em>中，我们已经介绍了数据探索、准备以及简单和双变量统计。本章展示了如何将<kbd class="calibre11">RevoScaleR</kbd>包设计为处理大型数据集(克服了RAM和单CPU的限制)，支持溢出到磁盘和多线程。同样的过程也可以用在R的数据库实例中，用于向您的业务和驻留在数据库中的数据传递预测。我们也讨论了这个方面，探索了不同的算法并比较了解决方案。一旦你选择了你的模型，你可能想要使用<kbd class="calibre11">PREDICT</kbd>条款。这是SQL Server 2017中的一项新功能，架构略有变化。请注意，目前(在撰写本章时)如果您想使用<kbd class="calibre11">PREDICT</kbd>子句，模型大小不能超过100 MB。目前只支持<kbd class="calibre11">RevoScaleR</kbd>和<kbd class="calibre11">MicrosoftML</kbd>包使用该子句，甚至不支持所有的<kbd class="calibre11">RevoScaleR</kbd>(和MicrosoftML)算法——目前支持的有<kbd class="calibre11">rxLinMod</kbd>、<kbd class="calibre11">rxLogit</kbd>、<kbd class="calibre11">rxBTrees</kbd>、<kbd class="calibre11">rxDtree</kbd>、<kbd class="calibre11">rxdForest</kbd>。但是，这种使用<kbd class="calibre11">PREDICT</kbd>子句的实时评分肯定会在SQL Server的下一个版本中得到发展和演变。</p>
+<p class="calibre2">我们需要预测一个分类或回归问题。使用<kbd class="calibre11">RevoScaleR</kbd>包可以支持大多数问题，并且<kbd class="calibre11">MicrosoftML</kbd>包中可用的一组新的附加分类器也支持这些算法。探索这两个软件包将会给你的决策带来急需的动力。此外，将序列化模型存储到数据库中是存储和调用定型模型(函数)的最佳方式，可以通过使用SQL Server代理或触发器添加简单的逻辑实现来对定型模型(函数)进行重新定型。</p>
+<p class="calibre2">在<a target="_blank" href="part0102.html#318PC0-e3f81285367248f4bbc6431bcd4f926d" class="calibre10">第07章</a>、<em class="calibre12">操作化R代码</em>中，您将学习如何操作化您的模型和解决方案，并探索不同的操作方法和一些好的实践。</p>
+
+
+            
+
+            
+        
+    </body></html>
+</body></html>

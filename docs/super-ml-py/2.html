@@ -1,0 +1,1378 @@
+<html><head/><body><html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Implementing Parametric Models</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">实现参数模型</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>在前一章，我们从监督机器学习的基础开始。在这一章中，我们将深入研究参数建模家族中几种流行的监督学习算法。我们将从正式介绍参数模型开始这一章。然后，我们将介绍两个非常流行的参数模型:线性和逻辑回归。我们将花一些时间来看看它们的内部工作方式，然后我们将跳到Python中，从头开始编写这些工作方式的代码。</p>
+
+<p>在本章中，我们将讨论以下主题:</p>
+
+<ul>
+
+<li>参数模型</li>
+
+<li>从头开始实现线性回归</li>
+
+<li>逻辑回归模型</li>
+
+<li>从头开始实现逻辑回归</li>
+
+<li>参数模型的利与弊</li>
+
+</ul>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Technical requirements</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">技术要求</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p class="mce-root">对于本章，您需要安装以下软件，如果您还没有这样做:</p>
+
+<ul>
+
+<li>Jupyter笔记本</li>
+
+<li>蟒蛇</li>
+
+<li>计算机编程语言</li>
+
+</ul>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p class="mce-root">本章的代码文件可以在<a href="https:/%E2%80%8B/%E2%80%8Bgithub.%E2%80%8Bcom/%E2%80%8BPacktPublishing/%20Supervised-Machine-Learning-with-Python" target="_blank"> https:/ / github找到。com/ PacktPublishing/ <br/>用Python监督机器学习</a>。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Parametric models</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">参数模型</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>说到监督学习，有两类学习算法:<strong>参数化</strong>和<strong>非参数化</strong>。这一地区也恰好是看门人和基于意见的猜测的温床，关于哪个更好。基本上，参数模型是有限维的，这意味着它们只能学习限定数量的模型参数。他们的学习阶段通常通过学习一些向量θ来分类，向量θ也被称为<strong>系数</strong>。最后，学习函数通常是一种已知的形式，这一点我们将在本节后面阐明。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Finite-dimensional models</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">有限维模型</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>如果我们回到监督学习的定义，回想一下我们需要学习一些函数，<em> f </em>。参数模型将在有限数量的汇总点内汇总我们的矩阵<em> X </em>和目标矩阵<em> y </em>之间的映射。点的数量通常与输入数据中的要素数量相关。所以，如果有三个变量，<em> f </em>会尝试总结出<em> X </em>和<em> y </em>之间的关系，假设theta中有三个值。这些被称为<strong>模型参数</strong> <em> f: y=f(X) </em>。</p>
+
+<p>让我们回顾并解释一下参数模型的一些特征。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The characteristics of parametric learning algorithms</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">参数学习算法的特点</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>我们现在将介绍参数学习算法的不同特性:</p>
+
+<ul>
+
+<li>模型参数通常被约束到输入空间的相同维度</li>
+
+<li>您可以指向一个变量及其相应的参数值，通常可以了解变量的重要性或它与我们的目标<em> y </em>的关系</li>
+
+<li>最后，它们通常速度很快，不需要太多数据</li>
+
+</ul>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Parametric model example</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">参数模型示例</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>想象一下，我们被要求根据房子的平方英尺和浴室数量来估计房子的价格。我们需要学习多少参数？对于我们的例子，我们需要学习多少参数？</p>
+
+<p>考虑到浴室的面积和数量，我们需要了解两个参数。因此，我们的函数可以表示为给定两个变量的估计价格——平方英尺和浴室数量——P1<em/>和P2<em/>。<em> P1 </em>将平方英尺与价格的关系。<em> P2 </em>将浴室的数量与价格的关系。</p>
+
+<p>以下代码显示了Python中设置的问题。<kbd>x1</kbd>是我们的第一个变量——平方英尺的数量。你可以看到，价格范围从小到<kbd>1200</kbd>到大到<kbd>4000</kbd>，我们的价格范围从<kbd>200000</kbd>到<kbd>500000</kbd>不等。在<kbd>x2</kbd>中，我们有浴室的数量。范围从少至<kbd>1</kbd>到多至<kbd>4</kbd>:</p>
+
+<pre>import numpy as np<br/>from numpy import linalg<br/><br/>x1 = np.array([2500, 2250, 3500, 4000, 1890, 1200, 2630])<br/>x2 = np.array([3, 2, 4, 3, 2, 1, 2])<br/>y = np.array([260000, 285000, 425000, 482500, 205000, 220000, 320000])</pre>
+
+<p>现在，你可以从我们的图中看到，这里似乎有一个积极的趋势。这很有道理。但是当我们深入研究这个例子时，我们会发现:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img class="alignnone size-full wp-image-490 image-border" src="img/3082ec42-423e-4e6f-a435-fd878d94150c.png" style="width:69.42em;height:23.75em;"/></p>
+
+<p class="CDPAlignCenter CDPAlign"/>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p>现在，我们想学习一个估计价格的函数，这个函数就是我们数据的每个向量行中估计参数的内积。所以，我们在这里进行线性回归。使用最小二乘方程可以方便地求解线性回归。因为从技术上讲，这个问题有无限多种可能的解决方案，最小二乘法将找到最小化误差平方和的解决方案。</p>
+
+<p>这里，我们完成了对<kbd>X</kbd>的最小二乘法，并学习了第一个单元格中的参数。然后，在下一个单元格中，我们将<kbd>X</kbd>乘以我们刚刚学习的θ参数，以获得预测。所以，如果你真的深究一下，只有一栋房子的价值被我们严重低估:倒数第二栋，面积<kbd>1200</kbd>平方英尺，有一间浴室。所以，它可能是一套公寓，而且可能位于城镇的一个非常热的地区，这就是为什么它的价格如此之高的原因:</p>
+
+<pre># solve for the values of theta<br/>from numpy import linalg<br/>X = np.hstack((x1.reshape(x1.shape[0], 1), x2.reshape(x2.shape[0], 1)))<br/>linalg.lstsq(X, y)[0]<br/><br/># get the estimated y values<br/>X.dot(linalg.lstsq(X,y)[0])</pre>
+
+<p>上述代码片段的输出如下:</p>
+
+<pre>array([   142.58050018, -23629.43252307])<br/><br/>array([285562.95287566, 273547.26035425, 404514.02053054, 499433.70314259,<br/>       222218.28029018, 147467.16769047, 327727.85042187])</pre>
+
+<p>现在来分析我们的参数。我们的房子每增加一平方英尺，估计价格就会上涨142美元58美分，这很直观。然而，我们每增加一个卫生间，我们的房子就会贬值24000美元:<em>价格= 142.58 * sqft+-23629.43 *卫生间</em>。</p>
+
+<p>这里还有另一个难题。按照这种逻辑，如果我们有一栋3000平方英尺、0间浴室的房子，那么它的价格应该和一栋4000平方英尺、4间浴室的房子差不多。所以，我们的模型显然有一些限制。当我们试图用很少的特征和数据来总结映射时，将会出现一些不合理的结论。但是当我们拟合线性回归时，还有一些我们没有考虑到的因素可以帮助我们。首先，我们不适合截距，我们没有集中我们的特征。所以，如果你回到中学，甚至是高中早期的代数，你会记得，当你在笛卡尔图上拟合直线时，截距是直线与y轴相交的地方，我们没有拟合其中之一。</p>
+
+<p class="mce-root"/>
+
+<p>在下面的代码中，我们在求解最小二乘法之前将数据集中，并估计截距，截距就是<kbd>y</kbd>的平均值，实际价格减去<kbd>X</kbd> var的内积，var是<kbd>X</kbd>列和估计参数的平均值:</p>
+
+<pre>X_means = X.mean(axis=0) # compute column (variable) name<br/>X_center = X - X_means  # center our data<br/>theta = linalg.lstsq(X_center, y)[0]  # solve lstsq<br/>print ("Theta: %r" % theta)<br/><br/>intercept = y.mean() -np.dot(X_means, theta.T) # find the intercept<br/>print("Intercept: %.2f" % intercept)<br/>print("Preds: %r" % (X.dot(theta.T) + intercept))</pre>
+
+<p>上述代码片段的输出如下:</p>
+
+<pre>Theta: array([ 128.90596161, -28362.07260241])<br/>Intercept: 51887.87<br/>Preds: array([289066.55823365, 285202.14043457, 389610.44723722, 482425.50064261,<br/> 238795.99425642, 178212.9533507 , 334186.40584484])</pre>
+
+<p class="CDPAlignLeft CDPAlign">以上总结了线性回归背后的数学和概念，以及参数学习的介绍。在线性回归中，我们简单地拟合多个点之间的最佳直线，试图最小化误差平方和。在下一节中，我们将学习PyCharm，并演示如何从头开始编写一个线性回归类。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Implementing linear regression from scratch</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">从头开始实现线性回归</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>线性回归求解最小二乘方程以发现参数向量θ。在这一节中，我们将浏览一下<kbd>packtml</kbd> Python库中的线性回归类的源代码，然后介绍一下<kbd>examples</kbd>目录中的一个简短的图形示例。</p>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<p>在我们看代码之前，我们将被介绍到支持书中所有估算器的接口。它叫做<kbd>BaseSimpleEstimator</kbd>，是一个抽象类。它将只执行一个方法，即<kbd>predict</kbd>。不同的子类层将为不同的模型族执行其他方法。但这一层支持我们将建立的所有模型，因为我们将所有东西放在一起都是受监督的，所以这一切都需要能够预测。你会注意到签名是在<kbd>dock</kbd>字符串中指定的。每个模型都将接受签名中的<kbd>X</kbd>和<kbd>y</kbd>，以及任何其他模型超参数:</p>
+
+<pre>class BaseSimpleEstimator(six.with_metaclass(ABCMeta)):<br/> """Base class for packt estimators.<br/> The estimators in the Packt package do not behave exactly like <br/> scikit-learn<br/> estimators (by design). They are made to perform the model fit <br/> immediately upon class instantiation. Moreover, many of the hyper<br/> parameter options are limited to promote readability and avoid<br/> confusion.<br/> The constructor of every Packt estimator should resemble the <br/> following::<br/> def __init__(self, X, y, *args, **kwargs):<br/> ...<br/> where ``X`` is the training matrix, ``y`` is the training target<br/> variable,<br/> and ``*args`` and ``**kwargs`` are varargs that will differ for each<br/> estimator.<br/> """<br/> @abstractmethod<br/> def predict(self, X):<br/> """Form predictions based on new data.<br/> This function must be implemented by subclasses to generate<br/> predictions given the model fit.<br/> Parameters<br/> ----------<br/> X : array-like, shape=(n_samples, n_features)<br/> The test array. Should be only finite values.<br/> """</pre>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The BaseSimpleEstimator interface</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">BaseSimpleEstimator接口</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>第一次刷新类似于基于scikit-learn估计器接口的刷新。但是有几个不同之处。首先，当我们构建一个模型时，我们不允许有太多的选项。此外，模型在实例化的时候就被训练好了。这也不同于scikit-learn，因为我们没有一个<kbd>fit</kbd>方法。Scikit-learn有一个<kbd>fit</kbd>方法允许网格搜索和超参数调整。所以，这只是我们不同于他们签名的又一个原因。现在，让我们继续研究线性回归:</p>
+
+<ol>
+
+<li>如果你有PyCharm，请打开它。我们将进入<kbd>packtml</kbd> <kbd>Hands-on-Supervised-Machine-Learning-with-Python</kbd>库，如下面的代码所示。你可以看到这是在皮查姆。这只是项目级别的根级别，我们将要使用的包是<kbd>packtml</kbd>。我们将浏览一下所有的<kbd>simple_regression.py</kbd>文件代码是如何工作的。如果您不使用PyCharm，Sublime是一个替代方法，或者您可以使用您喜欢的任何其他文本编辑器:</li>
+
+</ol>
+
+<pre style="padding-left: 60px">from __future__ import absolute_import<br/><br/>from sklearn.utils.validation import check_X_y, check_array<br/><br/>import numpy as np<br/>from numpy.linalg import lstsq<br/><br/>from packtml.base import BaseSimpleEstimator<br/><br/><br/>__all__ = [<br/> 'SimpleLinearRegression'<br/>]<br/><br/><br/>class SimpleLinearRegression(BaseSimpleEstimator):<br/> """Simple linear regression.<br/><br/> This class provides a very simple example of straight forward OLS<br/> regression with an intercept. There are no tunable parameters, and<br/> the model fit happens directly on class instantiation.<br/><br/> Parameters<br/> ----------<br/> X : array-like, shape=(n_samples, n_features)<br/> The array of predictor variables. This is the array we will use<br/> to regress on ``y``.</pre>
+
+<p class="mce-root">位于我们包层内部的<kbd>base.py</kbd>，将为<kbd>BaseSimpleEstimator</kbd>提供接口，我们将在整个包中使用它。唯一在抽象层次上强制执行的方法是<kbd>predict</kbd>函数。该函数将接受一个参数，即<kbd>X</kbd>。我们已经提到过，监督学习意味着我们将学习一个函数，<em> f，</em>给定<kbd>X</kbd>和<kbd>y</kbd>，这样我们就可以近似<img class="fm-editor-equation" src="img/05adbda5-3f19-428e-b0da-e3beccb26ed9.png" style="width:0.83em;height:1.58em;"/>给定<img class="fm-editor-equation" src="img/634ff51a-a39a-4a3c-a23a-a3cdc1e4313c.png" style="width:1.33em;height:1.67em;"/>，或者在这种情况下的<kbd>X</kbd>测试。由于每个子类都将实现不同的<kbd>predict</kbd>方法，我们将使用抽象方法<kbd>base</kbd>，如下面的代码片段所示:</p>
+
+<p class="mce-root">接下来，在<kbd>regression</kbd>子模块中，我们将打开<kbd>simple_regression.py</kbd>文件。这个文件将实现一个名为<kbd>SimpleLinearRegression</kbd>的类。我们称之为简单，只是为了不与scikit-learn线性回归混淆:</p>
+
+<p class="CDPAlignLeft CDPAlign" style="padding-left: 60px"><kbd>SimpleLinearRegression</kbd>要带两个参数。<kbd>X</kbd>是我们的矩阵协方差，<kbd>y</kbd>是训练目标，解释如下:</p>
+
+<pre style="padding-left: 60px">@abstractmethod<br/>   def predict(self, X):<br/>       """Form predictions based on new data.<br/>       This function must be implemented by subclasses to generate<br/>       predictions given the model fit.<br/>       Parameters<br/>       ----------<br/>       X : array-like, shape=(n_samples, n_features)<br/>       The test array. Should be only finite values.<br/>      """</pre>
+
+<ol start="2">
+
+<li class="mce-root">Next, inside the <kbd>regression</kbd> submodule, we will open the <kbd>simple_regression.py</kbd> file. This file will implement a class called <kbd>SimpleLinearRegression</kbd>. We call it simple just so you don't confuse it with the scikit-learn linear regression:</li>
+
+</ol>
+
+<pre style="padding-left: 60px">from __future__ import absolute_import<br/><br/>from sklearn.utils.validation import check_X_y, check_array<br/><br/>import numpy as np<br/>from numpy.linalg import lstsq<br/><br/>from ..base import BaseSimpleEstimator<br/><br/><br/>__all__ = [<br/>    'SimpleLinearRegression'<br/>]<br/><br/><br/>class SimpleLinearRegression(BaseSimpleEstimator):<br/>    """Simple linear regression.<br/><br/>    This class provides a very simple example of straight forward OLS<br/>    regression with an intercept. There are no tunable parameters, and<br/>    the model fit happens directly on class instantiation.<br/><br/>    Parameters<br/>    ----------<br/>    X : array-like, shape=(n_samples, n_features)<br/>        The array of predictor variables. This is the array we will use<br/>        to regress on ``y``.</pre>
+
+<p style="padding-left: 60px">现在，在我们的签名中，我们在<kbd>init</kbd>函数中要做的第一件事就是通过scikit-learn的<kbd>check_X_y</kbd>运行它。我们将确保维度在<kbd>X</kbd>和<kbd>y</kbd>之间匹配，因为对于我们来说，传递一个小于<kbd>X</kbd>中样本数量的训练目标向量是行不通的，反之亦然。我们还强制要求<kbd>y</kbd>中的所有内容都是数字。</p>
+
+<p>接下来我们需要做的是计算<kbd>X</kbd>中各列的平均值，这样我们就可以将所有内容居中，计算<kbd>y</kbd>中各值的平均值，这样我们就可以将它们居中。在这个完整的函数中，我们从NumPy库中提取了最小二乘优化函数。所以，我们只打算馈入<kbd>X</kbd>和<kbd>y</kbd>，它们现在都集中在<kbd>lstsq</kbd>。我们会得到三个东西，第一个是θ，也就是学习到的参数。所以，<kbd>X.theta</kbd>将会是<kbd>y</kbd>的最佳近似值。如果你想深入了解实际解决方案的分解，我们将得到等级，即<kbd>matrix</kbd>和<kbd>singular_values</kbd>的等级。正如上一节所讨论的，关于平均房屋成本，如果我们正在计算房屋价值减去<kbd>X_means</kbd>的内积，则列means是一个向量乘以另一个向量theta。因此，我们将在这里为截距获取一个标量值，并分配一些<kbd>self</kbd>属性:</p>
+
+<pre style="padding-left: 60px">Parameters<br/>    ----------<br/>    X : array-like, shape=(n_samples, n_features)<br/>        The array of predictor variables. This is the array we will use<br/>        to regress on ``y``.<br/><br/>    y : array-like, shape=(n_samples,)<br/>        This is the target array on which we will regress to build<br/>        our model.<br/>    Attributes<br/>    ----------<br/>    theta : array-like, shape=(n_features,)<br/>        The least-squares solution (the coefficients)<br/><br/>    rank : int<br/>        The rank of the predictor matrix, ``X``<br/><br/>    singular_values : array-like, shape=(n_features,)<br/>        The singular values of ``X``<br/><br/>    X_means : array-like, shape=(n_features,)<br/>        The column means of the predictor matrix, ``X``<br/><br/>    y_mean : float<br/>        The mean of the target variable, ``y``<br/><br/>    intercept : float<br/>        The intercept term<br/>    """<br/>    def __init__(self, X, y):<br/>        # First check X, y and make sure they are of equal length, no<br/>        NaNs<br/>        # and that they are numeric<br/>        X, y = check_X_y(X, y, y_numeric=True,<br/>                         accept_sparse=False) # keep it simple</pre>
+
+<ol start="3">
+
+<li class="CDPAlignLeft CDPAlign">当你实例化一个类的时候，你已经拟合了一个线性回归。然而，我们必须从<kbd>BaseSimpleEstimator</kbd>超类中覆盖<kbd>predict</kbd>函数。要预测这个，你要做的就是计算<kbd>X</kbd>的内积，<kbd>theta</kbd>上的新矩阵，以及我们已经学过的参数，然后加上截距。现在，这里与你在构造函数上看到的不同之处在于，我们不需要重新调整<kbd>X</kbd>的中心。如果进行<kbd>X</kbd>测试，我们唯一一次集中数据是在我们学习参数的时候，而不是在我们应用参数的时候。然后，我们将<kbd>X</kbd>乘以参数，那里的内积，然后加上截距。现在我们有了一个预测值的向量:</li>
+
+<li>现在，我们可以看一个例子。在项目级别打开<kbd>examples</kbd>目录，然后打开<kbd>regression</kbd>。我们将看看<kbd>example_linear_regression.py</kbd>文件，如下:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"><br/># We will do the same with our target variable, y<br/>X_means = np.average(X, axis=0)<br/>y_mean = y.mean(axis=0)<br/><br/># don't do in place, so we get a copy<br/>X = X - X_means<br/>y = y - y_mean<br/><br/># Let's compute the least squares on X wrt y<br/># Least squares solves the equation `a x = b` by computing a<br/># vector `x` that minimizes the Euclidean 2-norm `|| b - a x ||^2`.<br/>theta, _, rank, singular_values = lstsq(X, y, rcond=None)<br/><br/># finally, we compute the intercept values as the mean of the target<br/># variable MINUS the inner product of the X_means and the coefficients<br/>intercept = y_mean - np.dot(X_means, theta.T)<br/><br/># ... and set everything as an instance attribute<br/>self.theta = theta<br/>self.rank = rank<br/>self.singular_values = singular_values<br/><br/># we have to retain some of the statistics around the data too<br/>self.X_means = X_means<br/>self.y_mean = y_mean<br/>self.intercept = intercept</pre>
+
+<p style="padding-left: 60px">让我们来看看这里到底发生了什么，只是为了向您展示我们如何将它应用到真实数据中。我们将加载刚刚创建的线性回归，并导入scikit-learn的线性回归，以便我们可以比较结果。我们要做的第一件事是用<kbd>500</kbd>样本和<kbd>2</kbd>维度创建随机值的<kbd>X</kbd>矩阵。然后我们将创建<kbd>y</kbd>矩阵，这将是第一个<kbd>X</kbd>变量和<kbd>0</kbd>的线性组合，它将是第一列的<kbd>2</kbd>倍加上第二列的<kbd>1.5</kbd>倍。我们这样做的原因是为了表明我们的线性回归类将学习这些确切的参数，<kbd>2</kbd>和<kbd>1.5</kbd>，如下面的代码片段所示:</p>
+
+<pre style="padding-left: 60px">def predict(self, X):<br/>        """Compute new predictions for X"""<br/>        # copy, make sure numeric, etc...<br/>        X = check_array(X, accept_sparse=False, copy=False) # type: np.ndarray<br/><br/>        # make sure dims match<br/>        theta = self.theta<br/>        if theta.shape[0] != X.shape[1]:<br/>            raise ValueError("Dim mismatch in predictors!")<br/><br/>        # creates a copy<br/>        return np.dot(X, theta.T) + self.intercept<br/><br/></pre>
+
+<ol start="5">
+
+<li class="CDPAlignLeft CDPAlign">正如我们已经讨论过的，我们想要拆分我们的数据。你永远不希望只是评估和拟合你的样本数据；否则，你很容易过度适应:</li>
+
+</ol>
+
+<div><img src="img/fe4735c6-9f3c-4fbc-9e3f-f88a0b11ded3.png" style="width:18.08em;height:14.00em;"/></div>
+
+<p style="padding-left: 60px">接下来，我们将拟合我们的线性回归并计算我们的预测。所以，我们也可以用我们的断言来证明，我们学到的θ，与我们预期的实际θ非常接近；也就是<kbd>2</kbd>和<kbd>1.5</kbd>。因此，我们的预测应该类似于<kbd>y</kbd>列车输入:</p>
+
+<pre style="padding-left: 60px">from packtml.regression import SimpleLinearRegression<br/>from sklearn.linear_model import LinearRegression<br/>from sklearn.model_selection import train_test_split<br/>from matplotlib import pyplot as plt<br/>import numpy as np<br/>import sys<br/><br/># #############################################################################<br/># Create a data-set that perfectly models the linear relationship:<br/># y = 2a + 1.5b + 0<br/>random_state = np.random.RandomState(42)<br/>X = random_state.rand(500, 2)<br/>y = 2. * X[:, 0] + 1.5 * X[:, 1]<br/><br/></pre>
+
+<p style="padding-left: 60px">接下来，我们将拟合scikit-learn回归，以表明我们得到了类似的结果，如果不是完全相同的结果的话。我们正在展示我们刚刚创建的类中的θ与scikit-learn生成的系数相匹配。Scikit-learn是一个经过严格测试的著名库。所以，它们匹配的事实表明我们在正确的轨道上。最后，我们可以证明我们的预测非常接近scikit-learn解决方案:</p>
+
+<pre style="padding-left: 60px"># split the data<br/>X_train, X_test, y_train, y_test = train_test_split(X, y,<br/><br/>                                                   random_state=random_state)</pre>
+
+<ol start="6">
+
+<li>我们现在将拟合一个类的线性回归，这样我们就可以看到一个图。为此，让我们继续运行以下示例:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"># Fit a simple linear regression, produce predictions<br/>lm = SimpleLinearRegression(X_train, y_train)<br/>predictions = lm.predict(X_test)<br/>print("Test sum of residuals: %.3f" % (y_test - predictions).sum())<br/>assert np.allclose(lm.theta, [2., 1.5])<br/><br/></pre>
+
+<ol start="7">
+
+<li class="CDPAlignLeft CDPAlign">转到<kbd>Hands-on-Supervised-Machine-Learning-with-Python-master</kbd>顶层内的终端:项目层。记住要寻找内容环境的来源。因此，如果您还没有这样做，那么对于Unix用户，您将需要<kbd>source activate</kbd>,或者通过键入以下命令来激活:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"># Show that our solution is similar to scikit-learn's<br/><br/>lr = LinearRegression(fit_intercept=True)<br/>lr.fit(X_train, y_train)<br/>assert np.allclose(lm.theta, lr.coef_)<br/>assert np.allclose(predictions, lr.predict(X_test))</pre>
+
+<ol start="8">
+
+<li>通过键入文件名运行这个例子，文件名是<kbd>examples/regression/example_linear_regression.py</kbd>:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"># Fit another on ONE feature so we can show the plot<br/>X_train = X_train[:, np.newaxis, 0]<br/>X_test = X_test[:, np.newaxis, 0]<br/>lm = SimpleLinearRegression(X_train, y_train)<br/><br/># create the predictions &amp; plot them as the line<br/>preds = lm.predict(X_test)<br/>plt.scatter(X_test[:, 0], y_test, color='black')<br/>plt.plot(X_test[:, 0], preds, linewidth=3)<br/><br/># if we're supposed to save it, do so INSTEAD OF showing it<br/>if len(sys.argv) &gt; 1:<br/>    plt.savefig(sys.argv[1])<br/>else:<br/>    plt.show()</pre>
+
+<ol start="9">
+
+<li><img class="alignnone size-full wp-image-493 image-border" src="img/adf40228-6a5b-486e-b22c-ed1b546c7a9c.png" style="width:95.58em;height:15.17em;"/></li>
+
+</ol>
+
+<pre style="padding-left: 90px"><strong>source activate packt-sml</strong></pre>
+
+<ol start="10">
+
+<li>Run this example by typing the name of the file, which is <kbd>examples/regression/example_linear_regression.py</kbd>:</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign">当我们运行前面的代码时，我们应该得到我们的绘图，如下面的屏幕截图所示:</p>
+
+<p class="mce-root"><img class="alignnone size-full wp-image-495 image-border" src="img/23f870bd-3a57-4f1a-99ac-4803aa1e57f8.png" style="width:41.50em;height:32.92em;"/></p>
+
+<p class="CDPAlignLeft CDPAlign">我们可以看到，我们的残差和基本上为零，这意味着我们的预测是正确的。在这种情况下很简单，因为我们创建了一个场景，在这个场景中我们学习了准确的θ值。你可以看到我们在一个变量上拟合的线。考虑到我们只学习了一个变量，这就更接近了。通过scikit-learn的预测和系数，它似乎在定性和定量上与我们的预期相匹配。</p>
+
+<p class="CDPAlignCenter CDPAlign">在下一节中，我们将学习逻辑回归模型。</p>
+
+<p class="CDPAlignLeft CDPAlign">We can see that our sum of residuals is essentially zero, meaning that we were spot on in our predictions. It is easy in this case, because we created a scenario where we learned our exact theta values. You can see here the line that we're fitting across one variable. This is a bit more approximated given that we only learned it on one variable. It seems to both qualitatively and quantitatively match what we expected via scikit-learn's predictions and coefficients.</p>
+
+<p class="CDPAlignLeft CDPAlign">In the next section, we will learn about logistic regression models.</p>
+
+<p class="mce-root">逻辑回归模型</p>
+
+<p class="mce-root">在这一节中，我们将看看逻辑回归，这是我们将涉及的第一个爬山算法，我们将简要回顾一下线性回归。我们还将研究逻辑回归在数学和概念上的不同。最后，我们将学习核心算法，并解释它如何进行预测。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Logistic regression models</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">这个概念</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>逻辑回归在概念上与线性回归相反。如果我们想要一个离散值或一个类，而不是一个实值，那该怎么办？当我们想要预测一封电子邮件是否是垃圾邮件时，我们已经看到了一个这类问题的例子。因此，使用逻辑回归，我们可以预测类成员的概率，也称为分类，而不是预测真实值。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The concept</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">数学</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>数学上，逻辑回归与线性回归非常相似。我们的参数和<em> X </em>的内积表示一个类的成员的对数概率，它只是概率的自然对数超过<em> 1 </em>减去概率:</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The math</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title"><img class="fm-editor-equation" src="img/1c378b72-3456-40b9-a380-9b0bcecbc30c.png" style="width:12.33em;height:2.50em;"/></h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>我们真正想要的是类成员的概率。我们可以退出对数赔率，并使用sigmoid或逻辑函数来确定概率。</p>
+
+<p class="CDPAlignCenter CDPAlign">逻辑(sigmoid)变换</p>
+
+<p>在下面的代码中，我们将在<kbd>-10</kbd>和<kbd>10</kbd>之间创建一个值的<kbd>X</kbd>向量，然后应用逻辑转换得到<kbd>y</kbd>，然后我们可以绘制它:</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The logistic (sigmoid) transformation</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">正如你所看到的，我们得到了一条S形曲线，原始的<kbd>X</kbd>值在<em> x </em>轴上，而<kbd>y</kbd>值在<em> y </em>轴上。注意，一切都映射在y轴上的0和1之间。这些现在可以解释为概率:</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p><img class="alignnone size-full wp-image-281 image-border" src="img/aaaab465-81eb-4407-ad05-b3699b28a07d.png" style="width:23.83em;height:15.50em;"/></p>
+
+<pre>import numpy as np<br/>import matplotlib.pyplot as plt<br/>%matplotlib inline<br/><br/>x = np.linspace(-10, 10, 10000)<br/>y = 1. / (1 + np.exp(-x)) # sigmoid transformation<br/>plt.plot(x, y)</pre>
+
+<p>该算法</p>
+
+<p class="CDPAlignCenter CDPAlign">现在，我们已经在前面的部分简要介绍了逻辑回归算法。但是这里有一个我们如何学习参数的回顾:</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The algorithm</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">我们首先将θ初始化为零向量:</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p><img class="fm-editor-equation" src="img/d7b1d136-7920-4d85-8c0c-b2a8fbb157cb.png" style="width:3.50em;height:1.83em;"/></p>
+
+<ol>
+
+<li>因为这是一个爬山算法，所以它是迭代的。因此，对于每次迭代，我们将对数几率计算为θ转置<em> X </em>，然后通过逻辑转换对其进行转换:</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign"><img class="fm-editor-equation" src="img/11564b99-d4fb-4fd5-9fcf-81418826430c.png" style="width:7.75em;height:2.75em;"/></p>
+
+<ol start="2">
+
+<li>接下来，我们计算梯度，它是函数斜率的偏导数的向量，我们在上一节中已经讨论过了。我们简单地将其计算为<em> X </em>转置乘以残差，<em> y - <img class="fm-editor-equation" src="img/e35e83e5-16a8-41b6-b237-2a443870a922.png" style="width:0.67em;height:1.25em;"/>。</em>记住<em> <img class="fm-editor-equation" src="img/26c98c1f-1dc1-478e-8a0b-2b25162bb75b.png" style="width:0.83em;height:1.58em;"/> </em>是现在遵循逻辑转换的概率:</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign"><img class="fm-editor-equation" src="img/9d1b6e26-2d31-468d-8c23-c0a2e1ad025a.png" style="width:4.50em;height:1.33em;"/></p>
+
+<ol start="3">
+
+<li>最后，我们可以将系数更新为θ加上梯度。这里还可以看到一个<img class="fm-editor-equation" src="img/1185d50d-f929-492f-8fb9-57e0a9b27bd5.png" style="width:0.75em;height:1.17em;"/>参数，简单来说就是学习率参数。这控制着我们允许系数在每一步增长的幅度:</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign"><img class="fm-editor-equation" src="img/b40eca30-20d9-43e9-869d-cf52a42fc3f2.png" style="width:9.33em;height:1.33em;"/></p>
+
+<p class="mce-root">创建预测</p>
+
+<ol start="4">
+
+<li>我们最终收敛我们的梯度，它不再更新我们的系数，我们只剩下一堆类概率。那么，我们如何做出预测呢？我们所要做的就是超过一个给定的阈值，我们就可以得到类。因此，在这一节中，我们将使用一个二元问题。但是，对于多类，我们可以只对每个类使用argmax函数。现在，我们将生成离散预测，如以下代码所示:</li>
+
+</ol>
+
+<p class="CDPAlignCenter CDPAlign">上述代码的输出如下:</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Creating predictions</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">在下一节中，我们将从头开始在<kbd>packtml</kbd>包中实现逻辑回归。</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>从头开始实现逻辑回归</p>
+
+<pre>sigmoid = (lambda x: 1. / (1 + np.exp(-x)))<br/>log_odds = np.array([-5.6, 8.9, 3.7, 0.6, 0.])<br/>probas = sigmoid(log_odds)<br/>classes = np.round(probas).astype(int)<br/>print("Log odds: %r\nProbas: %r\nClasses: %r"<br/>      % (log_odds, probas, classes))</pre>
+
+<p>在这一节中，我们将在<kbd>packtml</kbd>包中用Python实现逻辑回归。我们首先简要回顾一下逻辑回归试图完成的任务，然后查看源代码并看一个例子。</p>
+
+<pre>Log odds: array([-5.6, 8.9, 3.7, 0.6, 0. ])<br/>Probas: array([0.00368424, 0.99986363, 0.97587298, 0.64565631, 0.5 ])<br/>Classes: array([0, 1, 1, 1, 0])</pre>
+
+<p>In the next section, we will walk through the implementation of logistic regression from scratch in the <kbd>packtml</kbd> package.</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Implementing logistic regression from scratch</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">回想一下，逻辑回归试图将样本分类到一个离散的类别中，也称为<strong>分类</strong>。逻辑转换允许我们转换从参数和<kbd>X</kbd>的内积中得到的对数概率。</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>请注意，我们打开了三个Python文件。一个是<kbd>extmath.py</kbd>，来自<kbd>packtml</kbd>里面的<kbd>utils</kbd>目录；另一个是<kbd>simple_logistic.py</kbd>，来自<kbd>packtml</kbd>中的<kbd>regression</kbd>库内；最后一个是一个<kbd>example_logistic_regression.py</kbd>文件，在<kbd>examples</kbd>目录和<kbd>regression</kbd>中。</p>
+
+<p class="mce-root">我们将通过以下步骤深入代码库:</p>
+
+<p>我们将从<kbd>extmath.py</kbd>文件开始。这里我们将使用两个函数。第一个是<kbd>log_likelihood</kbd>，这是我们希望在逻辑回归中最大化的目标函数:</p>
+
+<p><kbd>log_likelihood</kbd>函数的细节对于理解逻辑回归是如何工作的并不重要。但是，本质上，你在这里可以看到的是，我们将对<kbd>y</kbd>乘以对数几率进行求和，减去<kbd>1</kbd>的对数，再加上对数几率的指数。这里的加权本质上是对数几率，即<kbd>X.dot(w)</kbd>，<kbd>w</kbd>是我们正在学习的θ。这是目标函数。因此，我们对这些日志进行总结:</p>
+
+<p>We will dive right into the code base using the following steps:</p>
+
+<ol>
+
+<li>We will start with the <kbd>extmath.py</kbd> file. There are two functions that we will be using here. The first is <kbd>log_likelihood</kbd>, which is the objective function that we would like to maximize inside of the logistic regression:</li>
+
+</ol>
+
+<pre style="padding-left: 60px">def log_likelihood(X, y, w):<br/>    """Compute the log-likelihood function.<br/><br/>    Computes the log-likelihood function over the training data.<br/>    The key to the log-likelihood is that the log of the product of<br/>    likelihoods becomes the sum of logs. That is (in pseudo-code),<br/><br/>        np.log(np.product([f(i) for i in range(N)]))<br/><br/>    is equivalent to:<br/><br/>        np.sum([np.log(f(i)) for i in range(N)])<br/><br/>    The log-likelihood function is used in computing the gradient for<br/>    our loss function since the derivative of the sum (of logs) is equivalent<br/>    to the sum of derivatives, which simplifies all of our math.</pre>
+
+<ol start="2">
+
+<li>The specifics of the <kbd>log_likelihood</kbd> function are not necessarily critical for understanding how logistic regression works. But, essentially, what you can see here is that we will be summing up <kbd>y</kbd> times the log odds, minus the log of <kbd>1</kbd> plus the exponential of the log odds. Weighted here is essentially the log odds, that is, <kbd>X.dot(w)</kbd>, <kbd>w</kbd> being the theta that we are learning. This is the objective function. So, we're summing over those logs:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"> weighted = X.dot(w)<br/> return (y * weighted - np.log(1. + np.exp(weighted))).sum()</pre>
+
+<p class="mce-root"/>
+
+<p class="mce-root">第二个是<kbd>logistic_sigmoid</kbd>函数，我们现在将更深入地学习它。这就是我们如何能够退出对数赔率以获得类别概率的方法，该概率简单地等于<kbd>1</kbd>除以<kbd>1</kbd>加上负对数赔率的指数，其中<kbd>x</kbd>是这种情况下的对数赔率:</p>
+
+<p class="mce-root">我们将在逻辑回归类中使用这两个函数。因此，在<kbd>simple_logistic.py</kbd>中，您将看到一个类似于我们在上一节中使用的线性回归类的类:</p>
+
+<p class="mceNonEditable">现在，这个函数或类扩展了<kbd>BaseSimpleEstimator</kbd>。我们将在某个时候覆盖<kbd>predict</kbd>函数，构造函数将拟合模型并学习参数。所以，我们有四个超参数，在这个类中。第一个是<kbd>X</kbd>，是我们的训练数据；然后<kbd>y</kbd>，作为我们的训练标签；并且<kbd>n_steps</kbd>回顾了作为迭代模型的逻辑回归。因此，<kbd>n_steps</kbd>是我们将执行的迭代次数，其中<kbd>learning_rate</kbd>是我们的λ。如果你回到算法本身，这控制了给定梯度时我们更新θ的速度，最后，<kbd>loglik_interval</kbd>。这只是一个辅助参数。计算对数似然性可能非常昂贵。我们可以在下面的代码片段中看到这个解释:</p>
+
+<ol start="3">
+
+<li>最后，我们得到<kbd>theta</kbd>、参数<kbd>intercept</kbd>，然后是<kbd>log_likelihood</kbd>，这只是在每个间隔计算的对数似然性的列表。我们将首先检查我们的<kbd>X</kbd>和<kbd>y</kbd>是否如我们所愿，也就是<kbd>0, 1</kbd>。我们不会做任何接近scikit-learn所能做的事情。我们也不允许不同的字符串类:</li>
+
+</ol>
+
+<pre style="padding-left: 60px">def logistic_sigmoid(x):<br/>    """The logistic function.<br/><br/>    Compute the logistic (sigmoid) function over a vector, ``x``.<br/><br/>    Parameters<br/>    ----------<br/>    x : np.ndarray, shape=(n_samples,)<br/>        A vector to transform.<br/>    """<br/>    return 1. / (1. + np.exp(-x))</pre>
+
+<ol start="4">
+
+<li>接下来，我们要确定它实际上是二进制的。原因是我们正在执行逻辑回归，它在<kbd>0</kbd>和<kbd>1</kbd>之间是离散的。有一个回归的一般化，叫做<strong> softmax回归</strong>，它将允许我们使用许多不同的类。这是一个多级分类。当我们进入神经网络时，我们会谈到这一点。现在，我们把它限制为一个二元问题。</li>
+
+</ol>
+
+<pre style="padding-left: 60px"># -*- coding: utf-8 -*-<br/><br/>from __future__ import absolute_import<br/><br/>from sklearn.utils.validation import check_X_y, check_array<br/><br/>import numpy as np<br/>from packtml.utils.extmath import log_likelihood, logistic_sigmoid<br/>from packtml.utils.validation import assert_is_binary<br/>from packtml.base import BaseSimpleEstimator<br/><br/>__all__ = [<br/>    'SimpleLogisticRegression'<br/>]<br/><br/>try:<br/>    xrange<br/>except NameError: # py 3 doesn't have an xrange<br/>    xrange = range<br/><br/><br/>class SimpleLogisticRegression(BaseSimpleEstimator):<br/>    """Simple logistic regression.<br/><br/>    This class provides a very simple example of straight forward logistic<br/>    regression with an intercept. There are few tunable parameters aside from<br/>    the number of iterations, &amp; learning rate, and the model is fit upon<br/>    class initialization.</pre>
+
+<ol start="5">
+
+<li>接下来，我们希望将我们的<kbd>X</kbd>矩阵居中并标准化。这意味着我们将从<kbd>X</kbd>中减去列<kbd>means</kbd>，然后除以它的标准差。因此，我们有均值<kbd>0</kbd>和标准差<kbd>1</kbd>:</li>
+
+</ol>
+
+<pre style="padding-left: 60px">Parameters<br/>    ----------<br/>X : array-like, shape=(n_samples, n_features)<br/>        The array of predictor variables. This is the array we will use<br/>        to regress on ``y``.<br/><br/>y : array-like, shape=(n_samples,)<br/>        This is the target array on which we will regress to build<br/>        our model. It should be binary (0, 1).<br/><br/>n_steps : int, optional (default=100)<br/>        The number of iterations to perform.<br/><br/>learning_rate : float, optional (default=0.001)<br/>        The learning rate.<br/><br/>loglik_interval : int, optional (default=5)<br/>        How frequently to compute the log likelihood. This is an expensive<br/>        operation--computing too frequently will be very expensive.</pre>
+
+<p class="mce-root">现在，当我们学习线性回归参数或逻辑回归参数时，我们可以做一些小聪明的事情，这是我们在线性回归中不能做的。我们可以在学习时将截距添加到矩阵中，而不必在事后计算。我们将在<kbd>X</kbd>矩阵上创建一个1的向量作为新特征，如下所示:</p>
+
+<p class="mce-root">正如我们在算法中定义的，我们首先定义θ等于零。<kbd>X</kbd>中有多少列就有多少参数。对于每次迭代，我们将在这里计算对数概率。然后，我们用逻辑sigmoid来转换它。我们将计算我们的残差为<kbd>y - preds</kbd>。所以，在这一点上，<kbd>preds</kbd>是或然性。<kbd>y</kbd>可以被认为是二进制分类问题的分类概率，其中<kbd>1</kbd>是100%可能某物属于分类<kbd>1</kbd>，而<kbd>0</kbd>是0%可能某物属于分类<kbd>1</kbd>:</p>
+
+<ol start="6">
+
+<li>因此，我们可以从<kbd>y</kbd>中减去概率，得到我们的残差。为了得到我们的梯度，我们将执行<kbd>X</kbd>乘以残差，这是那里的内积。记住，梯度是函数斜率的偏导数的向量。</li>
+
+</ol>
+
+<pre style="padding-left: 60px">def __init__(self, X, y, n_steps=100, learning_rate=0.001,<br/>                 loglik_interval=5):<br/>        X, y = check_X_y(X, y, accept_sparse=False, # keep dense for example<br/>                         y_numeric=True)<br/><br/>        # we want to make sure y is binary since that's all our example covers<br/>        assert_is_binary(y)<br/><br/>        # X should be centered/scaled for logistic regression, much like<br/>        # with linear regression<br/>        means, stds = X.mean(axis=0), X.std(axis=0)<br/>        X = (X - means) / stds</pre>
+
+<ol start="7">
+
+<li>我们将通过增加梯度乘以我们的学习率来更新<kbd>theta</kbd>和参数。学习率是控制我们学习速度的λ函数。你可能还记得，如果我们学习得太快，我们可能会超越全局最优解，最终得到一个非最优解。如果我们走得太慢，那么我们会适应很长一段时间。逻辑回归是一个有趣的例子；由于这实际上是一个凸优化问题，我们将有足够的迭代次数来达到全局最优。因此，<kbd>learning_rate</kbd>这里有一点半开玩笑的意思，但这就是通常爬山函数使用<kbd>learning_rate</kbd>的工作方式:</li>
+
+<li>Next, we want to center and standardize our <kbd>X</kbd> matrix. That means we're going to subtract the column <kbd>means</kbd> from <kbd>X</kbd> and divide it by its standard deviation. So, we have mean <kbd>0</kbd>, and standard deviation <kbd>1</kbd>:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"># since we're going to learn an intercept, we can cheat and set the<br/># intercept to be a new feature that we'll learn with everything else<br/>X_w_intercept = np.hstack((np.ones((X.shape[0], 1)), X))</pre>
+
+<ol start="9">
+
+<li>Now, we can do something a little bit clever here when we are learning our linear regression parameters, or the logistic regression parameters that we could not do in linear regression. We can add the intercept to the matrix while we learn it, rather than having to compute it after the fact. We will create a vector of ones as a new feature on our <kbd>X</kbd> matrix, as shown:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"> # initialize the coefficients as zeros<br/> theta = np.zeros(X_w_intercept.shape[1])</pre>
+
+<p class="mce-root">这里的最后一步是，如果我们在适当的间隔，我们将计算<kbd>log_likelihood</kbd>。现在，再一次，你可以在每一次迭代中计算这个函数，但是这会花你很长时间。我们可以选择每隔5或10分钟进行一次，这将让我们看到我们正在优化该功能。但是，与此同时，这意味着我们不必在每次迭代中计算它。</p>
+
+<ol start="10">
+
+<li>最后，我们将所有这些保存为一个类的实例参数。注意，我们去掉了截距，并尽可能保持<kbd>1</kbd>向前的参数。这些是非截距参数，我们将在预测的内积中计算:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"> # now for each step, we compute the inner product of X and the<br/> # coefficients, transform the predictions with the sigmoid function,<br/> # and adjust the weights by the gradient<br/> ll = []<br/> for iteration in xrange(n_steps):<br/>     preds = logistic_sigmoid(X_w_intercept.dot(theta))<br/>     residuals = y - preds # The error term<br/>     gradient = X_w_intercept.T.dot(residuals)</pre>
+
+<p style="padding-left: 60px">因此，我们进行逻辑转换为<kbd>X</kbd>乘以<kbd>theta.T</kbd>，然后在我们对输入<kbd>X</kbd>进行集中和标准化后，添加<kbd>intercept</kbd>，这将给出概率:</p>
+
+<ol start="11">
+
+<li>但是，为了得到实际的预测，我们只需将概率向上取整。因此，在<kbd>predict</kbd>函数中，我们将把<kbd>predict_proba</kbd>向上或向下舍入到0或1，得到类型为<kbd>int</kbd>，这将给出我们的类0和1:</li>
+
+</ol>
+
+<pre style="padding-left: 60px"># update the coefficients<br/>theta += learning_rate * gradient<br/><br/># you may not always want to do this, since it's expensive. Tune<br/># the error_interval to increase/reduce this<br/>if (iteration + 1) % loglik_interval == 0:<br/>    ll.append(log_likelihood(X_w_intercept, y, theta))</pre>
+
+<p class="mce-root"/>
+
+<p class="mce-root"/>
+
+<ol start="12">
+
+<li>逻辑回归的例子</li>
+
+<li>现在，作为一个例子，我们将看看我们的<kbd>example_logistic_regression.py</kbd>脚本。我们将比较我们的<kbd>simple_logistic_regression.py</kbd>文件的输出和scikit-learn的输出，并证明我们在输出中获得了相似的(如果不是完全相等的)参数。我们使用scikit-learn <kbd>make_classification</kbd>函数创建<kbd>100</kbd>样本和两个特征，并执行<kbd>train_test_split</kbd>。首先，我们将我们自己的<kbd>SimpleLogisticRegression</kbd>与我们刚刚走过的模型相适应，并采取<kbd>50</kbd>步骤，因为这是一个<kbd>50</kbd>迭代，如下面的代码所示:</li>
+
+</ol>
+
+<pre style="padding-left: 90px"># recall that our theta includes the intercept, so we need to  pop<br/># that off and store it<br/>self.intercept = theta[0]<br/>self.theta = theta[1:]<br/>self.log_likelihood = ll<br/>self.column_means = means<br/>self.column_std = stds</pre>
+
+<p>接下来，我们将在几乎没有正则化的情况下计算scikit-learn的<kbd>LogisticRegression</kbd>，并对其进行拟合，如下所示:</p>
+
+<pre># scale the data appropriately<br/>X = (X - self.column_means) / self.column_std<br/><br/># creates a copy<br/>return logistic_sigmoid(np.dot(X, theta.T) + self.intercept)</pre>
+
+<p>我们将运行这段代码。通过键入<kbd>source activate packt-sml</kbd>，确保您已经激活了Anaconda环境。</p>
+
+<pre> def predict(self, X):<br/>     return np.round(self.predict_proba(X)).astype(int)</pre>
+
+<p class="mce-root">如果你用的是Windows，这将只是<kbd>activate packt-sml</kbd>。</p>
+
+<p class="mce-root">我们看到我们的测试准确率为96%，非常接近<kbd>Sklearn</kbd>的100%。Scikit-learn运行更多的迭代，这就是它获得更好准确性的原因。如果我们运行更多的迭代，理论上我们可以得到完美的精确度。在下面的输出中，您可以看到一个完美的线性可分边界。但是，由于我们没有运行同样多的迭代，我们没有达到它。所以，你可以在这个图中看到，我们有这个线性边界，这是我们学过的决策函数，把这两个类分开。左边是一个类，右边是另一个类，如图所示:</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Example of logistic regression</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title"><img class="alignnone size-full wp-image-496 image-border" src="img/b26fd4cd-0ca3-4d1f-bdb5-732d5062ffbc.png" style="width:96.17em;height:11.33em;"/></h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>上述代码的输出如下:</p>
+
+<pre># -*- coding: utf-8 -*-<br/><br/>from __future__ import absolute_import<br/><br/>from packtml.regression import SimpleLogisticRegression<br/>from packtml.utils.plotting import add_decision_boundary_to_axis<br/>from sklearn.linear_model import LogisticRegression<br/>from sklearn.datasets import make_classification<br/>from sklearn.model_selection import train_test_split<br/>from sklearn.metrics import accuracy_score<br/>from matplotlib import pyplot as plt<br/>import sys<br/><br/># #############################################################################<br/># Create an almost perfectly linearly-separable classification set<br/>X, y = make_classification(n_samples=100, n_features=2, random_state=42,<br/>                           n_redundant=0, n_repeated=0, n_classes=2,<br/>                           class_sep=1.0)<br/><br/># split data<br/>X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)<br/><br/># #############################################################################<br/># Fit a simple logistic regression, produce predictions<br/>lm = SimpleLogisticRegression(X_train, y_train, n_steps=50)<br/><br/>predictions = lm.predict(X_test)<br/>acc = accuracy_score(y_test, predictions)<br/>print("Test accuracy: %.3f" % acc)</pre>
+
+<p><img class="alignnone size-full wp-image-283 image-border" src="img/e3eddc15-ee9b-4acb-ab29-e3407fb81f18.png" style="width:47.75em;height:38.33em;"/></p>
+
+<pre># Show that our solution is similar to scikit-learn's<br/>lr = LogisticRegression(fit_intercept=True, C=1e16) # almost no regularization<br/>lr.fit(X_train, y_train)<br/>print("Sklearn test accuracy: %.3f" % accuracy_score(y_test, <br/>                                                   lr.predict(X_test)))</pre>
+
+<p>假设，如果我们运行这个代码一百次甚至更多次，我们可以实现一个完美的线性可分平面，这可以保证一个线性可分的类，因为逻辑回归总是会达到全局最优。我们也知道我们的公式与scikit-learn的公式完全相同。所以，这只是我们在那里运行了多少次迭代的问题。</p>
+
+<p>在下一节中，我们将看看参数模型的一些优点和缺点。</p>
+
+<p>We see that our test accuracy is 96%, which is pretty close to <kbd>Sklearn</kbd> at 100%. Scikit-learn runs more iterations, which is why it gets better accuracy. If we ran more iterations, we could theoretically get perfect accuracy. In the following output, you can see a perfectly linearly separable boundary here. But, since we haven't run as many iterations, we're not hitting it. So, what you can see in this diagram is that we have this linear boundary, which is the decision function we've learned, separating these two classes. On the left, you have one class, and on the right, you have another, as shown:</p>
+
+<p class="CDPAlignCenter CDPAlign">参数模型的利与弊</p>
+
+<p>参数模型有一些非常方便的属性。也就是说，它们拟合速度快，不需要太多的数据，并且很容易解释。在线性和逻辑回归的情况下，很容易查看系数并直接解释一个变量在任一方向上波动的影响。在金融或保险等受监管行业，参数模型往往占据主导地位，因为它们可以很容易地向监管者解释。商业伙伴倾向于真正依赖这些系数产生的洞察力。然而，正如我们到目前为止已经看到的，它们倾向于过于简化。因此，作为一个例子，我们在上一节中看到的逻辑回归决策边界假设两个类之间有一个完美的线性边界。</p>
+
+<p class="CDPAlignCenter CDPAlign">现实世界很少能被约束成线性关系。也就是说，模型非常简单。它们并不总是抓住变量之间关系的真正细微差别，这有点像一把双刃剑。此外，它们受到离群值和数据规模的严重影响。所以，你必须非常小心地准备数据。这是我们必须确保在拟合之前居中并缩放数据的原因之一。最后，如果你给你的模型添加数据，它们不太可能变得更好。这引入了一个新概念，我们称之为偏差。</p>
+
+<p>偏差引起的误差是我们将在后续章节中讨论的一个概念。这是一个过于简化的模型的结果。在下图中，我们的模型通过将一个<kbd>logit</kbd>函数视为线性函数来简化它:</p>
+
+<p><img class="alignnone size-full wp-image-497 image-border" src="img/c3f57086-32f9-43e4-9c09-66a912959d67.png" style="width:23.58em;height:20.33em;"/></p>
+
+<p class="mce-root">这也称为<strong>欠拟合</strong>，在参数模型族中很常见。有几种方法可以对抗高偏差，其中大部分我们将在下一章介绍。但是，本着探索参数模型的缺点的精神，在这里指出其中一些是值得的。如前所述，在高偏差情况下，我们无法添加更多数据来学习更好的函数。如果我们以前面的例子为例，如果你沿着logit线增加更多的样本，我们的学习线或蓝线将不再接近真实函数，因为它是线性的。它不够复杂，不足以模拟真正的底层函数，这是许多参数模型简单的不幸后果。更多的模型复杂性和复杂的非线性特征通常有助于校正高偏差。</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>The pros and cons of parametric models</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">摘要</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>在这一章中，我们介绍了参数模型。然后，在转到Python中的实现之前，我们讨论了线性逻辑回归的低级数学。既然我们已经讨论了参数模型的一些优点和缺点，那么在下一章中，我们将看看一些非参数模型。</p>
+
+<p>It is rare that the real world can be constrained into linear relationships. That said, the models are very simple. They don't always capture the true nuances of relationships between variables, which is a bit of a double-edged sword. Also, they're heavily impacted by outliers and data scale. So, you have to take great care with data preparation. This is one of the reasons that we had to make sure we centered and scaled our data before fitting. Finally, if you add data to your models, it's unlikely that they're going to get much better. This introduces a new concept, which we're going to call bias.</p>
+
+<p>Error due to bias is a concept we will talk about in subsequent chapters. It's the result of a model that is oversimplified. In the following diagram, our model oversimplifies a <kbd>logit</kbd> function by treating it as linear:</p>
+
+<p class="CDPAlignCenter CDPAlign"><img class="alignnone size-full wp-image-497 image-border" src="img/c3f57086-32f9-43e4-9c09-66a912959d67.png" style="width:23.58em;height:20.33em;"/></p>
+
+<p>This is also known as <strong>underfitting</strong>, which is common within the parametric model family. There are several ways to combat high bias, most of which we will introduce in the next chapter. But, in the spirit of exploring the drawbacks of parametric models, it's worth pointing some of them out here. As mentioned before, we cannot add more data to learn a better function in high-bias situations. If we take the previous example, if you were to add more samples along the logit line, our learned or blue line would not approach the true function any more than it already has, because it's linear. It's not complex enough to model the true underlying function, which is an unfortunate consequence of the simplicity of many parametric models. More model complexity and complex nonlinear features usually help to correct high bias.</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html>
+<html xmlns:epub="http://www.idpf.org/2007/ops">
+
+    <head>
+
+        <title>Summary</title>
+
+        
+
+        <meta charset="utf-8"/>
+
+<meta content="urn:uuid:f717b8d9-6bc3-4a1d-ae49-89fb65c33b98" name="Adept.expected.resource"/>
+
+    </head>
+
+
+
+    <body>
+
+        
+
+
+
+                            
+
+                    <h1 class="header-title">Summary</h1>
+
+                
+
+            
+
+            
+
+                
+
+<p>In this chapter, we were introduced to parametric models. We then walked through the low-level math of linear logistic regression, before moving on to implementations in Python. Now that we've covered some of the pros and cons of parametric models, in the next chapter, we will take a look at some non-parametric models.</p>
+
+
+
+
+
+            
+
+
+
+            
+
+        
+
+    </body>
+
+
+
+</html></body></html>
